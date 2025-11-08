@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -30,7 +31,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -42,66 +43,69 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let db, auth, userId;
+
+        // Definição explícita de setores com ids que batem com os ids no HTML
         const SECTORS = [
-            'MOEGAS/RECEPÇÃO', 'SILOS E PRÉ-SECAGENS', 'SILO PULMÃO',
-            'SILOS DE REPASSE', 'BENEFICIAMENTO', 'ENSAQUE', 'MARCOLD',
-            'GRANELEIRO ADRIANA'
+            { id: 'moegas-recepcao', nome: 'MOEGAS/RECEPÇÃO' },
+            { id: 'silos-e-pre-secagens', nome: 'SILOS E PRÉ-SECAGENS' },
+            { id: 'silo-pulmao', nome: 'SILO PULMÃO' },
+            { id: 'silos-de-repasse', nome: 'SILOS DE REPASSE' },
+            { id: 'beneficiamento', nome: 'BENEFICIAMENTO' },
+            { id: 'ensaque', nome: 'ENSAQUE' },
+            { id: 'marcold', nome: 'MARCOLD' },
+            { id: 'graneleiro-adriana', nome: 'GRANELEIRO ADRIANA' }
         ];
         
+        // Local storage key (fallback)
+        const LOCAL_STORAGE_KEY = `planning_draft_${appId}`;
+
         // --- Inicialização e Autenticação Firebase ---
         async function initializeFirebase() {
             if (!firebaseConfig) {
-                console.error("Firebase Config não encontrada.");
+                console.warn("Firebase Config não fornecida — usando persistência local apenas.");
+                loadStatusFromLocal();
                 return;
             }
 
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
             try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
+
                 userId = auth.currentUser?.uid || crypto.randomUUID();
                 console.log(`✅ Autenticação Firebase bem-sucedida. User ID: ${userId}`);
-                loadLastStatusFromFirestore(); // Carrega o último status após autenticar
+                await loadLastStatusFromFirestore();
             } catch (error) {
-                console.error("❌ Falha na autenticação Firebase:", error);
-                // Mesmo com erro, tenta carregar o status local (como fallback)
+                console.error("❌ Falha na autenticação/inicialização Firebase:", error);
+                // fallback para local
                 loadStatusFromLocal();
             }
         }
 
         // --- Gerenciamento de Referências Firestore ---
-        
-        // Ref. para salvar o último status local do usuário (private data)
         function getPlanningDocRefPrivate() {
-            // Caminho privado: artifacts/{appId}/users/{userId}/planning_data/current_status
             return doc(db, `artifacts/${appId}/users/${userId}/planning_data/current_status`);
         }
 
-        // Ref. para salvar o status que será visualizado no COI (public data)
         function getPlanningDocRefPublic() {
-            // Caminho público: artifacts/{appId}/public/data/planning_data/current_status
             return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`);
         }
 
         // --- Funções de Ajuda ---
-
-        // Retorna a data de hoje formatada em YYYY-MM-DD
         function getCurrentDateString() {
             const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return now.toISOString().slice(0,10);
         }
 
         function showFeedback(message, isError = false) {
             const msgEl = document.getElementById('feedback-message');
+            if (!msgEl) return;
             msgEl.textContent = message;
             msgEl.className = `p-3 rounded-md mt-4 font-semibold text-center fade-in ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
             
@@ -111,34 +115,72 @@
             }, 5000);
         }
 
-        // --- Funções de Persistência ---
+        // --- Persistência local (fallback) ---
+        function saveStatusToLocal(data) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn("Não foi possível salvar no localStorage:", e);
+            }
+        }
 
-        // Carrega o último status (privado) do Firestore e preenche o formulário
+        function loadStatusFromLocal() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (!data || !data.setores) return;
+                data.setores.forEach(setor => {
+                    const statusEl = document.getElementById(`status-${setor.id}`);
+                    const priorityEl = document.getElementById(`priority-${setor.id}`);
+                    if (statusEl) statusEl.value = setor.status || '';
+                    if (priorityEl) priorityEl.value = setor.prioridade || 'NORMAL';
+                });
+                if (data.data) document.getElementById('data-ref').value = data.data;
+                if (data.turno) document.getElementById('turno-ref').value = data.turno;
+                showFeedback("Último rascunho local carregado.", false);
+            } catch (e) {
+                console.warn("Erro ao carregar rascunho local:", e);
+            }
+        }
+
+        // --- Funções de Persistência Firestore ---
         async function loadLastStatusFromFirestore() {
+            if (!db || !auth) return;
             try {
                 const docRef = getPlanningDocRefPrivate();
                 const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists()) {
+                if (docSnap && docSnap.exists()) {
                     const data = docSnap.data();
-                    data.setores.forEach(setor => {
-                        const statusEl = document.getElementById(`status-${setor.id}`);
-                        const priorityEl = document.getElementById(`priority-${setor.id}`);
-                        if (statusEl) statusEl.value = setor.status || '';
-                        if (priorityEl) priorityEl.value = setor.prioridade || 'NORMAL';
-                    });
-                    showFeedback("Último status de trabalho carregado com sucesso.", false);
+                    if (data && data.setores) {
+                        data.setores.forEach(setor => {
+                            const statusEl = document.getElementById(`status-${setor.id}`);
+                            const priorityEl = document.getElementById(`priority-${setor.id}`);
+                            if (statusEl) statusEl.value = setor.status || '';
+                            if (priorityEl) priorityEl.value = setor.prioridade || 'NORMAL';
+                        });
+                    }
+                    if (data.data) document.getElementById('data-ref').value = data.data;
+                    if (data.turno) document.getElementById('turno-ref').value = data.turno;
+                    showFeedback("Último status de trabalho carregado do Firestore.", false);
                 } else {
                     console.log("Nenhum status anterior encontrado no Firestore (private).");
+                    loadStatusFromLocal();
                 }
             } catch (error) {
                 console.error("Erro ao carregar status do Firestore (private):", error);
+                loadStatusFromLocal();
             }
         }
 
-        // Salva o status atual no Firestore (privado)
         async function saveStatusPrivate() {
-            const formData = collectFormData(false); // Coleta todos os dados, incluindo vazios
+            const formData = collectFormData(false);
+            if (!formData) return;
+            // salva local sempre
+            saveStatusToLocal(formData);
+
+            if (!db) return;
             try {
                 await setDoc(getPlanningDocRefPrivate(), formData);
                 console.log("Rascunho salvo no Firestore (private).");
@@ -148,36 +190,34 @@
         }
 
         // --- Funções do Formulário ---
-
-        // Coleta todos os dados do formulário
         function collectFormData(requireFull) {
-            const dataRef = document.getElementById('data-ref').value;
-            const turnoRef = document.getElementById('turno-ref').value;
+            const dataRef = document.getElementById('data-ref')?.value || '';
+            const turnoRef = document.getElementById('turno-ref')?.value || '';
 
             if (requireFull && (!dataRef || !turnoRef)) {
                 return null;
             }
 
-            const setoresData = SECTORS.map(nome => {
-                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            const setoresData = SECTORS.map(s => {
+                const id = s.id;
+                const nome = s.nome;
                 const statusEl = document.getElementById(`status-${id}`);
                 const priorityEl = document.getElementById(`priority-${id}`);
                 
                 const status = statusEl ? statusEl.value.trim() : '';
                 const prioridade = priorityEl ? priorityEl.value.toUpperCase() : 'NORMAL';
 
-                // Se for obrigatório e a descrição estiver vazia, retorna null
-                if (requireFull && !status) return null; 
+                if (requireFull && !status) return null;
 
                 return {
-                    id: id,
-                    nome: nome,
-                    status: status,
-                    prioridade: prioridade
+                    id,
+                    nome,
+                    status,
+                    prioridade
                 };
             }).filter(item => item !== null);
 
-            if (requireFull && setoresData.length === 0) return null; // Formulário completamente vazio
+            if (requireFull && setoresData.length === 0) return null;
 
             return {
                 timestamp: Date.now(),
@@ -191,31 +231,35 @@
         async function handleTransmission(event) {
             event.preventDefault();
             
-            const formData = collectFormData(true); // Coleta dados e exige que hajam dados preenchidos
+            const formData = collectFormData(true);
             if (!formData) {
                 showFeedback("⚠️ Por favor, preencha a Data, o Turno e pelo menos um Status de Setor.", true);
                 return;
             }
 
-            // Ação: Salva no Firestore (Public Data)
-            try {
-                // 1. Salva o rascunho privado (para o usuário)
-                await saveStatusPrivate();
-                
-                // 2. Salva o status público (para o Dashboard COI)
-                await setDoc(getPlanningDocRefPublic(), formData);
+            // salva rascunho local e privado
+            saveStatusToLocal(formData);
+            await saveStatusPrivate();
 
+            // tenta salvar público no Firestore
+            if (!db) {
+                showFeedback("⚠️ Salvo localmente. Firestore não inicializado.", false);
+                return;
+            }
+
+            try {
+                await setDoc(getPlanningDocRefPublic(), formData);
                 showFeedback("🚀 Planejamento salvo e Dashboard COI atualizado com sucesso!", false);
             } catch (error) {
+                console.error("Erro ao salvar público:", error);
                 showFeedback(`❌ Erro ao salvar/atualizar o planejamento: ${error.message}`, true);
-                console.error("Erro na transmissão (salvar público):", error);
             }
         }
 
         // Limpa todos os campos do formulário
         function clearForm() {
-            SECTORS.forEach(nome => {
-                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            SECTORS.forEach(s => {
+                const id = s.id;
                 const statusEl = document.getElementById(`status-${id}`);
                 const priorityEl = document.getElementById(`priority-${id}`);
                 if (statusEl) statusEl.value = '';
@@ -224,18 +268,21 @@
             document.getElementById('data-ref').value = getCurrentDateString();
             document.getElementById('turno-ref').value = 'TURNO 1';
             showFeedback("Formulário limpo e pronto para um novo preenchimento.", false);
-            saveStatusPrivate(); // Salva o formulário limpo como rascunho
+            const draft = collectFormData(false);
+            if (draft) saveStatusToLocal(draft);
+            saveStatusPrivate();
         }
         
         // --- Setup Inicial ---
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('data-ref').value = getCurrentDateString();
-            document.getElementById('transmission-form').addEventListener('submit', handleTransmission);
-            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+            const dateEl = document.getElementById('data-ref');
+            if (dateEl) dateEl.value = getCurrentDateString();
+
+            document.getElementById('transmission-form')?.addEventListener('submit', handleTransmission);
+            document.getElementById('clear-form-btn')?.addEventListener('click', clearForm);
             
-            // Adiciona listener para salvar rascunho a cada mudança (debounce ideal, mas omitido por simplicidade)
-            SECTORS.forEach(nome => {
-                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            SECTORS.forEach(s => {
+                const id = s.id;
                 document.getElementById(`status-${id}`)?.addEventListener('input', saveStatusPrivate);
                 document.getElementById(`priority-${id}`)?.addEventListener('change', saveStatusPrivate);
             });
@@ -278,7 +325,7 @@
             <div id="feedback-message" class="fade-out" style="opacity: 0;"></div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Seção 1: MOEGAS/RECEPÇÃO -->
+                <!-- Seções: IDs já batem com SECTORS -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">MOEGAS/RECEPÇÃO</h2>
                     <textarea id="status-moegas-recepcao" placeholder="Descreva o status e os próximos passos para o setor."
@@ -292,7 +339,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 2: SILOS E PRÉ-SECAGENS -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">SILOS E PRÉ-SECAGENS</h2>
                     <textarea id="status-silos-e-pre-secagens" placeholder="Descreva o status e os próximos passos para o setor."
@@ -302,55 +348,10 @@
                         <option value="NORMAL">Normal</option>
                         <option value="BAIXA">Baixa</option>
                         <option value="MÉDIA">Média</option>
-                        // Adicione estas constantes (abaixo de SECTORS)
-                        const EXTERNAL_API_ENDPOINT = typeof __external_api_endpoint !== 'undefined' ? __external_api_endpoint : 'https://example.com/api/planning';
-                        const EXTERNAL_API_TOKEN = typeof __external_api_token !== 'undefined' ? __external_api_token : null;
-
-                        // Substitua a função handleTransmission por esta versão:
-                        async function handleTransmission(event) {
-                            event.preventDefault();
-                            
-                            const formData = collectFormData(true); // exige que haja dados preenchidos
-                            if (!formData) {
-                                showFeedback("⚠️ Por favor, preencha a Data, o Turno e pelo menos um Status de Setor.", true);
-                                return;
-                            }
-
-                            try {
-                                // 1) Salva rascunho privado
-                                await saveStatusPrivate();
-
-                                // 2) Salva status público no Firestore (se necessário)
-                                await setDoc(getPlanningDocRefPublic(), formData);
-
-                                // 3) Envia para a API externa
-                                const headers = { 'Content-Type': 'application/json' };
-                                if (EXTERNAL_API_TOKEN) headers['Authorization'] = `Bearer ${EXTERNAL_API_TOKEN}`;
-
-                                const resp = await fetch(EXTERNAL_API_ENDPOINT, {
-                                    method: 'POST',
-                                    headers,
-                                    body: JSON.stringify(formData),
-                                    // mode: 'cors' // por padrão; ajuste se necessário
-                                });
-
-                                if (!resp.ok) {
-                                    // tenta ler corpo de resposta para debug
-                                    let bodyText;
-                                    try { bodyText = await resp.text(); } catch(e) { bodyText = ''; }
-                                    throw new Error(`API externa retornou ${resp.status} ${bodyText}`);
-                                }
-
-                                showFeedback("🚀 Planejamento salvo e enviado para a API externa com sucesso!", false);
-                            } catch (error) {
-                                console.error("Erro na transmissão/salvamento:", error);
-                                showFeedback(`❌ Erro ao salvar/enviar o planejamento: ${error.message}`, true);
-                            }
-                        }
+                        <option value="ALTA">Alta</option>
                     </select>
                 </div>
 
-                <!-- Seção 3: SILO PULMÃO -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">SILO PULMÃO</h2>
                     <textarea id="status-silo-pulmao" placeholder="Descreva o status e os próximos passos para o setor."
@@ -364,7 +365,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 4: SILOS DE REPASSE -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">SILOS DE REPASSE</h2>
                     <textarea id="status-silos-de-repasse" placeholder="Descreva o status e os próximos passos para o setor."
@@ -378,7 +378,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 5: BENEFICIAMENTO -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">BENEFICIAMENTO</h2>
                     <textarea id="status-beneficiamento" placeholder="Descreva o status e os próximos passos para o setor."
@@ -392,7 +391,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 6: ENSAQUE -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">ENSAQUE</h2>
                     <textarea id="status-ensaque" placeholder="Descreva o status e os próximos passos para o setor."
@@ -406,7 +404,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 7: MARCOLD -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">MARCOLD</h2>
                     <textarea id="status-marcold" placeholder="Descreva o status e os próximos passos para o setor."
@@ -420,7 +417,6 @@
                     </select>
                 </div>
 
-                <!-- Seção 8: GRANELEIRO ADRIANA -->
                 <div class="card bg-white p-6 shadow-lg">
                     <h2 class="section-name text-2xl font-bold mb-4">GRANELEIRO ADRIANA</h2>
                     <textarea id="status-graneleiro-adriana" placeholder="Descreva o status e os próximos passos para o setor."
