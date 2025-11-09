@@ -21,30 +21,33 @@ jobs:
         # Este passo substitui os PLACEHOLDERS no firebase_config.js
         # com os valores reais armazenados como Secrets no GitHub.
         run: |
-          # A variável $FILE_LIST deve conter todos os arquivos que precisam
-          # da correção de caminho relativa para buscar o firebase_config.js
-          # Assumimos que seus arquivos HTML estão na raiz (./) ou em subdiretórios
+          # Lista de arquivos para CORREÇÃO de caminho (muda './' para '../')
           FILE_LIST="operacional_planning_input.html operational_dashboard_viewer.html"
-
-          # Correção de caminho para importação: troca './' por '../' em subpastas
-          # O comando sed roda no ambiente Linux do GitHub Actions.
-          for file in $FILE_LIST; do
-              # Tenta o caminho na raiz (para arquivos que estão na raiz)
-              sed -i "s|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|g" $file 2>/dev/null || true
-              
-              # Tenta o caminho corrigido (se já existir)
-              sed -i "s|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|g" $file 2>/dev/null || true
-          done
           
-          # Realiza a substituição de placeholders no firebase_config.js
+          # --- Importante: Esta lista deve incluir os caminhos de TODOS os seus arquivos HTML que importam o firebase_config.js ---
+          # Se os seus arquivos estão em subpastas (ex: /interfaceA/ e /interfaceCoi/), você precisará adicioná-los aqui:
+          # Exemplo: FILE_LIST="interfaceA/operacional_planning_input.html interfaceCoi/operational_dashboard_viewer.html firebase_config.js"
+          # Como não sei seus caminhos, vou manter os arquivos na raiz, mas você pode editar se necessário.
+          
+          # Realiza a substituição de placeholders no firebase_config.js (este arquivo está na raiz)
           sed -i "s|apiKey: \"##API_KEY##\"|apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"|g" firebase_config.js
           sed -i "s|authDomain: \"##AUTH_DOMAIN##\"|authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"|g" firebase_config.js
           sed -i "s|projectId: \"##PROJECT_ID##\"|projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"|g" firebase_config.js
           sed -i "s|storageBucket: \"##STORAGE_BUCKET##\"|storageBucket: \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"|g" firebase_config.js
           sed -i "s|messagingSenderId: \"##MESSAGING_SENDER_ID##\"|messagingSenderId: \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\"|g" firebase_config.js
           sed -i "s|appId: \"##APP_ID##\"|appId: \"${{ secrets.FIREBASE_APP_ID }}\"|g" firebase_config.js
+
+          echo "✅ firebase_config.js configurado."
           
-          echo "✅ firebase_config.js e caminhos corrigidos com sucesso via Secrets."
+          # Tentativa de correção de caminho de importação (de './firebase_config.js' para '../firebase_config.js')
+          for file in $FILE_LIST; do
+              # Apenas tenta a correção se o arquivo existir (os arquivos .html na raiz)
+              if [ -f "$file" ]; then
+                # Garante que o caminho de importação é '.. /firebase_config.js'
+                sed -i "s|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|g" "$file"
+                echo "Corrigido caminho em $file"
+              fi
+          done
 
       - name: Configurar e implantar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
