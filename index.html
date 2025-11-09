@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard COI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:Inter,sans-serif;background:#f0f4f8;color:#333}
+.header-bg{background:#0d2545;color:#fff}
+.card{border-radius:8px;transition:transform .2s,box-shadow .2s}
+.priority-alta{color:#e74c3c;font-weight:700;border-left:5px solid #e74c3c}
+.priority-media{color:#f39c12;font-weight:700;border-left:5px solid #f39c12}
+.priority-baixa{color:#2ecc71;font-weight:700;border-left:5px solid #2ecc71}
+.priority-normal{color:#3498db;font-weight:700;border-left:5px solid #3498db}
+.status-header{border-bottom:2px solid #ecf0f1;margin-bottom:10px;padding-bottom:8px}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<header class="header-bg p-4 flex justify-between items-center sticky top-0 z-10">
+  <h1 class="text-3xl font-extrabold flex items-center"><span class="mr-3">📊</span> Dashboard COI - Planejamento Operacional</h1>
+  <div class="flex flex-col text-right text-sm">
+    <span id="status-conexao" class="font-medium text-yellow-400">INICIALIZANDO...</span>
+    <span class="mt-1">Data: <span id="data-planejamento" class="font-semibold">N/A</span> | Turno: <span id="turno-planejamento" class="font-semibold">N/A</span> | Última Atualização: <span id="ultima-atualizacao" class="font-semibold">N/A</span></span>
+  </div>
+</header>
+<main class="p-8">
+  <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <p class="text-center text-gray-500 p-8 col-span-full">Aguardando inicialização e dados do Firebase...</p>
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+setLogLevel('debug');
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+let db, auth, isAuthReady=false;
+
+function getPriorityClass(priority){ const p=(priority||'').toLowerCase(); if(p.includes('alta')) return 'priority-alta bg-white'; if(p.includes('média')||p.includes('media')) return 'priority-media bg-white'; if(p.includes('baixa')) return 'priority-baixa bg-white'; return 'priority-normal bg-white'; }
+
+function updateDashboard(data){
+  document.getElementById('data-planejamento').textContent = data.data || 'N/A';
+  document.getElementById('turno-planejamento').textContent = data.turno || 'N/A';
+  document.getElementById('ultima-atualizacao').textContent = new Date(data.timestamp).toLocaleString('pt-BR') || 'N/A';
+  const setores = data.setores||[];
+  const orderMap = {'ALTA':1,'MÉDIA':2,'BAIXA':3,'NORMAL':4};
+  setores.sort((a,b)=> (orderMap[(a.prioridade||'NORMAL').toUpperCase()]||99) - (orderMap[(b.prioridade||'NORMAL').toUpperCase()]||99));
+  const container = document.getElementById('dashboard-content');
+  let html='';
+  setores.forEach(s=> html += `<div class="card p-6 ${getPriorityClass(s.prioridade)}"><div class="status-header flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-[#0d2545]">${s.nome}</h3><span class="text-lg font-bold">Prioridade: ${(s.prioridade||'NORMAL').toUpperCase()}</span></div><p class="whitespace-pre-wrap text-gray-700 leading-relaxed min-h-[100px]">${s.status||''}</p></div>`);
+  container.innerHTML = html;
+}
+
+function loadFromHashIfPresent(){
+  try{ const m=(location.hash||'').match(/payload=([^&]+)/); if(!m) return; const b=decodeURIComponent(m[1]); const json=atob(b); const data=JSON.parse(json); updateDashboard(data); const s=document.getElementById('status-conexao'); s.textContent='PREVIEW (hash payload)'; s.className='text-blue-600 font-bold'; }catch(e){ console.warn('hash payload fail', e); }
+}
+
+async function initializeFirebase(){
+  const statusIndicator = document.getElementById('status-conexao');
+  if(!firebaseConfig){ console.warn('Firebase config ausente. Modo offline.'); statusIndicator.textContent='OFFLINE: Firebase não configurado.'; statusIndicator.className='text-yellow-600 font-bold'; loadFromHashIfPresent(); return; }
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+  try{ if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); else await signInAnonymously(auth); }catch(e){ console.error('auth fail', e); }
+  onAuthStateChanged(auth, user=>{ isAuthReady=true; listenToPlanningData(); });
+}
+
+function getPlanningDocRef(){ if(!db) return null; return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`); }
+
+function listenToPlanningData(){
+  const statusIndicator = document.getElementById('status-conexao');
+  if(!db || !isAuthReady){ statusIndicator.textContent='AGUARDANDO: inicialização Firebase...'; statusIndicator.className='text-yellow-500 font-bold'; return; }
+  const docRef = getPlanningDocRef();
+  if(!docRef){ statusIndicator.textContent='ERRO: Firestore indisponível.'; statusIndicator.className='text-red-500 font-bold'; return; }
+  onSnapshot(docRef, docSnap=>{ if(docSnap.exists()){ updateDashboard(docSnap.data()); statusIndicator.textContent='CONECTADO: Dados atualizados.'; statusIndicator.className='text-green-500 font-bold'; } else { statusIndicator.textContent='CONECTADO: Aguardando primeira transmissão...'; statusIndicator.className='text-yellow-500 font-bold'; document.getElementById('dashboard-content').innerHTML='<p class="text-center text-gray-500 p-8">Nenhum dado de planejamento encontrado. Use a Interface A para transmitir.</p>'; } }, err=>{ console.error('snapshot err', err); statusIndicator.textContent='ERRO: Falha na conexão Firestore.'; statusIndicator.className='text-red-500 font-bold'; });
+}
+
+window.onload = initializeFirebase;
+</script>
+</body>
+</html>
