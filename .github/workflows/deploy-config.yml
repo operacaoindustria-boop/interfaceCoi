@@ -18,40 +18,29 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Configurar Credenciais do Firebase
-        # Este passo substitui os PLACEHOLDERS no firebase_config.js
-        # com os valores reais armazenados como Secrets no GitHub.
+        # Este passo substitui os valores de configuração do Firebase com os Segredos (Secrets)
         run: |
-          # Lista de arquivos para CORREÇÃO de caminho (muda './' para '../')
+          # 1. Realiza a substituição dos valores preenchidos no firebase_config.js pelos Secrets.
+          # Isso garante a injeção segura das credenciais no momento da implantação.
+          sed -i "s|apiKey: \"AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ\"|apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"|g" firebase_config.js
+          sed -i "s|authDomain: \"integracaocoi.firebaseapp.com\"|authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"|g" firebase_config.js
+          sed -i "s|projectId: \"integracaocoi\"|projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"|g" firebase_config.js
+          sed -i "s|storageBucket: \"integracaocoi.firebasestorage.app\"|storageBucket: \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"|g" firebase_config.js
+          sed -i "s|messagingSenderId: \"177203745489\"|messagingSenderId: \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\"|g" firebase_config.js
+          sed -i "s|appId: \"1:177203745489:web:b86bbc4e96830e06032bf0\"|appId: \"${{ secrets.FIREBASE_APP_ID }}\"|g" firebase_config.js
+          
+          echo "✅ firebase_config.js configurado com Secrets."
+          
+          # 2. Correção do caminho de importação (de './' para '../')
           FILE_LIST="operacional_planning_input.html operational_dashboard_viewer.html"
-          
-          # --- Importante: Esta lista deve incluir os caminhos de TODOS os seus arquivos HTML que importam o firebase_config.js ---
-          # Se os seus arquivos estão em subpastas (ex: /interfaceA/ e /interfaceCoi/), você precisará adicioná-los aqui:
-          # Exemplo: FILE_LIST="interfaceA/operacional_planning_input.html interfaceCoi/operational_dashboard_viewer.html firebase_config.js"
-          # Como não sei seus caminhos, vou manter os arquivos na raiz, mas você pode editar se necessário.
-          
-          # Realiza a substituição de placeholders no firebase_config.js (este arquivo está na raiz)
-          sed -i "s|apiKey: \"##API_KEY##\"|apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"|g" firebase_config.js
-          sed -i "s|authDomain: \"##AUTH_DOMAIN##\"|authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"|g" firebase_config.js
-          sed -i "s|projectId: \"##PROJECT_ID##\"|projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"|g" firebase_config.js
-          sed -i "s|storageBucket: \"##STORAGE_BUCKET##\"|storageBucket: \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"|g" firebase_config.js
-          sed -i "s|messagingSenderId: \"##MESSAGING_SENDER_ID##\"|messagingSenderId: \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\"|g" firebase_config.js
-          sed -i "s|appId: \"##APP_ID##\"|appId: \"${{ secrets.FIREBASE_APP_ID }}\"|g" firebase_config.js
-
-          echo "✅ firebase_config.js configurado."
-          
-          # Tentativa de correção de caminho de importação (de './firebase_config.js' para '../firebase_config.js')
           for file in $FILE_LIST; do
-              # Apenas tenta a correção se o arquivo existir (os arquivos .html na raiz)
-              if [ -f "$file" ]; then
-                # Garante que o caminho de importação é '.. /firebase_config.js'
-                sed -i "s|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|g" "$file"
-                echo "Corrigido caminho em $file"
-              fi
+              # Garante que o caminho de importação é '../firebase_config.js' se o arquivo estiver em subpasta
+              sed -i "s|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'|import { FIREBASE_CONFIG, APP_ID_FALLBACK } from '../firebase_config.js'|g" $file || true
           done
 
       - name: Configurar e implantar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./ # Assume que seus arquivos HTML estão na raiz
-          force_orphan: true # Inicia um branch de implantação limpo
+          publish_dir: ./ # Assumindo que seus arquivos HTML estão na raiz
+          force_orphan: true 

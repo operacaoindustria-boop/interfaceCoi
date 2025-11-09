@@ -1,1 +1,859 @@
-﻿[Immersive content redacted for brevity.]
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejamento Operacional - Entrada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tipografia corporativa e cores */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; color: #333; }
+        .header-bg { background-color: #0d2545; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .card { transition: box-shadow 0.2s; border-radius: 8px; }
+        .card:hover { box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); }
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        .section-name { color: #0d2545; }
+        .priority-select { border-radius: 6px; border: 1px solid #ccc; padding: 6px; }
+
+        /* Estilo para a mensagem de feedback */
+        #feedback-message {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .fade-in { opacity: 1; transform: translateY(0); }
+        .fade-out { opacity: 0; transform: translateY(10px); }
+    </style>
+
+    <!-- Firebase SDKs e Importação da Configuração Centralizada -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- Importa a configuração do arquivo centralizado ---
+        import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'; 
+        
+        setLogLevel('debug'); // Ativa logs de debug para o Firestore
+
+        // Variáveis Globais (usamos FALLBACK se o ambiente Canvas não injetar)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : APP_ID_FALLBACK;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : FIREBASE_CONFIG;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId;
+        const SECTORS = [
+            'MOEGAS/RECEPÇÃO', 'SILOS E PRÉ-SECAGENS', 'SILO PULMÃO',
+            'SILOS DE REPASSE', 'BENEFICIAMENTO', 'ENSAQUE', 'MARCOLD',
+            'GRANELEIRO ADRIANA'
+        ];
+        
+        // --- Inicialização e Autenticação Firebase ---
+        async function initializeFirebase() {
+            // Verifica se a chave de API foi substituída (método simples para GitHub Pages)
+            if (firebaseConfig.apiKey.includes('##API_KEY##')) {
+                 document.getElementById('config-alert').textContent = "❌ ERRO DE CONFIGURAÇÃO: Por favor, configure os Secrets do Firebase no GitHub.";
+                 return;
+            }
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            try {
+                // Tenta autenticar com token (se estiver no ambiente Canvas) ou anonimamente (para GitHub Pages)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+                console.log(`✅ Autenticação Firebase bem-sucedida. User ID: ${userId}`);
+                loadLastStatusFromFirestore(); // Carrega o último status após autenticar
+            } catch (error) {
+                console.error("❌ Falha na autenticação Firebase (Verifique suas credenciais):", error);
+                document.getElementById('config-alert').textContent = "❌ ERRO: Falha na autenticação do Firebase. Verifique a configuração e regras de segurança.";
+            }
+        }
+
+        // --- Gerenciamento de Referências Firestore ---
+        
+        // Ref. para salvar o último status local do usuário (private data)
+        function getPlanningDocRefPrivate() {
+            // Caminho privado: artifacts/{appId}/users/{userId}/planning_data/current_status
+            return doc(db, `artifacts/${appId}/users/${userId}/planning_data/current_status`);
+        }
+
+        // Ref. para salvar o status que será visualizado no COI (public data)
+        function getPlanningDocRefPublic() {
+            // Caminho público: artifacts/{appId}/public/data/planning_data/current_status
+            return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`);
+        }
+
+        // --- Funções de Ajuda ---
+
+        // Retorna a data de hoje formatada em YYYY-MM-DD
+        function getCurrentDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function showFeedback(message, isError = false) {
+            const msgEl = document.getElementById('feedback-message');
+            msgEl.textContent = message;
+            msgEl.className = `p-3 rounded-md mt-4 font-semibold text-center fade-in ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+            
+            setTimeout(() => {
+                msgEl.className = 'fade-out';
+                setTimeout(() => { msgEl.textContent = ''; }, 500);
+            }, 5000);
+        }
+
+        // --- Funções de Persistência ---
+
+        // Carrega o último status (privado) do Firestore e preenche o formulário
+        async function loadLastStatusFromFirestore() {
+            if (!db) return; // Não carrega se o Firebase não foi inicializado
+            try {
+                const docRef = getPlanningDocRefPrivate();
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    data.setores.forEach(setor => {
+                        const statusEl = document.getElementById(`status-${setor.id}`);
+                        const priorityEl = document.getElementById(`priority-${setor.id}`);
+                        if (statusEl) statusEl.value = setor.status || '';
+                        if (priorityEl) priorityEl.value = setor.prioridade || 'NORMAL';
+                    });
+                    showFeedback("Último status de trabalho carregado com sucesso.", false);
+                } else {
+                    console.log("Nenhum status anterior encontrado no Firestore (private).");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar status do Firestore (private):", error);
+            }
+        }
+
+        // Salva o status atual no Firestore (privado)
+        async function saveStatusPrivate() {
+            if (!db) return; // Não salva se o Firebase não foi inicializado
+            const formData = collectFormData(false); // Coleta todos os dados, incluindo vazios
+            try {
+                // Remove o timestamp temporariamente para não salvar a cada keystroke
+                const { timestamp, ...dataToSave } = formData;
+                await setDoc(getPlanningDocRefPrivate(), dataToSave);
+                console.log("Rascunho salvo no Firestore (private).");
+            } catch (error) {
+                console.error("Erro ao salvar rascunho no Firestore (private):", error);
+            }
+        }
+
+        // --- Funções do Formulário ---
+
+        // Coleta todos os dados do formulário
+        function collectFormData(requireFull) {
+            const dataRef = document.getElementById('data-ref').value;
+            const turnoRef = document.getElementById('turno-ref').value;
+
+            if (requireFull && (!dataRef || !turnoRef)) {
+                return null;
+            }
+
+            const setoresData = SECTORS.map(nome => {
+                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+                const statusEl = document.getElementById(`status-${id}`);
+                const priorityEl = document.getElementById(`priority-${id}`);
+                
+                const status = statusEl ? statusEl.value.trim() : '';
+                const prioridade = priorityEl ? priorityEl.value.toUpperCase() : 'NORMAL';
+
+                // Se for obrigatório e a descrição estiver vazia, retorna null
+                if (requireFull && !status) return null; 
+
+                return {
+                    id: id,
+                    nome: nome,
+                    status: status,
+                    prioridade: prioridade
+                };
+            }).filter(item => item !== null);
+
+            if (requireFull && setoresData.length === 0) return null; // Formulário completamente vazio
+
+            return {
+                timestamp: Date.now(),
+                data: dataRef,
+                turno: turnoRef,
+                setores: setoresData
+            };
+        }
+
+        // Lógica de TRANSMISSÃO (Atualização de Status Público)
+        async function handleTransmission(event) {
+            event.preventDefault();
+            
+            if (!db) {
+                showFeedback("❌ ERRO: Firebase não configurado. Verifique as credenciais no código.", true);
+                return;
+            }
+
+            const formData = collectFormData(true); // Coleta dados e exige que hajam dados preenchidos
+            if (!formData) {
+                showFeedback("⚠️ Por favor, preencha a Data, o Turno e pelo menos um Status de Setor.", true);
+                return;
+            }
+
+            // Ação: Salva no Firestore (Public Data)
+            try {
+                // 1. Salva o rascunho privado (para o usuário)
+                await saveStatusPrivate();
+                
+                // 2. Salva o status público (para o Dashboard COI)
+                await setDoc(getPlanningDocRefPublic(), formData);
+
+                showFeedback("🚀 Planejamento salvo e Dashboard COI atualizado com sucesso!", false);
+            } catch (error) {
+                showFeedback(`❌ Erro ao salvar/atualizar o planejamento: ${error.message}`, true);
+                console.error("Erro na transmissão (salvar público):", error);
+            }
+        }
+
+        // Limpa todos os campos do formulário
+        function clearForm() {
+            SECTORS.forEach(nome => {
+                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+                const statusEl = document.getElementById(`status-${id}`);
+                const priorityEl = document.getElementById(`priority-${id}`);
+                if (statusEl) statusEl.value = '';
+                if (priorityEl) priorityEl.value = 'NORMAL';
+            });
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('turno-ref').value = 'TURNO 1';
+            showFeedback("Formulário limpo e pronto para um novo preenchimento.", false);
+            if (db) saveStatusPrivate(); // Salva o formulário limpo como rascunho
+        }
+        
+        // --- Setup Inicial ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('transmission-form').addEventListener('submit', handleTransmission);
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+            
+            // Adiciona listener para salvar rascunho a cada mudança (debounce ideal, mas omitido por simplicidade)
+            SECTORS.forEach(nome => {
+                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+                document.getElementById(`status-${id}`)?.addEventListener('input', saveStatusPrivate);
+                document.getElementById(`priority-${id}`)?.addEventListener('change', saveStatusPrivate);
+            });
+
+            document.getElementById('data-ref')?.addEventListener('change', saveStatusPrivate);
+            document.getElementById('turno-ref')?.addEventListener('change', saveStatusPrivate);
+            
+            initializeFirebase();
+        });
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <form id="transmission-form">
+        <!-- Banner de Configuração (Visível para o usuário) -->
+        <div id="config-alert" class="bg-red-500 text-white p-3 text-center font-bold">
+            ⚠️ ATENÇÃO: VERIFIQUE SUAS CREDENCIAIS NO ARQUIVO 'firebase_config.js'!
+        </div>
+        
+        <!-- Cabeçalho Corporativo e Contexto -->
+        <header class="header-bg p-4 sticky top-0 z-10">
+            <h1 class="text-3xl font-extrabold flex items-center justify-center">
+                <span class="mr-3">📋</span> Planejamento Operacional
+            </h1>
+            <!-- Seletores de Contexto -->
+            <div class="flex flex-wrap justify-center gap-6 mt-4 p-3 bg-white/10 rounded-lg">
+                <div class="flex items-center space-x-2">
+                    <label for="data-ref" class="font-semibold">Data:</label>
+                    <input type="date" id="data-ref" required 
+                           class="p-2 rounded-md text-gray-900 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="turno-ref" class="font-semibold">Turno:</label>
+                    <select id="turno-ref" required 
+                            class="p-2 rounded-md text-gray-900 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="TURNO 1">Turno 1</option>
+                        <option value="TURNO 2">Turno 2</option>
+                        <option value="TURNO 3">Turno 3</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteúdo Principal - Setores -->
+        <main class="max-w-6xl mx-auto p-6">
+            <div id="feedback-message" class="fade-out" style="opacity: 0;"></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Seção 1: MOEGAS/RECEPÇÃO -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">MOEGAS/RECEPÇÃO</h2>
+                    <textarea id="status-moegas-recepcao" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-moegas-recepcao" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-moegas-recepcao" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 2: SILOS E PRÉ-SECAGENS -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">SILOS E PRÉ-SECAGENS</h2>
+                    <textarea id="status-silos-e-pre-secagens" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-silos-e-pre-secagens" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-silos-e-pre-secagens" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 3: SILO PULMÃO -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">SILO PULMÃO</h2>
+                    <textarea id="status-silo-pulmao" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-silo-pulmao" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-silo-pulmao" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 4: SILOS DE REPASSE -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">SILOS DE REPASSE</h2>
+                    <textarea id="status-silos-de-repasse" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-silos-de-repasse" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-silos-de-repasse" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 5: BENEFICIAMENTO -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">BENEFICIAMENTO</h2>
+                    <textarea id="status-beneficiamento" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-beneficiamento" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-beneficiamento" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 6: ENSAQUE -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">ENSAQUE</h2>
+                    <textarea id="status-ensaque" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-ensaque" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-ensaque" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 7: MARCOLD -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">MARCOLD</h2>
+                    <textarea id="status-marcold" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-marcold" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-marcold" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+
+                <!-- Seção 8: GRANELEIRO ADRIANA -->
+                <div class="card bg-white p-6 shadow-lg">
+                    <h2 class="section-name text-2xl font-bold mb-4">GRANELEIRO ADRIANA</h2>
+                    <textarea id="status-graneleiro-adriana" placeholder="Descreva o status e os próximos passos para o setor."
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    <label for="priority-graneleiro-adriana" class="block mt-3 text-sm font-medium text-gray-700">Prioridade de Ação:</label>
+                    <select id="priority-graneleiro-adriana" class="priority-select w-full mt-1">
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="MÉDIA">Média</option>
+                        <option value="ALTA">Alta</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div class="mt-8 flex justify-center space-x-4">
+                <button type="button" id="clear-form-btn"
+                        class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition duration-150 shadow-sm font-semibold">
+                    Limpar Formulário
+                </button>
+                <button type="submit"
+                        class="px-8 py-3 rounded-lg text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-lg font-bold">
+                    Salvar e Atualizar Planejamento
+                </button>
+            </div>
+        </main>
+    </form>
+</body>
+<script>
+    // Bloco de código JavaScript (movido para o final do corpo para garantir a execução)
+    
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // --- Importa a configuração do arquivo centralizado ---
+    import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'; 
+    
+    setLogLevel('debug'); // Ativa logs de debug para o Firestore
+
+    // Variáveis Globais (usamos FALLBACK se o ambiente Canvas não injetar)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : APP_ID_FALLBACK;
+    const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : FIREBASE_CONFIG;
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let db, auth, userId;
+    const SECTORS = [
+        'MOEGAS/RECEPÇÃO', 'SILOS E PRÉ-SECAGENS', 'SILO PULMÃO',
+        'SILOS DE REPASSE', 'BENEFICIAMENTO', 'ENSAQUE', 'MARCOLD',
+        'GRANELEIRO ADRIANA'
+    ];
+    
+    // --- Inicialização e Autenticação Firebase ---
+    async function initializeFirebase() {
+        // Verifica se a chave de API foi substituída (método simples para GitHub Pages)
+        if (firebaseConfig.apiKey.includes('##API_KEY##')) {
+             document.getElementById('config-alert').textContent = "❌ ERRO DE CONFIGURAÇÃO: Por favor, configure os Secrets do Firebase no GitHub.";
+             return;
+        }
+
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        try {
+            // Tenta autenticar com token (se estiver no ambiente Canvas) ou anonimamente (para GitHub Pages)
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+            userId = auth.currentUser?.uid || crypto.randomUUID();
+            console.log(`✅ Autenticação Firebase bem-sucedida. User ID: ${userId}`);
+            loadLastStatusFromFirestore(); // Carrega o último status após autenticar
+        } catch (error) {
+            console.error("❌ Falha na autenticação Firebase (Verifique suas credenciais):", error);
+            document.getElementById('config-alert').textContent = "❌ ERRO: Falha na autenticação do Firebase. Verifique a configuração e regras de segurança.";
+        }
+    }
+
+    // --- Gerenciamento de Referências Firestore ---
+    
+    // Ref. para salvar o último status local do usuário (private data)
+    function getPlanningDocRefPrivate() {
+        // Caminho privado: artifacts/{appId}/users/{userId}/planning_data/current_status
+        return doc(db, `artifacts/${appId}/users/${userId}/planning_data/current_status`);
+    }
+
+    // Ref. para salvar o status que será visualizado no COI (public data)
+    function getPlanningDocRefPublic() {
+        // Caminho público: artifacts/{appId}/public/data/planning_data/current_status
+        return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`);
+    }
+
+    // --- Funções de Ajuda ---
+
+    // Retorna a data de hoje formatada em YYYY-MM-DD
+    function getCurrentDateString() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function showFeedback(message, isError = false) {
+        const msgEl = document.getElementById('feedback-message');
+        msgEl.textContent = message;
+        msgEl.className = `p-3 rounded-md mt-4 font-semibold text-center fade-in ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+        
+        setTimeout(() => {
+            msgEl.className = 'fade-out';
+            setTimeout(() => { msgEl.textContent = ''; }, 500);
+        }, 5000);
+    }
+
+    // --- Funções de Persistência ---
+
+    // Carrega o último status (privado) do Firestore e preenche o formulário
+    async function loadLastStatusFromFirestore() {
+        if (!db) return; // Não carrega se o Firebase não foi inicializado
+        try {
+            const docRef = getPlanningDocRefPrivate();
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                data.setores.forEach(setor => {
+                    const statusEl = document.getElementById(`status-${setor.id}`);
+                    const priorityEl = document.getElementById(`priority-${setor.id}`);
+                    if (statusEl) statusEl.value = setor.status || '';
+                    if (priorityEl) priorityEl.value = setor.prioridade || 'NORMAL';
+                });
+                showFeedback("Último status de trabalho carregado com sucesso.", false);
+            } else {
+                console.log("Nenhum status anterior encontrado no Firestore (private).");
+            }
+        } catch (error) {
+            console.error("Erro ao carregar status do Firestore (private):", error);
+        }
+    }
+
+    // Salva o status atual no Firestore (privado)
+    async function saveStatusPrivate() {
+        if (!db) return; // Não salva se o Firebase não foi inicializado
+        const formData = collectFormData(false); // Coleta todos os dados, incluindo vazios
+        try {
+            // Remove o timestamp temporariamente para não salvar a cada keystroke
+            const { timestamp, ...dataToSave } = formData;
+            await setDoc(getPlanningDocRefPrivate(), dataToSave);
+            console.log("Rascunho salvo no Firestore (private).");
+        } catch (error) {
+            console.error("Erro ao salvar rascunho no Firestore (private):", error);
+        }
+    }
+
+    // --- Funções do Formulário ---
+
+    // Coleta todos os dados do formulário
+    function collectFormData(requireFull) {
+        const dataRef = document.getElementById('data-ref').value;
+        const turnoRef = document.getElementById('turno-ref').value;
+
+        if (requireFull && (!dataRef || !turnoRef)) {
+            return null;
+        }
+
+        const setoresData = SECTORS.map(nome => {
+            const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            const statusEl = document.getElementById(`status-${id}`);
+            const priorityEl = document.getElementById(`priority-${id}`);
+            
+            const status = statusEl ? statusEl.value.trim() : '';
+            const prioridade = priorityEl ? priorityEl.value.toUpperCase() : 'NORMAL';
+
+            // Se for obrigatório e a descrição estiver vazia, retorna null
+            if (requireFull && !status) return null; 
+
+            return {
+                id: id,
+                nome: nome,
+                status: status,
+                prioridade: prioridade
+            };
+        }).filter(item => item !== null);
+
+        if (requireFull && setoresData.length === 0) return null; // Formulário completamente vazio
+
+        return {
+            timestamp: Date.now(),
+            data: dataRef,
+            turno: turnoRef,
+            setores: setoresData
+        };
+    }
+
+    // Lógica de TRANSMISSÃO (Atualização de Status Público)
+    async function handleTransmission(event) {
+        event.preventDefault();
+        
+        if (!db) {
+            showFeedback("❌ ERRO: Firebase não configurado. Verifique as credenciais no código.", true);
+            return;
+        }
+
+        const formData = collectFormData(true); // Coleta dados e exige que hajam dados preenchidos
+        if (!formData) {
+            showFeedback("⚠️ Por favor, preencha a Data, o Turno e pelo menos um Status de Setor.", true);
+            return;
+        }
+
+        // Ação: Salva no Firestore (Public Data)
+        try {
+            // 1. Salva o rascunho privado (para o usuário)
+            await saveStatusPrivate();
+            
+            // 2. Salva o status público (para o Dashboard COI)
+            await setDoc(getPlanningDocRefPublic(), formData);
+
+            showFeedback("🚀 Planejamento salvo e Dashboard COI atualizado com sucesso!", false);
+        } catch (error) {
+            showFeedback(`❌ Erro ao salvar/atualizar o planejamento: ${error.message}`, true);
+            console.error("Erro na transmissão (salvar público):", error);
+        }
+    }
+
+    // Limpa todos os campos do formulário
+    function clearForm() {
+        SECTORS.forEach(nome => {
+            const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            const statusEl = document.getElementById(`status-${id}`);
+            const priorityEl = document.getElementById(`priority-${id}`);
+            if (statusEl) statusEl.value = '';
+            if (priorityEl) priorityEl.value = 'NORMAL';
+        });
+        document.getElementById('data-ref').value = getCurrentDateString();
+        document.getElementById('turno-ref').value = 'TURNO 1';
+        showFeedback("Formulário limpo e pronto para um novo preenchimento.", false);
+        if (db) saveStatusPrivate(); // Salva o formulário limpo como rascunho
+    }
+    
+    // --- Setup Inicial ---
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('data-ref').value = getCurrentDateString();
+        document.getElementById('transmission-form').addEventListener('submit', handleTransmission);
+        document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+        
+        // Adiciona listener para salvar rascunho a cada mudança (debounce ideal, mas omitido por simplicidade)
+        SECTORS.forEach(nome => {
+            const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+            document.getElementById(`status-${id}`)?.addEventListener('input', saveStatusPrivate);
+            document.getElementById(`priority-${id}`)?.addEventListener('change', saveStatusPrivate);
+        });
+
+        document.getElementById('data-ref')?.addEventListener('change', saveStatusPrivate);
+        document.getElementById('turno-ref')?.addEventListener('change', saveStatusPrivate);
+        
+        initializeFirebase();
+    });
+</script>
+@'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard do COI (Visualização em Tempo Real)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tipografia corporativa e cores */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; color: #333; }
+        .header-bg { background-color: #0d2545; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .card { transition: transform 0.2s, box-shadow 0.2s; border-radius: 8px; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); }
+        /* Bordas Coloridas (Para Alta Gestão) */
+        .priority-alta { color: #e74c3c; font-weight: 700; border-left: 5px solid #e74c3c; }
+        .priority-media { color: #f39c12; font-weight: 700; border-left: 5px solid #f39c12; }
+        .priority-baixa { color: #2ecc71; font-weight: 700; border-left: 5px solid #2ecc71; }
+        .priority-normal { color: #3498db; font-weight: 700; border-left: 5px solid #3498db; }
+        .status-header { border-bottom: 2px solid #ecf0f1; margin-bottom: 10px; padding-bottom: 8px; }
+        .last-update { font-size: 0.75rem; color: #95a5a6; }
+    </style>
+    <!-- Firebase SDKs e Importação da Configuração Centralizada -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Importa a configuração do arquivo centralizada ---
+        import { FIREBASE_CONFIG, APP_ID_FALLBACK } from './firebase_config.js'; 
+
+        setLogLevel('debug'); // Ativa logs de debug para o Firestore
+        
+        // Variáveis Globais (usamos FALLBACK se o ambiente Canvas não injetar)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : APP_ID_FALLBACK;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : FIREBASE_CONFIG;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let isAuthReady = false;
+
+        // Inicialização e Autenticação Firebase
+        async function initializeFirebase() {
+             // Verifica se a chave de API foi substituída (método simples para GitHub Pages)
+            if (firebaseConfig.apiKey.includes('##API_KEY##')) {
+                 document.getElementById('config-alert-viewer').textContent = "⚠️ ERRO DE CONFIGURAÇÃO: Edite 'firebase_config.js' com suas credenciais.";
+                 return;
+            }
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            // Tenta autenticar com token (se estiver no ambiente Canvas) ou anonimamente (para GitHub Pages)
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("✅ Autenticação Firebase bem-sucedida.");
+            } catch (error) {
+                console.error("❌ Falha na autenticação Firebase (Verifique suas credenciais):", error);
+            }
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log(`Usuário autenticado: ${user.uid}`);
+                } else {
+                    console.log("Usuário desautenticado.");
+                }
+                isAuthReady = true;
+                listenToPlanningData(); // Começa a escutar após a autenticação
+            });
+        }
+
+        // Obtém a referência do documento público
+        function getPlanningDocRef() {
+            // Caminho público: artifacts/{appId}/public/data/planning_data/current_status
+            // Garantindo 6 segmentos (par)
+            return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`);
+        }
+
+        // Função para escutar mudanças nos dados do planejamento
+        function listenToPlanningData() {
+            if (!db || !isAuthReady) {
+                console.warn("Aguardando inicialização do Firebase e autenticação.");
+                return;
+            }
+
+            const docRef = getPlanningDocRef();
+            const statusIndicator = document.getElementById('status-conexao');
+            document.getElementById('config-alert-viewer').style.display = 'none'; // Esconde o alerta se a conexão começar
+
+            // onSnapshot: Atualiza em tempo real sempre que os dados mudam no Firestore
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    statusIndicator.textContent = "CONECTADO: Dados atualizados.";
+                    statusIndicator.className = 'text-green-500 font-bold';
+                    updateDashboard(data);
+                } else {
+                    statusIndicator.textContent = "CONECTADO: Aguardando primeira transmissão...";
+                    statusIndicator.className = 'text-yellow-500 font-bold';
+                    document.getElementById('dashboard-content').innerHTML = '<p class="text-center text-gray-500 p-8 col-span-full">Nenhum dado de planejamento encontrado. Por favor, utilize a Interface de Entrada (A) para transmitir o primeiro status operacional.</p>';
+                }
+            }, (error) => {
+                console.error("Erro ao escutar dados do Firestore:", error);
+                statusIndicator.textContent = "ERRO: Falha na conexão Firestore.";
+                statusIndicator.className = 'text-red-500 font-bold';
+            });
+        }
+
+        // --- Funções de Renderização e Lógica do Dashboard ---
+
+        // Mapeia prioridades para classes Tailwind (para cores)
+        function getPriorityClass(priority) {
+            const normalizedPriority = priority ? priority.toLowerCase() : 'normal';
+            switch (normalizedPriority) {
+                case 'alta': return 'priority-alta bg-white';
+                case 'média': return 'priority-media bg-white';
+                case 'baixa': return 'priority-baixa bg-white';
+                default: return 'priority-normal bg-white';
+            }
+        }
+
+        // Função principal para atualizar o Dashboard com novos dados
+        function updateDashboard(data) {
+            const contentContainer = document.getElementById('dashboard-content');
+            
+            // 1. Atualizar Header
+            document.getElementById('data-planejamento').textContent = data.data || 'N/A';
+            document.getElementById('turno-planejamento').textContent = data.turno || 'N/A';
+            document.getElementById('ultima-atualizacao').textContent = new Date(data.timestamp).toLocaleString('pt-BR') || 'N/A';
+            
+            // 2. Processar e Ordenar Setores
+            const setores = data.setores || [];
+
+            // A alta gestão sempre visualiza a prioridade mais alta primeiro
+            const orderMap = { 'ALTA': 1, 'MÉDIA': 2, 'BAIXA': 3, 'NORMAL': 4 };
+            setores.sort((a, b) => {
+                const priorityA = orderMap[a.prioridade.toUpperCase()] || 99;
+                const priorityB = orderMap[b.prioridade.toUpperCase()] || 99;
+                return priorityA - priorityB;
+            });
+
+            // 3. Renderizar Setores
+            let htmlContent = '';
+            setores.forEach(setor => {
+                htmlContent += `
+                    <div class="card p-6 ${getPriorityClass(setor.prioridade)}">
+                        <div class="status-header flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-[#0d2545]">${setor.nome}</h3>
+                            <span class="text-lg font-bold">
+                                Prioridade: ${setor.prioridade.toUpperCase()}
+                            </span>
+                        </div>
+                        <p class="whitespace-pre-wrap text-gray-700 leading-relaxed min-h-[100px]">${setor.status}</p>
+                    </div>
+                `;
+            });
+
+            contentContainer.innerHTML = htmlContent;
+        }
+
+        // Inicia o processo
+        window.onload = initializeFirebase;
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Banner de Configuração (Visível para o usuário) -->
+    <div id="config-alert-viewer" class="bg-red-500 text-white p-3 text-center font-bold">
+        ⚠️ ATENÇÃO: VERIFIQUE SUAS CREDENCIAIS NO ARQUIVO 'firebase_config.js'!
+    </div>
+
+    <!-- Cabeçalho Corporativo -->
+    <header class="header-bg p-4 flex justify-between items-center sticky top-0 z-10">
+        <h1 class="text-3xl font-extrabold flex items-center">
+            <span class="mr-3">📊</span> Dashboard COI - Planejamento Operacional
+        </h1>
+        <div class="flex flex-col text-right text-sm">
+            <span id="status-conexao" class="font-medium text-yellow-400">INICIALIZANDO...</span>
+            <span class="mt-1">
+                Data: <span id="data-planejamento" class="font-semibold">N/A</span> |
+                Turno: <span id="turno-planejamento" class="font-semibold">N/A</span> |
+                Última Atualização: <span id="ultima-atualizacao" class="font-semibold">N/A</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Container Principal do Dashboard -->
+    <main class="p-8">
+        <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Os cards de status serão injetados aqui via JavaScript -->
+            <p class="text-center text-gray-500 p-8 col-span-full">Aguardando inicialização e dados do Firebase...</p>
+        </div>
+    </main>
+</body>
+</html>
