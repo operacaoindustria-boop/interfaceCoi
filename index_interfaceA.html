@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planejamento Operacional - Entrada</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:Inter, sans-serif;background:#f0f4f8;color:#333}
+.header-bg{background:#0d2545;color:#fff}
+.card{border-radius:8px;transition:box-shadow .2s}
+textarea{min-height:120px;resize:vertical}
+.priority-select{border-radius:6px;border:1px solid #ccc;padding:6px}
+#feedback-message{transition:opacity .5s,transform .5s}
+.fade-in{opacity:1;transform:translateY(0)}
+.fade-out{opacity:0;transform:translateY(10px)}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<form id="transmission-form">
+<header class="header-bg p-4 sticky top-0 z-10">
+  <h1 class="text-3xl font-extrabold flex items-center justify-center"><span class="mr-3">📋</span> Planejamento Operacional</h1>
+  <div class="flex flex-wrap justify-center gap-6 mt-4 p-3 bg-white/10 rounded-lg">
+    <div class="flex items-center space-x-2"><label for="data-ref" class="font-semibold">Data:</label><input id="data-ref" type="date" required class="p-2 rounded-md"></div>
+    <div class="flex items-center space-x-2"><label for="turno-ref" class="font-semibold">Turno:</label><select id="turno-ref" required class="p-2 rounded-md"><option value="TURNO 1">Turno 1</option><option value="TURNO 2">Turno 2</option><option value="TURNO 3">Turno 3</option></select></div>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto p-6">
+  <div id="feedback-message" class="fade-out" style="opacity:0"></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Seções (mantidas simples) -->
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">MOEGAS/RECEPÇÃO</h2><textarea id="status-moegas-recepcao" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-moegas-recepcao" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILOS E PRÉ-SECAGENS</h2><textarea id="status-silos-e-pre-secagens" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silos-e-pre-secagens" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILO PULMÃO</h2><textarea id="status-silo-pulmao" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silo-pulmao" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILOS DE REPASSE</h2><textarea id="status-silos-de-repasse" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silos-de-repasse" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">BENEFICIAMENTO</h2><textarea id="status-beneficiamento" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-beneficiamento" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">ENSAQUE</h2><textarea id="status-ensaque" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-ensaque" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">MARCOLD</h2><textarea id="status-marcold" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-marcold" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">GRANELEIRO ADRIANA</h2><textarea id="status-graneleiro-adriana" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-graneleiro-adriana" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+  </div>
+  <div class="mt-8 flex justify-center space-x-4"><button type="button" id="clear-form-btn" class="px-6 py-3 border rounded-lg bg-white">Limpar Formulário</button><button type="submit" class="px-8 py-3 rounded-lg text-white bg-green-600">Salvar e Atualizar Planejamento</button></div>
+</main>
+</form>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+setLogLevel('debug');
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+let db=null, auth=null, userId=null;
+const SECTORS = ['MOEGAS/RECEPÇÃO','SILOS E PRÉ-SECAGENS','SILO PULMÃO','SILOS DE REPASSE','BENEFICIAMENTO','ENSAQUE','MARCOLD','GRANELEIRO ADRIANA'];
+const LOCAL_KEY = `planning_draft_${(typeof __app_id!=='undefined'?__app_id:'default')}`;
+
+function getCurrentDateString(){ const now=new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; }
+
+async function initializeFirebase(){
+    if(!firebaseConfig){ console.warn("Firebase config ausente — modo offline."); loadStatusFromLocal(); return; }
+    try{
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+        else await signInAnonymously(auth);
+        userId = auth.currentUser?.uid || crypto.randomUUID();
+        console.log("Firebase init OK, user:", userId);
+        await loadLastStatusFromFirestore();
+    }catch(e){
+        console.error("Erro Firebase:", e);
+        loadStatusFromLocal();
+    }
+}
+
+function saveStatusToLocal(data){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(data)); }catch(e){console.warn(e);} }
+function loadStatusFromLocal(){ try{ const raw=localStorage.getItem(LOCAL_KEY); if(!raw) return; const d=JSON.parse(raw); if(d.data) document.getElementById('data-ref').value=d.data; if(d.turno) document.getElementById('turno-ref').value=d.turno; (d.setores||[]).forEach(s=>{ const st=document.getElementById(`status-${s.id}`); const pr=document.getElementById(`priority-${s.id}`); if(st) st.value=s.status||''; if(pr) pr.value=s.prioridade||'NORMAL'; }); }catch(e){console.warn(e);} }
+
+function getPlanningDocRefPrivate(){ if(!db || !userId) return null; return doc(db, `artifacts/${appId}/users/${userId}/planning_data/current_status`); }
+function getPlanningDocRefPublic(){ if(!db) return null; return doc(db, `artifacts/${appId}/public/data/planning_data/current_status`); }
+
+async function loadLastStatusFromFirestore(){ const ref=getPlanningDocRefPrivate(); if(!ref) return loadStatusFromLocal(); try{ const snap = await getDoc(ref); if(snap.exists()){ const d=snap.data(); if(d.data) document.getElementById('data-ref').value=d.data; if(d.turno) document.getElementById('turno-ref').value=d.turno; (d.setores||[]).forEach(s=>{ const st=document.getElementById(`status-${s.id}`); const pr=document.getElementById(`priority-${s.id}`); if(st) st.value=s.status||''; if(pr) pr.value=s.prioridade||'NORMAL'; }); } else loadStatusFromLocal(); }catch(e){ console.warn("loadLastStatusFromFirestore:", e); loadStatusFromLocal(); } }
+
+function collectFormData(requireFull){
+    const dataRef=document.getElementById('data-ref').value;
+    const turnoRef=document.getElementById('turno-ref').value;
+    if(requireFull && (!dataRef||!turnoRef)) return null;
+    const setores=SECTORS.map(nome=>{ const id=nome.toLowerCase().replace(/[\s\/,]+/g,'_').replace(/_/g,'-'); const statusEl=document.getElementById(`status-${id}`); const priorityEl=document.getElementById(`priority-${id}`); const status=statusEl?statusEl.value.trim():''; const prioridade=priorityEl?priorityEl.value.toUpperCase():'NORMAL'; if(requireFull && !status) return null; return { id, nome, status, prioridade }; }).filter(x=>x!==null);
+    if(requireFull && setores.length===0) return null;
+    return { timestamp: Date.now(), data: dataRef, turno: turnoRef, setores };
+}
+
+async function saveStatusPrivate(){ const d=collectFormData(false); if(!d) return; saveStatusToLocal(d); const ref=getPlanningDocRefPrivate(); if(!ref){ console.debug("Firestore private não inicializado; salvo local."); return; } try{ await setDoc(ref, d); console.log("Rascunho salvo no Firestore (private)."); }catch(e){ console.error("Erro save private:", e); } }
+
+async function handleTransmission(e){ e.preventDefault(); const d=collectFormData(true); if(!d){ alert("Preencha data, turno e pelo menos um status."); return; } saveStatusToLocal(d); await saveStatusPrivate(); const pref=getPlanningDocRefPublic(); if(!pref){ alert("Salvo localmente (Firestore não configurado)."); return; } try{ await setDoc(pref, d); alert("Planejamento atualizado no COI."); }catch(e){ alert("Erro ao publicar: "+(e.message||e)); console.error(e); } }
+
+function clearForm(){ SECTORS.forEach(nome=>{ const id=nome.toLowerCase().replace(/[\s\/,]+/g,'_').replace(/_/g,'-'); const st=document.getElementById(`status-${id}`); const pr=document.getElementById(`priority-${id}`); if(st) st.value=''; if(pr) pr.value='NORMAL'; }); document.getElementById('data-ref').value=getCurrentDateString(); document.getElementById('turno-ref').value='TURNO 1'; saveStatusPrivate(); }
+
+document.addEventListener('DOMContentLoaded', ()=>{ document.getElementById('data-ref').value=getCurrentDateString(); document.getElementById('transmission-form').addEventListener('submit', handleTransmission); document.getElementById('clear-form-btn').addEventListener('click', clearForm); SECTORS.forEach(nome=>{ const id=nome.toLowerCase().replace(/[\s\/,]+/g,'_').replace(/_/g,'-'); document.getElementById(`status-${id}`)?.addEventListener('input', saveStatusPrivate); document.getElementById(`priority-${id}`)?.addEventListener('change', saveStatusPrivate); }); initializeFirebase(); });
+
+</script>
+</body>
+</html>
