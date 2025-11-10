@@ -9,6 +9,7 @@
 body{font-family:Inter, sans-serif;background:#f0f4f8;color:#333}
 .header-bg{background:#0d2545;color:#fff}
 .card{border-radius:8px;transition:box-shadow .2s}
+.card:hover{transform:translateY(-5px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
 textarea{min-height:120px;resize:vertical}
 .priority-select{border-radius:6px;border:1px solid #ccc;padding:6px}
 #feedback-message{transition:opacity .5s,transform .5s}
@@ -19,7 +20,7 @@ textarea{min-height:120px;resize:vertical}
 <body class="bg-gray-50 min-h-screen">
 <form id="transmission-form">
 <header class="header-bg p-4 sticky top-0 z-10">
-  <h1 class="text-3xl font-extrabold flex items-center justify-center"><span class="mr-3">📋</span> Planejamento Operacional</h1>
+  <h1 class="text-3xl font-extrabold flex items-center justify-center"><span role="img" aria-label="Clipboard" class="mr-3">📋</span> Planejamento Operacional</h1>
   <div class="flex flex-wrap justify-center gap-6 mt-4 p-3 bg-white/10 rounded-lg">
     <div class="flex items-center space-x-2"><label for="data-ref" class="font-semibold">Data:</label><input id="data-ref" type="date" required class="p-2 rounded-md"></div>
     <div class="flex items-center space-x-2"><label for="turno-ref" class="font-semibold">Turno:</label><select id="turno-ref" required class="p-2 rounded-md"><option value="TURNO 1">Turno 1</option><option value="TURNO 2">Turno 2</option><option value="TURNO 3">Turno 3</option></select></div>
@@ -43,10 +44,10 @@ textarea{min-height:120px;resize:vertical}
 </form>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 setLogLevel('debug');
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
