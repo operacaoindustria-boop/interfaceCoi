@@ -22,8 +22,8 @@ textarea{min-height:120px;resize:vertical}
 <header class="header-bg p-4 sticky top-0 z-10">
   <h1 class="text-3xl font-extrabold flex items-center justify-center"><span role="img" aria-label="Clipboard" class="mr-3">📋</span> Planejamento Operacional</h1>
   <div class="flex flex-wrap justify-center gap-6 mt-4 p-3 bg-white/10 rounded-lg">
-    <div class="flex items-center space-x-2"><label for="data-ref" class="font-semibold">Data:</label><input id="data-ref" type="date" required class="p-2 rounded-md"></div>
-    <div class="flex items-center space-x-2"><label for="turno-ref" class="font-semibold">Turno:</label><select id="turno-ref" required class="p-2 rounded-md"><option value="TURNO 1">Turno 1</option><option value="TURNO 2">Turno 2</option><option value="TURNO 3">Turno 3</option></select></div>
+    <div class="flex items-center space-x-2 bg-blue-800 p-2 rounded-md"><label for="data-ref" class="font-semibold">Data:</label><input id="data-ref" type="date" required class="p-2 rounded-md bg-gray-300 text-black"></div>
+    <div class="flex items-center space-x-2 bg-blue-800 p-2 rounded-md"><label for="turno-ref" class="font-semibold">Turno:</label><select id="turno-ref" required class="p-2 rounded-md bg-gray-300 text-black"><option value="Turno A">Turno A</option><option value="Turno B">Turno B</option><option value="Turno C">Turno C</option></select></div>
   </div>
 </header>
 <main class="max-w-6xl mx-auto p-6">
@@ -58,7 +58,7 @@ function collectFormData() {
     if (!dataRef || !turnoRef) return null;
 
     const setores = SECTORS.map(nome => {
-        const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+        const id = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
         const statusEl = document.getElementById(`status-${id}`);
         const priorityEl = document.getElementById(`priority-${id}`);
         const status = statusEl ? statusEl.value.trim() : '';
@@ -94,7 +94,7 @@ function clearForm() {
         if (pr) pr.value = 'NORMAL';
     });
     document.getElementById('data-ref').value = getCurrentDateString();
-    document.getElementById('turno-ref').value = 'TURNO 1';
+    document.getElementById('turno-ref').value = 'TURNO A';
     localStorage.removeItem(LOCAL_KEY);
 }
 
