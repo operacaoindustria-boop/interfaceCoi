@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Testes para Planejamento Operacional</title>
+    <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.20.0.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture">
+        <!-- O HTML do formulário original é colocado aqui para que o JS possa encontrá-lo -->
+        <form id="transmission-form">
+            <header>
+                <h1 >Planejamento Operacional</h1>
+                <div>
+                    <div><label for="data-ref">Data:</label><input id="data-ref" type="date" required></div>
+                    <div><label for="turno-ref">Turno:</label><select id="turno-ref" required><option value="Turno A">Turno A</option><option value="Turno B">Turno B</option><option value="Turno C">Turno C</option></select></div>
+                </div>
+            </header>
+            <main>
+                <div id="feedback-message"></div>
+                <div>
+                    <div><h2>MOEGAS/RECEPÇÃO</h2><textarea id="status-moegas-recepcao"></textarea><label>Prioridade:</label><select id="priority-moegas-recepcao"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>SILOS E PRÉ-SECAGENS</h2><textarea id="status-silos-e-pre-secagens"></textarea><label>Prioridade:</label><select id="priority-silos-e-pre-secagens"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>SILO PULMÃO</h2><textarea id="status-silo-pulmao"></textarea><label>Prioridade:</label><select id="priority-silo-pulmao"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>SILOS DE REPASSE</h2><textarea id="status-silos-de-repasse"></textarea><label>Prioridade:</label><select id="priority-silos-de-repasse"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>BENEFICIAMENTO</h2><textarea id="status-beneficiamento"></textarea><label>Prioridade:</label><select id="priority-beneficiamento"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>ENSAQUE</h2><textarea id="status-ensaque"></textarea><label>Prioridade:</label><select id="priority-ensaque"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>MARCOLD</h2><textarea id="status-marcold"></textarea><label>Prioridade:</label><select id="priority-marcold"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                    <div><h2>GRANELEIRO ADRIANA</h2><textarea id="status-graneleiro-adriana"></textarea><label>Prioridade:</label><select id="priority-graneleiro-adriana"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
+                </div>
+                <div><button type="button" id="clear-form-btn">Limpar Formulário</button><button type="submit">Salvar e Atualizar Planejamento</button></div>
+            </main>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/qunit/qunit-2.20.0.js"></script>
+
+    <!-- Script original do operacional_planning_input.html -->
+    <script>
+        const SECTORS = ['MOEGAS/RECEPÇÃO','SILOS E PRÉ-SECAGENS','SILO PULMÃO','SILOS DE REPASSE','BENEFICIAMENTO','ENSAQUE','MARCOLD','GRANELEIRO ADRIANA'];
+        const LOCAL_KEY = 'planning_data';
+
+        function getCurrentDateString(){
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function collectFormData() {
+            const dataRef = document.getElementById('data-ref').value;
+            const turnoRef = document.getElementById('turno-ref').value;
+            if (!dataRef || !turnoRef) return null;
+
+            const setores = SECTORS.map(nome => {
+                const id = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+                const statusEl = document.getElementById(`status-${id}`);
+                const priorityEl = document.getElementById(`priority-${id}`);
+                const status = statusEl ? statusEl.value.trim() : '';
+                const prioridade = priorityEl ? priorityEl.value.toUpperCase() : 'NORMAL';
+                return { id, nome, status, prioridade };
+            });
+
+            return { timestamp: Date.now(), data: dataRef, turno: turnoRef, setores };
+        }
+
+        function handleTransmission(e) {
+            e.preventDefault();
+            const data = collectFormData();
+            if (!data) {
+                alert("Preencha data e turno.");
+                return;
+            }
+            try {
+                localStorage.setItem(LOCAL_KEY, JSON.stringify(.dat));
+                window.location.href = './index.html';
+            } catch (e) {
+                alert("Erro ao salvar os dados: " + (e.message || e));
+                console.error(e);
+            }
+        }
+
+        function clearForm() {
+            SECTORS.forEach(nome => {
+                const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
+                const st = document.getElementById(`status-${id}`);
+                const pr = document.getElementById(`priority-${id}`);
+                if (st) st.value = '';
+                if (pr) pr.value = 'NORMAL';
+            });
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('turno-ref').value = 'TURNO A';
+            localStorage.removeItem(LOCAL_KEY);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('transmission-form').addEventListener('submit', handleTransmission);
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+        });
+    </script>
+
+    <!-- Script de Testes com QUnit -->
+    <script>
+    QUnit.module('Planejamento Operacional', function(hooks) {
+        hooks.beforeEach(function() {
+            // Limpa o localStorage antes de cada teste
+            localStorage.clear();
+            // Reseta o formulário para um estado padrão
+            document.getElementById('transmission-form').reset();
+            document.getElementById('data-ref').value = '';
+            document.getElementById('turno-ref').value = 'Turno A';
+        });
+
+        QUnit.test('getCurrentDateString deve retornar a data no formato YYYY-MM-DD', function(assert) {
+            const dateString = getCurrentDateString();
+            const regex = /^\d{4}-\d{2}-\d{2}$/;
+            assert.ok(regex.test(dateString), 'A data está no formato correto.');
+        });
+
+        QUnit.test('collectFormData deve retornar null se data ou turno não forem preenchidos', function(assert) {
+            assert.strictEqual(collectFormData(), null, 'Retorna null quando a data está vazia.');
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('turno-ref').value = '';
+            assert.strictEqual(collectFormData(), null, 'Retorna null quando o turno está vazio.');
+        });
+
+        QUnit.test('collectFormData deve coletar os dados do formulário corretamente', function(assert) {
+            const testDate = '2025-11-12';
+            const testTurno = 'Turno B';
+            document.getElementById('data-ref').value = testDate;
+            document.getElementById('turno-ref').value = testTurno;
+            document.getElementById('status-moegas-recepcao').value = 'Operando normalmente';
+            document.getElementById('priority-moegas-recepcao').value = 'ALTA';
+
+            const data = collectFormData();
+
+            assert.ok(data.timestamp, 'Timestamp deve existir.');
+            assert.strictEqual(data.data, testDate, 'Data deve ser a mesma do input.');
+            assert.strictEqual(data.turno, testTurno, 'Turno deve ser o mesmo do input.');
+            assert.strictEqual(data.setores.length, SECTORS.length, 'Deve haver o número correto de setores.');
+            
+            const moegas = data.setores.find(s => s.id === 'moegas-recepcao');
+            assert.strictEqual(moegas.status, 'Operando normalmente', 'Status de moegas/recepção correto.');
+            assert.strictEqual(moegas.prioridade, 'ALTA', 'Prioridade de moegas/recepção correta.');
+        });
+
+        QUnit.test('clearForm deve limpar todos os campos e remover dados do localStorage', function(assert) {
+            document.getElementById('data-ref').value = '2025-11-12';
+            document.getElementById('status-moegas-recepcao').value = 'Teste';
+            localStorage.setItem(LOCAL_KEY, '{"test":"data"}');
+
+            clearForm();
+
+            assert.strictEqual(document.getElementById('status-moegas-recepcao').value, '', 'Campo de status deve estar vazio.');
+            assert.strictEqual(document.getElementById('priority-moegas-recepcao').value, 'NORMAL', 'Campo de prioridade deve ser NORMAL.');
+            assert.strictEqual(document.getElementById('data-ref').value, getCurrentDateString(), 'Campo de data deve ser a data atual.');
+            assert.strictEqual(localStorage.getItem(LOCAL_KEY), null, 'localStorage deve ser limpo.');
+        });
+
+        QUnit.test('handleTransmission deve salvar no localStorage e redirecionar', function(assert) {
+            assert.expect(2); // Esperamos duas asserções
+
+            // Mock localStorage.setItem
+            const originalSetItem = localStorage.setItem;
+            localStorage.setItem = function(key, value) {
+                assert.strictEqual(key, LOCAL_KEY, 'A chave do localStorage está correta.');
+                originalSetItem.apply(this, arguments);
+            };
+
+            // Mock window.location.href
+            const originalLocation = window.location;
+            delete window.location;
+            window.location = { href: '' };
+            Object.defineProperty(window.location, 'href', {
+                set: (url) => {
+                    assert.strictEqual(url, './index.html', 'Redirecionamento para a página correta.');
+                    // Restaura o objeto original para evitar problemas em outros testes
+                    window.location = originalLocation;
+                }
+            });
+            
+            document.getElementById('data-ref').value = getCurrentDateString();
+            document.getElementById('turno-ref').value = 'Turno C';
+            
+            const form = document.getElementById('transmission-form');
+            const submitEvent = new Event('submit', { cancelable: true });
+            form.dispatchEvent(submitEvent);
+
+            // Restaura o localStorage.setItem
+            localStorage.setItem = originalSetItem;
+        });
+    });
+    </script>
+</body>
+</html>
