@@ -1,0 +1,31 @@
+name: Sync Interfaces
+
+on:
+  push:
+    branches:
+      - main # Altere para 'master' se for o nome da sua branch principal
+    paths:
+      - 'index_interfaceA.html'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync files
+        run: |
+          cp index_interfaceA.html index_interfaceCoi.html
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add index_interfaceCoi.html
+          if ! git diff --staged --quiet; then
+            git commit -m "docs: sync interfaceCoi with interfaceA"
+            git push
+          fi
