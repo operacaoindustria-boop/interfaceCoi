@@ -1,95 +1,143 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard COI</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-body{font-family:Inter,sans-serif;background:#f0f4f8;color:#333}
-.header-bg{background:#0d2545;color:#fff}
-.card{border-radius:8px;transition:transform .2s,box-shadow .2s}
-.card:hover{transform:translateY(-5px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
-.priority-alta{color:#e74c3c;font-weight:700;border-left:5px solid #e74c3c}
-.priority-media{color:#f39c12;font-weight:700;border-left:5px solid #f39c12}
-.priority-baixa{color:#2ecc71;font-weight:700;border-left:5px solid #2ecc71}
-.priority-normal{color:#3498db;font-weight:700;border-left:5px solid #3498db}
-.status-header{border-bottom:2px solid #ecf0f1;margin-bottom:10px;padding-bottom:8px}
-</style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-<header class="header-bg p-4 flex justify-between items-center sticky top-0 z-10">
-  <h1 class="text-3xl font-extrabold flex items-center"><span role="img" aria-label="Chart increasing" class="mr-3">📊</span> Dashboard COI - Planejamento Operacional</h1>
-  <div class="flex flex-col text-right text-sm">
-    <span id="status-conexao" class="font-medium text-yellow-400">INICIALIZANDO...</span>
-    <span class="mt-1">Data: <span id="data-planejamento" class="font-semibold">N/A</span> | Turno: <span id="turno-planejamento" class="font-semibold">N/A</span> | Última Atualização: <span id="ultima-atualizacao" class="font-semibold">N/A</span></span>
-  </div>
-</header>
-<main class="p-8">
-  <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <p class="text-center text-gray-500 p-8 col-span-full">Aguardando inicialização e dados do Firebase...</p>
-  </div>
-</main>
-
-<script>
-const LOCAL_KEY = 'planning_data';
-
-function getPriorityClass(priority) {
-    const p = (priority || '').toLowerCase();
-    if (p.includes('alta')) return 'priority-alta bg-white';
-    if (p.includes('média') || p.includes('media')) return 'priority-media bg-white';
-    if (p.includes('baixa')) return 'priority-baixa bg-white';
-    return 'priority-normal bg-white';
-}
-
-function updateDashboard(data) {
-    document.getElementById('data-planejamento').textContent = data.data || 'N/A';
-    document.getElementById('turno-planejamento').textContent = data.turno || 'N/A';
-    document.getElementById('ultima-atualizacao').textContent = new Date(data.timestamp).toLocaleString('pt-BR') || 'N/A';
-
-    const setores = data.setores || [];
-    const orderMap = { 'ALTA': 1, 'MÉDIA': 2, 'BAIXA': 3, 'NORMAL': 4 };
-    setores.sort((a, b) => (orderMap[(a.prioridade || 'NORMAL').toUpperCase()] || 99) - (orderMap[(b.prioridade || 'NORMAL').toUpperCase()] || 99));
-
-    const container = document.getElementById('dashboard-content');
-    let html = '';
-    setores.forEach(s => {
-        html += `<div class="card p-6 ${getPriorityClass(s.prioridade)}">
-            <div class="status-header flex justify-between items-center mb-4">
-                <h3 class="text-xl font-semibold text-[#0d2545]">${s.nome}</h3>
-                <span class="text-lg font-bold">Prioridade: ${(s.prioridade || 'NORMAL').toUpperCase()}</span>
-            </div>
-            <p class="whitespace-pre-wrap text-gray-700 leading-relaxed min-h-[100px]">${s.status || ''}</p>
-        </div>`;
-    });
-    container.innerHTML = html;
-}
-
-function loadFromLocalStorage() {
-    const statusIndicator = document.getElementById('status-conexao');
-    try {
-        const rawData = localStorage.getItem(LOCAL_KEY);
-        if (rawData) {
-            const data = JSON.parse(rawData);
-            updateDashboard(data);
-            statusIndicator.textContent = 'DADOS CARREGADOS LOCALMENTE';
-            statusIndicator.className = 'text-green-500 font-bold';
-        } else {
-            statusIndicator.textContent = 'NENHUM DADO ENCONTRADO';
-            statusIndicator.className = 'text-yellow-500 font-bold';
-            document.getElementById('dashboard-content').innerHTML = '<p class="text-center text-gray-500 p-8">Nenhum dado de planejamento encontrado. Use a <a href="./operacional_planning_input.html" class="text-blue-500 underline">Interface de Entrada</a> para transmitir dados.</p>';
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Restrito - Planejamento Operacional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
         }
-    } catch (e) {
-        console.error('Falha ao carregar dados do localStorage', e);
-        statusIndicator.textContent = 'ERRO AO CARREGAR DADOS';
-        statusIndicator.className = 'text-red-500 font-bold';
-    }
-}
+    </style>
+</head>
+<body class="bg-slate-100">
 
-window.onload = loadFromLocalStorage;
-</script>
+    <div id="app-container" class="min-h-screen flex items-center justify-center">
+        
+        <!-- Tela de Login (Padrão) -->
+        <div id="login-screen" class="w-full max-w-md">
+            <div class="bg-white p-8 rounded-xl shadow-2xl border-t-4 border-blue-600">
+                <h2 class="text-3xl font-bold text-slate-800 text-center mb-2">
+                    Acesso Restrito
+                </h2>
+                <p class="text-center text-slate-500 mb-8">Interface de Planejamento Operacional</p>
+                
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700">E-mail</label>
+                        <input
+                            type="email"
+                            id="email"
+                            required
+                            class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="seu.email@exemplo.com"
+                        />
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700">Senha</label>
+                        <input
+                            type="password"
+                            id="password"
+                            required
+                            class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="••••••••"
+                        />
+                    </div>
+                    
+                    <div id="error-message" class="text-red-600 text-sm text-center font-semibold" style="display: none;"></div>
+                    
+                    <div>
+                        <button
+                            type="submit"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            Entrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tela de Carregamento (Oculta) -->
+        <div id="loading-screen" style="display: none;">
+            <p class="text-xl font-semibold text-slate-600 animate-pulse">Verificando sessão...</p>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { FIREBASE_CONFIG } from "./firebase_config.js";
+
+        // Inicializa Firebase
+        const app = initializeApp(FIREBASE_CONFIG);
+        const auth = getAuth(app);
+
+        // Elementos do DOM
+        const loginScreen = document.getElementById('login-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+
+        // Função para mostrar erro
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Função para esconder erro
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Gerenciador de estado de autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Se o usuário já está logado, redireciona para a Interface A
+                window.location.href = 'interfaceA.html';
+            } else {
+                // Se não há usuário, mostra a tela de login e esconde o carregamento
+                loadingScreen.style.display = 'none';
+                loginScreen.style.display = 'block';
+            }
+        });
+
+        // Gerenciador de submit do formulário
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // O onAuthStateChanged vai cuidar do redirecionamento
+            } catch (err) {
+                console.error("Erro de Autenticação:", err.code);
+                if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+                    showError("E-mail ou senha inválidos. Tente novamente.");
+                } else if (err.code === "auth/operation-not-allowed") {
+                    showError("Login por E-mail/Senha não está ativado no Console do Firebase.");
+                } else {
+                    showError("Falha na autenticação. Verifique o console para mais detalhes.");
+                }
+            }
+        });
+
+        // Exibe a tela de carregamento inicialmente
+        loadingScreen.style.display = 'block';
+        loginScreen.style.display = 'none';
+
+    </script>
+
 </body>
 </html>

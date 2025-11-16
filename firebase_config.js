@@ -1,12 +1,14 @@
-﻿// ATENÇÃO: ESTE ARQUIVO SERÁ PREENCHIDO PELO GITHUB ACTIONS.
-// ELE CONTÉM SUAS CHAVES REAIS DO PROJETO integracaocoi.
-export const FIREBASE_CONFIG = {
-    apiKey: "", 
-    authDomain: "integracaocoi.firebaseapp.com",
-    projectId: "integracaocoi",
-    storageBucket: "integracaocoi.firebasestorage.app",
-    messagingSenderId: "177203745489",
-    appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
-};
+// ADICIONE A CONFIGURAÇÃO DO SEU FIREBASE AQUI
+// Exemplo:
+// export const firebaseConfig = {
+//   apiKey: "SUA_API_KEY",
+//   authDomain: "SEU_AUTH_DOMAIN",
+//   projectId: "SEU_PROJECT_ID",
+//   storageBucket: "SEU_STORAGE_BUCKET",
+//   messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+//   appId: "SEU_APP_ID"
+// };
+// Por favor, substitua os valores acima pelos da sua configuração do Firebase.
+// Se você não tiver uma configuração do Firebase, a aplicação funcionará em modo offline.
 
-export const APP_ID_FALLBACK = 'integracaocoi';
+export const firebaseConfig = null;

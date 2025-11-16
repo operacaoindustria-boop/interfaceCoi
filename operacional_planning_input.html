@@ -1,111 +1,540 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Planejamento Operacional - Entrada</title>
-<script src="https://cdn.tailwindcss.com?v=20251110"></script>
-<style>
-body{font-family:Inter, sans-serif;background:#f0f4f8;color:#333}
-.header-bg{background:#0d2545;color:#fff}
-.card{border-radius:8px;transition:box-shadow .2s}
-.card:hover{transform:translateY(-5px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
-textarea{min-height:120px;resize:vertical}
-.priority-select{border-radius:6px;border:1px solid #ccc;padding:6px}
-#feedback-message{transition:opacity .5s,transform .5s}
-.fade-in{opacity:1;transform:translateY(0)}
-.fade-out{opacity:0;transform:translateY(10px)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejamento Operacional COI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-<form id="transmission-form">
-<header class="header-bg p-4 sticky top-0 z-10">
-  <h1 class="text-3xl font-extrabold flex items-center justify-center"><span role="img" aria-label="Clipboard" class="mr-3">📋</span> Planejamento Operacional</h1>
-  <div class="flex flex-wrap justify-center gap-6 mt-4 p-3 bg-white/10 rounded-lg">
-    <div class="flex items-center space-x-2 bg-blue-800 p-2 rounded-md"><label for="data-ref" class="font-semibold">Data:</label><input id="data-ref" type="date" required class="p-2 rounded-md bg-gray-300 text-black"></div>
-    <div class="flex items-center space-x-2 bg-blue-800 p-2 rounded-md"><label for="turno-ref" class="font-semibold">Turno:</label><select id="turno-ref" required class="p-2 rounded-md bg-gray-300 text-black"><option value="Turno A">Turno A</option><option value="Turno B">Turno B</option><option value="Turno C">Turno C</option></select></div>
-  </div>
-</header>
-<main class="max-w-6xl mx-auto p-6">
-  <div id="feedback-message" class="fade-out" style="opacity:0"></div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <!-- Seções (mantidas simples) -->
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">MOEGAS/RECEPÇÃO</h2><textarea id="status-moegas-recepcao" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-moegas-recepcao" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILOS E PRÉ-SECAGENS</h2><textarea id="status-silos-e-pre-secagens" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silos-e-pre-secagens" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILO PULMÃO</h2><textarea id="status-silo-pulmao" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silo-pulmao" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">SILOS DE REPASSE</h2><textarea id="status-silos-de-repasse" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-silos-de-repasse" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">BENEFICIAMENTO</h2><textarea id="status-beneficiamento" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-beneficiamento" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">ENSAQUE</h2><textarea id="status-ensaque" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-ensaque" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">MARCOLD</h2><textarea id="status-marcold" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-marcold" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-    <div class="card bg-white p-6 shadow-lg"><h2 class="text-2xl font-bold mb-4">GRANELEIRO ADRIANA</h2><textarea id="status-graneleiro-adriana" class="w-full p-3 border rounded-lg"></textarea><label class="block mt-3">Prioridade:</label><select id="priority-graneleiro-adriana" class="priority-select w-full mt-1"><option>NORMAL</option><option>BAIXA</option><option>MÉDIA</option><option>ALTA</option></select></div>
-  </div>
-  <div class="mt-8 flex justify-center space-x-4"><button type="button" id="clear-form-btn" class="px-6 py-3 border rounded-lg bg-white">Limpar Formulário</button><button type="submit" class="px-8 py-3 rounded-lg text-white bg-green-600">Salvar e Atualizar Planejamento</button></div>
-</main>
-</form>
+<body class="bg-gray-50">
+    <div id="root"></div>
 
-<script>
-const SECTORS = ['MOEGAS/RECEPÇÃO','SILOS E PRÉ-SECAGENS','SILO PULMÃO','SILOS DE REPASSE','BENEFICIAMENTO','ENSAQUE','MARCOLD','GRANELEIRO ADRIANA'];
-const LOCAL_KEY = 'planning_data';
+    <script type="text/babel">
+        const { useState, useEffect, useContext, createContext } = React;
 
-function getCurrentDateString(){
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
+        // --- Configuração do Firebase ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
+            authDomain: "integracaocoi.firebaseapp.com",
+            projectId: "integracaocoi",
+            storageBucket: "integracaocoi.firebasestorage.app",
+            messagingSenderId: "177203745489",
+            appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
+        };
 
-function collectFormData() {
-    const dataRef = document.getElementById('data-ref').value;
-    const turnoRef = document.getElementById('turno-ref').value;
-    if (!dataRef || !turnoRef) return null;
+        // Inicializa Firebase
+        const app = firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    const setores = SECTORS.map(nome => {
-        const id = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
-        const statusEl = document.getElementById(`status-${id}`);
-        const priorityEl = document.getElementById(`priority-${id}`);
-        const status = statusEl ? statusEl.value.trim() : '';
-        const prioridade = priorityEl ? priorityEl.value.toUpperCase() : 'NORMAL';
-        return { id, nome, status, prioridade };
-    });
+        const PUBLIC_PLANNING_PATH = 'planejamento_coi/status_publico';
 
-    return { timestamp: Date.now(), data: dataRef, turno: turnoRef, setores };
-}
+        // --- Contexto de Autenticação ---
+        const AuthContext = createContext(null);
 
-function handleTransmission(e) {
-    e.preventDefault();
-    const data = collectFormData();
-    if (!data) {
-        alert("Preencha data e turno.");
-        return;
-    }
-    try {
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
-        window.location.href = './index.html';
-    } catch (e) {
-        alert("Erro ao salvar os dados: " + (e.message || e));
-        console.error(e);
-    }
-}
+        const AuthProvider = ({ children }) => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-function clearForm() {
-    SECTORS.forEach(nome => {
-        const id = nome.toLowerCase().replace(/[\s\/,]+/g, '_').replace(/_/g, '-');
-        const st = document.getElementById(`status-${id}`);
-        const pr = document.getElementById(`priority-${id}`);
-        if (st) st.value = '';
-        if (pr) pr.value = 'NORMAL';
-    });
-    document.getElementById('data-ref').value = getCurrentDateString();
-    document.getElementById('turno-ref').value = 'TURNO A';
-    localStorage.removeItem(LOCAL_KEY);
-}
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    setCurrentUser(user);
+                    setLoading(false);
+                });
+                return unsubscribe;
+            }, []);
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('data-ref').value = getCurrentDateString();
-    document.getElementById('transmission-form').addEventListener('submit', handleTransmission);
-    document.getElementById('clear-form-btn').addEventListener('click', clearForm);
-});
-</script>
+            const value = { currentUser, loading, auth, db };
+
+            return (
+                <AuthContext.Provider value={value}>
+                    {children}
+                </AuthContext.Provider>
+            );
+        };
+
+        // --- Tela de Login ---
+        const LoginScreen = () => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (err) {
+                    console.error("Erro de Autenticação:", err);
+                    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+                        setError("E-mail ou senha inválidos.");
+                    } else {
+                        setError("Falha na autenticação. Verifique o console.");
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                    <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md border border-gray-200">
+                        <h2 className="text-2xl font-bold text-gray-800 text-center mb-5">
+                            Acesso Restrito
+                        </h2>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">E-mail</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Senha</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+                            <div>
+                                <button
+                                    type="submit"
+                                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                                >
+                                    Entrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Formulário de Planejamento (Interface A) ---
+        const PlanningForm = () => {
+            const { currentUser, db } = useContext(AuthContext);
+            const [feedback, setFeedback] = useState('');
+            const [feedbackType, setFeedbackType] = useState('success');
+            const [sectorsState, setSectorsState] = useState({});
+            const [contextState, setContextState] = useState({ data: '', turno: 'TURNO 1' });
+
+            const SECTORS_LIST = [
+                { name: 'MOEGAS/RECEPÇÃO', id: 'moegas-recepcao' },
+                { name: 'SILOS E PRÉ-SECAGENS', id: 'silos-e-pre-secagens' },
+                { name: 'SILO PULMÃO', id: 'silo-pulmao' },
+                { name: 'SILOS DE REPASSE', id: 'silos-de-repasse' },
+                { name: 'BENEFICIAMENTO', id: 'beneficiamento' },
+                { name: 'ENSAQUE', id: 'ensaque' },
+                { name: 'MARCOLD', id: 'marcold' },
+                { name: 'GRANELEIRO ADRIANA', id: 'graneleiro-adriana' }
+            ];
+
+            const getDraftPath = () => `planejamento_coi_drafts/${currentUser.uid}/drafts/current_planning`;
+
+            useEffect(() => {
+                const loadInitialData = async () => {
+                    if (!currentUser) return;
+                    try {
+                        const docRef = db.doc(getDraftPath());
+                        const docSnap = await docRef.get();
+                        
+                        if (docSnap.exists) {
+                            const data = docSnap.data();
+                            const sectorsObj = {};
+                            (data.setores || []).forEach(sector => {
+                                sectorsObj[sector.id] = { status: sector.status, prioridade: sector.prioridade };
+                            });
+                            setSectorsState(sectorsObj);
+                            setContextState({ data: data.data, turno: data.turno });
+                            setFeedback('Rascunho anterior carregado.');
+                        } else {
+                            const now = new Date();
+                            const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                            setContextState(prev => ({ ...prev, data: dateString }));
+                        }
+                    } catch (e) {
+                        console.error("Erro ao carregar rascunho:", e);
+                        setFeedbackType('error');
+                        setFeedback('Erro ao carregar rascunho.');
+                    }
+                };
+                loadInitialData();
+            }, [currentUser, db]);
+
+            const saveDraft = async (dataToSave) => {
+                if (!currentUser) return;
+                try {
+                    await db.doc(getDraftPath()).set(dataToSave);
+                } catch (e) {
+                    console.error("Falha ao salvar rascunho:", e);
+                }
+            };
+
+            const handlePublish = async (e) => {
+                e.preventDefault();
+                
+                const setoresArray = SECTORS_LIST.map(sector => ({
+                    id: sector.id,
+                    nome: sector.name,
+                    status: sectorsState[sector.id]?.status || '',
+                    prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
+                })).filter(s => s.status.trim() !== '');
+
+                const finalData = {
+                    timestamp: Date.now(),
+                    data: contextState.data,
+                    turno: contextState.turno,
+                    setores: setoresArray
+                };
+
+                if (!finalData.data || !finalData.turno || finalData.setores.length === 0) {
+                    setFeedbackType('error');
+                    setFeedback('Preencha a Data, o Turno e pelo menos um Status de Setor.');
+                    return;
+                }
+
+                try {
+                    await saveDraft(finalData);
+                    await db.doc(PUBLIC_PLANNING_PATH).set(finalData);
+                    setFeedbackType('success');
+                    setFeedback('Planejamento salvo e atualizado com sucesso!');
+                } catch (err) {
+                    console.error("Erro ao publicar:", err);
+                    setFeedbackType('error');
+                    setFeedback('ERRO: Falha na publicação. Verifique as permissões do Firestore.');
+                }
+            };
+
+            const openDashboard = () => {
+                const baseUrl = window.location.href.split('?')[0];
+                const dashboardUrl = `${baseUrl}?page=dashboard`;
+                window.open(dashboardUrl, '_blank');
+            };
+
+            const handlePublishAndOpen = async (e) => {
+                e.preventDefault();
+                
+                const setoresArray = SECTORS_LIST.map(sector => ({
+                    id: sector.id,
+                    nome: sector.name,
+                    status: sectorsState[sector.id]?.status || '',
+                    prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
+                })).filter(s => s.status.trim() !== '');
+
+                const finalData = {
+                    timestamp: Date.now(),
+                    data: contextState.data,
+                    turno: contextState.turno,
+                    setores: setoresArray
+                };
+
+                if (!finalData.data || !finalData.turno || finalData.setores.length === 0) {
+                    setFeedbackType('error');
+                    setFeedback('Preencha a Data, o Turno e pelo menos um Status de Setor.');
+                    return;
+                }
+
+                try {
+                    await saveDraft(finalData);
+                    await db.doc(PUBLIC_PLANNING_PATH).set(finalData);
+                    setFeedbackType('success');
+                    setFeedback('Planejamento salvo e atualizado com sucesso!');
+                    openDashboard();
+                } catch (err) {
+                    console.error("Erro ao publicar:", err);
+                    setFeedbackType('error');
+                    setFeedback('ERRO: Falha na publicação. Verifique as permissões do Firestore.');
+                }
+            };
+
+            const handleLogout = () => {
+                auth.signOut().catch(e => console.error("Erro ao deslogar:", e));
+            };
+            
+            const clearForm = () => {
+                const dateString = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+                const clearedData = { data: dateString, turno: 'TURNO 1', setores: [] };
+                setSectorsState({});
+                setContextState({ data: dateString, turno: 'TURNO 1' });
+                setFeedback('Formulário limpo.');
+                saveDraft(clearedData);
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <h1 className="text-xl font-semibold flex items-center">
+                                <span className="mr-2">📋</span> Interface de Entrada
+                            </h1>
+                            <div className="flex items-center space-x-3">
+                                <span className="text-sm hidden sm:block">Usuário: {currentUser.email}</span>
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Sair
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <form onSubmit={handlePublish} className="max-w-7xl mx-auto p-4 sm:p-6">
+                        
+                        {feedback && (
+                            <div className={`p-3 mb-4 rounded-md text-sm font-medium ${feedbackType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {feedback}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap justify-start items-center gap-4 mb-6 p-3 bg-gray-100 rounded-md border border-gray-200">
+                            <div className="flex items-center space-x-2">
+                                <label htmlFor="data-ref" className="font-semibold text-gray-700 text-sm">Data:</label>
+                                <input
+                                    type="date"
+                                    id="data-ref"
+                                    required
+                                    value={contextState.data || ''}
+                                    onChange={(e) => setContextState(prev => ({...prev, data: e.target.value}))}
+                                    className="p-2 rounded-md border border-gray-300 bg-white shadow-sm text-sm"
+                                />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <label htmlFor="turno-ref" className="font-semibold text-gray-700 text-sm">Turno:</label>
+                                <select
+                                    id="turno-ref"
+                                    required
+                                    value={contextState.turno || 'TURNO 1'}
+                                    onChange={(e) => setContextState(prev => ({...prev, turno: e.target.value}))}
+                                    className="p-2 rounded-md border border-gray-300 bg-white shadow-sm text-sm"
+                                >
+                                    <option value="TURNO 1">Turno 1</option>
+                                    <option value="TURNO 2">Turno 2</option>
+                                    <option value="TURNO 3">Turno 3</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                            {SECTORS_LIST.map(sector => (
+                                <div key={sector.id} className="bg-white p-4 shadow-md rounded-lg border border-gray-200">
+                                    <h2 className="text-lg font-semibold text-gray-800 mb-2">{sector.name}</h2>
+                                    
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Status e Próximos Passos
+                                    </label>
+                                    <textarea
+                                        id={`status-${sector.id}`}
+                                        placeholder="Descreva o status do setor..."
+                                        value={sectorsState[sector.id]?.status || ''}
+                                        onChange={(e) => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], status: e.target.value}}))}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-inner text-sm"
+                                        rows="4"
+                                    />
+                                    
+                                    <label className="block mt-3 text-xs font-medium text-gray-600">
+                                        Prioridade
+                                    </label>
+                                    <select
+                                        id={`priority-${sector.id}`}
+                                        value={sectorsState[sector.id]?.prioridade || 'NORMAL'}
+                                        onChange={(e) => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: e.target.value}}))}
+                                        className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm"
+                                    >
+                                        <option value="NORMAL">NORMAL</option>
+                                        <option value="BAIXA">BAIXA</option>
+                                        <option value="MÉDIA">MÉDIA</option>
+                                        <option value="ALTA">ALTA</option>
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 flex justify-center space-x-4">
+                            <button
+                                type="button"
+                                onClick={clearForm}
+                                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-100 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Limpar
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-6 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Salvar e Atualizar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handlePublishAndOpen}
+                                className="px-6 py-2 rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Salvar e Abrir Dashboard
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        // --- Dashboard (Interface B) ---
+        const DashboardViewer = () => {
+            const { db } = useContext(AuthContext);
+            const [planningData, setPlanningData] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                if (!db) {
+                    setLoading(false);
+                    return;
+                }
+                
+                const unsubscribe = db.doc(PUBLIC_PLANNING_PATH).onSnapshot((docSnap) => {
+                    if (docSnap.exists) {
+                        setPlanningData(docSnap.data());
+                    } else {
+                        setPlanningData(null);
+                    }
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Erro no listener Firestore:", error);
+                    setLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, [db]);
+
+            const getPriorityClass = (priority) => {
+                const p = priority ? priority.toUpperCase() : 'NORMAL';
+                switch (p) {
+                    case 'ALTA': return 'border-red-500';
+                    case 'MÉDIA': return 'border-orange-400';
+                    case 'BAIXA': return 'border-yellow-400';
+                    default: return 'border-gray-300';
+                }
+            };
+            
+            const getPriorityBadgeClass = (priority) => {
+                const p = priority ? priority.toUpperCase() : 'NORMAL';
+                switch (p) {
+                    case 'ALTA': return 'bg-red-100 text-red-800';
+                    case 'MÉDIA': return 'bg-orange-100 text-orange-800';
+                    case 'BAIXA': return 'bg-yellow-100 text-yellow-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                }
+            };
+
+            const sortedSetores = planningData?.setores ? [...planningData.setores].sort((a, b) => {
+                const order = { 'ALTA': 1, 'MÉDIA': 2, 'BAIXA': 3, 'NORMAL': 4 };
+                return (order[a.prioridade] || 4) - (order[b.prioridade] || 4);
+            }) : [];
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <p className="text-lg font-semibold text-gray-500">Carregando Dashboard...</p>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <h1 className="text-xl font-semibold flex items-center">
+                                <span className="mr-2">📊</span> Dashboard COI - Planejamento
+                            </h1>
+                            <div className="text-right text-xs">
+                                <p className="font-semibold text-green-600">Status: Conectado (Tempo Real)</p>
+                                <p>Última Atualização: {planningData ? new Date(planningData.timestamp).toLocaleTimeString('pt-BR') : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto p-4 sm:p-6">
+                        <div className="bg-gray-100 p-3 rounded-md border border-gray-200 mb-6 text-center">
+                            <p className="text-lg font-bold text-gray-800">Situação Operacional</p>
+                            <p className="mt-1 text-sm text-gray-600">
+                                Data: <span className="font-semibold text-blue-700">{planningData?.data || 'N/A'}</span> | 
+                                Turno: <span className="font-semibold text-blue-700">{planningData?.turno || 'N/A'}</span>
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                            {sortedSetores.length > 0 ? (
+                                sortedSetores.map(sector => (
+                                    <div key={sector.id} className={`bg-white p-4 rounded-md shadow-sm border-l-4 ${getPriorityClass(sector.prioridade)}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-base font-bold text-gray-800">{sector.nome}</h3>
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(sector.prioridade)}`}>
+                                                {sector.prioridade}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                            {sector.status || 'Nenhum status fornecido.'}
+                                        </p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500 p-6 col-span-full">Nenhum planejamento disponível.</p>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Componente Principal (Roteador) ---
+        const App = () => {
+            const { currentUser, loading } = useContext(AuthContext);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDashboardPage = urlParams.get('page') === 'dashboard';
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <p className="text-lg font-semibold text-gray-600">Iniciando...</p>
+                    </div>
+                );
+            }
+
+            if (isDashboardPage) {
+                return <DashboardViewer />;
+            }
+            
+            if (!currentUser) {
+                return <LoginScreen />;
+            }
+
+            return <PlanningForm />;
+        };
+
+        const Main = () => (
+            <AuthProvider>
+                <App />
+            </AuthProvider>
+        );
+
+        ReactDOM.render(<Main />, document.getElementById('root'));
+    </script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </body>
 </html>

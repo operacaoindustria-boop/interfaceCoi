@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Planejamento Operacional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --priority-alta: #ef4444;
+            --priority-media: #f97316;
+            --priority-baixa: #eab308;
+            --priority-normal: #3b82f6;
+        }
+        .priority-alta { border-color: var(--priority-alta); }
+        .priority-media { border-color: var(--priority-media); }
+        .priority-baixa { border-color: var(--priority-baixa); }
+        .priority-normal { border-color: var(--priority-normal); }
+
+        .bg-priority-alta { background-color: var(--priority-alta); }
+        .bg-priority-media { background-color: var(--priority-media); }
+        .bg-priority-baixa { background-color: var(--priority-baixa); }
+        .bg-priority-normal { background-color: var(--priority-normal); }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Principal -->
+    <div id="app-container" class="container mx-auto p-4 md:p-8">
+
+        <!-- TELA DE LOGIN -->
+        <div id="login-view">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8 mt-10">
+                <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Acesso Restrito - Produtor</h2>
+                <div id="login-error" class="hidden text-red-500 text-sm mb-4 text-center"></div>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="email" class="block text-gray-600 mb-2">Email</label>
+                        <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-gray-600 mb-2">Senha</label>
+                        <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">Entrar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- APLICAÇÃO PRINCIPAL (Produtor & Consumidor) -->
+        <div id="main-app-view" class="hidden">
+            
+            <!-- MÓDULO A: Interface de Entrada (Produtor) -->
+            <div id="producer-view" class="hidden bg-white p-6 rounded-lg shadow-md mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-700">Módulo de Entrada - Planejamento Operacional</h2>
+                    <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">Sair</button>
+                </div>
+                <form id="planning-form">
+                    <!-- Campos de Contexto -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="data" class="block text-sm font-medium text-gray-600 mb-1">Data</label>
+                            <input type="date" id="data" name="data" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="turno" class="block text-sm font-medium text-gray-600 mb-1">Turno</label>
+                            <select id="turno" name="turno" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="">Selecione o Turno</option>
+                                <option value="TURNO 1">TURNO 1</option>
+                                <option value="TURNO 2">TURNO 2</option>
+                                <option value="TURNO 3">TURNO 3</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Campos de Setor -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Gerado dinamicamente -->
+                    </div>
+
+                    <!-- Botão de Envio -->
+                    <div class="mt-8 text-center">
+                        <button type="submit" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition duration-300">
+                            Salvar e Atualizar Planejamento
+                        </button>
+                    </div>
+                </form>
+                <div id="feedback-message" class="mt-4 text-center text-green-600 font-semibold"></div>
+            </div>
+
+            <!-- MÓDULO B: Dashboard COI (Consumidor) -->
+            <div id="consumer-view" class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Dashboard COI - Status em Tempo Real</h2>
+                <p class="text-gray-500 mb-6">Atualizado em: <span id="last-update-timestamp" class="font-semibold">--:--:--</span></p>
+                <div id="dashboard-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Cards de status serão inseridos aqui -->
+                    <p id="no-data-message" class="col-span-full text-center text-gray-500">Aguardando dados do planejamento...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO DO FIREBASE ---
+        // Substitua com suas credenciais do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            authDomain: "your-project-id.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "your-sender-id",
+            appId: "1:your-sender-id:web:your-app-id"
+        };
+
+        // --- INICIALIZAÇÃO DO FIREBASE ---
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const planningDocRef = db.collection("planejamento_coi").doc("status_publico");
+
+        // --- ELEMENTOS DA UI ---
+        const loginView = document.getElementById('login-view');
+        const mainAppView = document.getElementById('main-app-view');
+        const producerView = document.getElementById('producer-view');
+        const consumerView = document.getElementById('consumer-view');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const logoutButton = document.getElementById('logout-button');
+        const planningForm = document.getElementById('planning-form');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const dashboardCards = document.getElementById('dashboard-cards');
+        const lastUpdateTimestamp = document.getElementById('last-update-timestamp');
+        const noDataMessage = document.getElementById('no-data-message');
+
+        const priorities = ['NORMAL', 'BAIXA', 'MÉDIA', 'ALTA'];
+        const priorityClasses = {
+            'ALTA': { border: 'priority-alta', bg: 'bg-priority-alta' },
+            'MÉDIA': { border: 'priority-media', bg: 'bg-priority-media' },
+            'BAIXA': { border: 'priority-baixa', bg: 'bg-priority-baixa' },
+            'NORMAL': { border: 'priority-normal', bg: 'bg-priority-normal' }
+        };
+
+        // --- LÓGICA DE AUTENTICAÇÃO (MÓDULO A) ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Usuário está logado
+                loginView.classList.add('hidden');
+                mainAppView.classList.remove('hidden');
+                producerView.classList.remove('hidden');
+            } else {
+                // Usuário não está logado
+                loginView.classList.remove('hidden');
+                mainAppView.classList.remove('hidden'); // Manter o dashboard visível
+                producerView.classList.add('hidden');
+            }
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    loginError.textContent = 'Email ou senha inválidos.';
+                    loginError.classList.remove('hidden');
+                });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // --- LÓGICA DE ENTRADA DE DADOS (MÓDULO A) ---
+        function createSectorInputs() {
+            const container = planningForm.querySelector('.grid.grid-cols-1');
+            for (let i = 1; i <= 8; i++) {
+                const sectorHTML = `
+                    <div class="border-l-4 border-gray-200 p-4 rounded-r-lg bg-gray-50">
+                        <h3 class="font-bold text-gray-700 mb-2">Setor ${i}</h3>
+                        <div class="mb-2">
+                            <label for="status-${i}" class="text-sm text-gray-600">Descrição do Status</label>
+                            <textarea id="status-${i}" name="status-${i}" rows="3" class="w-full mt-1 p-2 border rounded-md text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label for="priority-${i}" class="text-sm text-gray-600">Prioridade</label>
+                            <select id="priority-${i}" name="priority-${i}" class="w-full mt-1 p-2 border rounded-md text-sm">
+                                ${priorities.map(p => `<option value="${p}">${p}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += sectorHTML;
+            }
+        }
+        createSectorInputs();
+
+        planningForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            feedbackMessage.textContent = '';
+
+            const formData = new FormData(planningForm);
+            const data = {
+                data: formData.get('data'),
+                turno: formData.get('turno'),
+                setores: [],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            let hasAtLeastOneStatus = false;
+            for (let i = 1; i <= 8; i++) {
+                const status = formData.get(`status-${i}`);
+                if (status && status.trim() !== '') {
+                    hasAtLeastOneStatus = true;
+                    data.setores.push({
+                        nome: `Setor ${i}`,
+                        status: status,
+                        prioridade: formData.get(`priority-${i}`)
+                    });
+                }
+            }
+
+            if (!data.data || !data.turno || !hasAtLeastOneStatus) {
+                feedbackMessage.textContent = 'Erro: Preencha Data, Turno e pelo menos um Status.';
+                feedbackMessage.classList.remove('text-green-600');
+                feedbackMessage.classList.add('text-red-500');
+                return;
+            }
+
+            planningDocRef.set(data)
+                .then(() => {
+                    feedbackMessage.textContent = 'Planejamento enviado com sucesso!';
+                    feedbackMessage.classList.remove('text-red-500');
+                    feedbackMessage.classList.add('text-green-600');
+                    planningForm.reset();
+                })
+                .catch(error => {
+                    feedbackMessage.textContent = `Erro ao enviar: ${error.message}`;
+                    feedbackMessage.classList.remove('text-green-600');
+                    feedbackMessage.classList.add('text-red-500');
+                });
+        });
+
+        // --- LÓGICA DO DASHBOARD EM TEMPO REAL (MÓDULO B) ---
+        planningDocRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                noDataMessage.classList.add('hidden');
+                const data = doc.data();
+                const setores = data.setores || [];
+                
+                // Atualiza o timestamp
+                const updateTime = data.timestamp ? data.timestamp.toDate() : new Date();
+                lastUpdateTimestamp.textContent = updateTime.toLocaleTimeString('pt-BR');
+
+                // Ordena os setores por prioridade
+                const priorityOrder = { 'ALTA': 4, 'MÉDIA': 3, 'BAIXA': 2, 'NORMAL': 1 };
+                setores.sort((a, b) => (priorityOrder[b.prioridade] || 0) - (priorityOrder[a.prioridade] || 0));
+
+                // Limpa e renderiza os cards
+                dashboardCards.innerHTML = '';
+                setores.forEach(setor => {
+                    const pClass = priorityClasses[setor.prioridade] || priorityClasses['NORMAL'];
+                    const cardHTML = `
+                        <div class="bg-white rounded-lg shadow-sm border-l-8 ${pClass.border} p-4 flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-lg font-bold text-gray-800">${setor.nome}</h3>
+                                <span class="text-white text-xs font-bold uppercase px-3 py-1 rounded-full ${pClass.bg}">${setor.prioridade}</span>
+                            </div>
+                            <p class="text-gray-600 flex-grow">${setor.status}</p>
+                        </div>
+                    `;
+                    dashboardCards.innerHTML += cardHTML;
+                });
+
+            } else {
+                noDataMessage.classList.remove('hidden');
+                dashboardCards.innerHTML = '';
+                lastUpdateTimestamp.textContent = '--:--:--';
+            }
+        }, (error) => {
+            console.error("Erro ao ouvir o banco de dados: ", error);
+            noDataMessage.textContent = 'Erro de conexão com o dashboard.';
+            noDataMessage.classList.remove('hidden');
+        });
+
+    </script>
+</body>
+</html>
