@@ -148,14 +148,12 @@
         // --- LÓGICA DE AUTENTICAÇÃO (MÓDULO A) ---
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Usuário está logado
                 loginView.classList.add('hidden');
                 mainAppView.classList.remove('hidden');
                 producerView.classList.remove('hidden');
             } else {
-                // Usuário não está logado
                 loginView.classList.remove('hidden');
-                mainAppView.classList.remove('hidden'); // Manter o dashboard visível
+                mainAppView.classList.remove('hidden');
                 producerView.classList.add('hidden');
             }
         });
@@ -213,11 +211,13 @@
             };
 
             let hasAtLeastOneStatus = false;
+            const submissionTime = Date.now();
             for (let i = 1; i <= 8; i++) {
                 const status = formData.get(`status-${i}`);
                 if (status && status.trim() !== '') {
                     hasAtLeastOneStatus = true;
                     data.setores.push({
+                        id: `${submissionTime}-${i}`, // ID Único
                         nome: `Setor ${i}`,
                         status: status,
                         prioridade: formData.get(`priority-${i}`)
@@ -247,34 +247,130 @@
         });
 
         // --- LÓGICA DO DASHBOARD EM TEMPO REAL (MÓDULO B) ---
+        const handleToggleSubActivity = async (sectorId, activityIndex) => {
+            try {
+                const doc = await planningDocRef.get();
+                if (!doc.exists) return;
+
+                const data = doc.data();
+                const updatedSetores = data.setores.map(s => {
+                    if (s.id === sectorId) {
+                        const activities = s.status.split('\n').filter(act => act.trim() !== '');
+                        let completedMask = s.completed_mask || Array(activities.length).fill(false);
+                        
+                        if (completedMask.length !== activities.length) {
+                            const newMask = Array(activities.length).fill(false);
+                            for(let i = 0; i < Math.min(completedMask.length, newMask.length); i++) {
+                                newMask[i] = completedMask[i];
+                            }
+                            completedMask = newMask;
+                        }
+
+                        completedMask[activityIndex] = !completedMask[activityIndex];
+                        
+                        return { ...s, completed_mask: completedMask };
+                    }
+                    return s;
+                });
+
+                await planningDocRef.update({ setores: updatedSetores });
+            } catch (error) {
+                console.error("Erro ao atualizar status da sub-atividade:", error);
+                alert("Não foi possível atualizar a atividade. Verifique o console para mais detalhes.");
+            }
+        };
+
         planningDocRef.onSnapshot((doc) => {
             if (doc.exists) {
                 noDataMessage.classList.add('hidden');
                 const data = doc.data();
                 const setores = data.setores || [];
                 
-                // Atualiza o timestamp
-                const updateTime = data.timestamp ? data.timestamp.toDate() : new Date();
+                const updateTime = data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp)) : new Date();
                 lastUpdateTimestamp.textContent = updateTime.toLocaleTimeString('pt-BR');
 
-                // Ordena os setores por prioridade
                 const priorityOrder = { 'ALTA': 4, 'MÉDIA': 3, 'BAIXA': 2, 'NORMAL': 1 };
                 setores.sort((a, b) => (priorityOrder[b.prioridade] || 0) - (priorityOrder[a.prioridade] || 0));
 
-                // Limpa e renderiza os cards
                 dashboardCards.innerHTML = '';
                 setores.forEach(setor => {
                     const pClass = priorityClasses[setor.prioridade] || priorityClasses['NORMAL'];
-                    const cardHTML = `
-                        <div class="bg-white rounded-lg shadow-sm border-l-8 ${pClass.border} p-4 flex flex-col">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="text-lg font-bold text-gray-800">${setor.nome}</h3>
-                                <span class="text-white text-xs font-bold uppercase px-3 py-1 rounded-full ${pClass.bg}">${setor.prioridade}</span>
-                            </div>
-                            <p class="text-gray-600 flex-grow">${setor.status}</p>
-                        </div>
-                    `;
-                    dashboardCards.innerHTML += cardHTML;
+                    
+                    const card = document.createElement('div');
+                    card.className = `bg-white rounded-lg shadow-sm border-l-8 ${pClass.border} p-4 flex flex-col transition-all duration-300`;
+
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center mb-2';
+                    
+                    const title = document.createElement('h3');
+                    title.className = 'text-lg font-bold text-gray-800';
+                    title.textContent = setor.nome;
+
+                    const priorityBadge = document.createElement('span');
+                    priorityBadge.className = `text-white text-xs font-bold uppercase px-3 py-1 rounded-full ${pClass.bg}`;
+                    priorityBadge.textContent = setor.prioridade;
+
+                    header.appendChild(title);
+                    header.appendChild(priorityBadge);
+                    card.appendChild(header);
+
+                    const activitiesContainer = document.createElement('div');
+                    activitiesContainer.className = 'flex-grow mt-2';
+
+                    const activities = setor.status.split('\n').filter(act => act.trim() !== '');
+                    let completedMask = setor.completed_mask || [];
+                    if (completedMask.length !== activities.length) {
+                        completedMask = Array(activities.length).fill(false);
+                    }
+
+                    if (activities.length > 0) {
+                        activities.forEach((activity, index) => {
+                            const isActivityCompleted = completedMask[index] === true;
+
+                            const activityWrapper = document.createElement('div');
+                            activityWrapper.className = 'flex items-center justify-between mt-2';
+                            
+                            const label = document.createElement('label');
+                            label.className = 'flex items-center space-x-3 cursor-pointer';
+                            
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.checked = isActivityCompleted;
+                            checkbox.className = 'h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0';
+                            checkbox.onchange = () => handleToggleSubActivity(setor.id, index);
+
+                            const span = document.createElement('span');
+                            span.className = `text-sm ${isActivityCompleted ? 'text-gray-500 line-through' : 'text-gray-700'}`;
+                            span.textContent = activity;
+
+                            label.appendChild(checkbox);
+                            label.appendChild(span);
+                            activityWrapper.appendChild(label);
+
+                            if (isActivityCompleted) {
+                                const completedText = document.createElement('span');
+                                completedText.className = 'text-green-600 font-semibold text-xs ml-2 flex-shrink-0';
+                                completedText.textContent = 'Concluída';
+                                activityWrapper.appendChild(completedText);
+                            }
+                            
+                            activitiesContainer.appendChild(activityWrapper);
+                        });
+                    } else {
+                        const p = document.createElement('p');
+                        p.className = 'text-gray-600';
+                        p.textContent = setor.status;
+                        activitiesContainer.appendChild(p);
+                    }
+
+                    card.appendChild(activitiesContainer);
+                    
+                    const allCompleted = completedMask.length > 0 && completedMask.every(c => c === true);
+                    if (allCompleted) {
+                        card.classList.add('opacity-60');
+                    }
+
+                    dashboardCards.appendChild(card);
                 });
 
             } else {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planejamento Operacional COI</title>
+    <title>Planejamento Operacional - Indústria</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -11,6 +11,19 @@
     <style>
         body {
             font-family: sans-serif;
+            padding-top: 50px; /* Adjust based on the height of the sticky feedback */
+        }
+        .fixed-feedback {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50; /* Ensure it stays above other content */
+            max-width: 90%; /* Limit width for better readability on smaller screens */
+            text-align: center;
+            width: fit-content;
+            margin-left: auto; /* Centraliza o elemento */
+            margin-right: auto; /* Centraliza o elemento */
         }
     </style>
 </head>
@@ -130,17 +143,25 @@
             const [feedback, setFeedback] = useState('');
             const [feedbackType, setFeedbackType] = useState('success');
             const [sectorsState, setSectorsState] = useState({});
-            const [contextState, setContextState] = useState({ data: '', turno: 'TURNO 1' });
+            const [contextState, setContextState] = useState({ data: '', turno: 'TURNO: A' });
 
             const SECTORS_LIST = [
-                { name: 'MOEGAS/RECEPÇÃO', id: 'moegas-recepcao' },
-                { name: 'SILOS E PRÉ-SECAGENS', id: 'silos-e-pre-secagens' },
-                { name: 'SILO PULMÃO', id: 'silo-pulmao' },
-                { name: 'SILOS DE REPASSE', id: 'silos-de-repasse' },
-                { name: 'BENEFICIAMENTO', id: 'beneficiamento' },
+                { name: 'ADUBO', id: 'adubo' },
+                { name: 'CRISTO REI', id: 'cristo-rei' },
                 { name: 'ENSAQUE', id: 'ensaque' },
-                { name: 'MARCOLD', id: 'marcold' },
-                { name: 'GRANELEIRO ADRIANA', id: 'graneleiro-adriana' }
+                { name: 'GRANELEIRO AGROCEMA', id: 'graneleiro-agrocema' },
+                { name: 'GRANELEIRO SEDE', id: 'graneleiro-sede' },
+                { name: 'HARVER', id: 'harver' },
+                { name: 'KSI', id: 'ksi' },
+                { name: 'MARCOLDS', id: 'marcolds' },
+                { name: 'MOEGA/RECEPÇÃO', id: 'moega-recepcao' },
+                { name: 'MOMESSO LINHAS 1,2,3,4 E 5', id: 'momesso-linhas-12345' },
+                { name: 'PELETIZAÇÃO', id: 'peletizacao' },
+                { name: 'RAINHA DA SERRA', id: 'rainha-da-serra' },
+                { name: 'SECAGEM SEDE', id: 'secagem-sede' },
+                { name: 'SHAPARRAL', id: 'shaparral' },
+                { name: 'SILOS E PRÉ SECAGENS', id: 'silos-e-pre-secagens' },
+                { name: 'UBS BENEFICIAMENTO', id: 'ubs-beneficiamento' }
             ];
 
             const getDraftPath = () => `planejamento_coi_drafts/${currentUser.uid}/drafts/current_planning`;
@@ -156,7 +177,8 @@
                             const data = docSnap.data();
                             const sectorsObj = {};
                             (data.setores || []).forEach(sector => {
-                                sectorsObj[sector.id] = { status: sector.status, prioridade: sector.prioridade };
+                                const reconstructedStatus = (sector.atividades || []).map(act => act.text).join('\n');
+                                sectorsObj[sector.id] = { status: reconstructedStatus, prioridade: sector.prioridade };
                             });
                             setSectorsState(sectorsObj);
                             setContextState({ data: data.data, turno: data.turno });
@@ -187,12 +209,24 @@
             const handlePublish = async (e) => {
                 e.preventDefault();
                 
-                const setoresArray = SECTORS_LIST.map(sector => ({
-                    id: sector.id,
-                    nome: sector.name,
-                    status: sectorsState[sector.id]?.status || '',
-                    prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
-                })).filter(s => s.status.trim() !== '');
+                const setoresArray = SECTORS_LIST.map(sector => {
+                    const statusValue = sectorsState[sector.id]?.status || '';
+                    const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                        text: line.trim(),
+                        completed: false
+                    }));
+
+                    if (atividades.length === 0) {
+                        return null;
+                    }
+
+                    return {
+                        id: sector.id,
+                        nome: sector.name,
+                        atividades: atividades,
+                        prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
+                    };
+                }).filter(s => s !== null);
 
                 const finalData = {
                     timestamp: Date.now(),
@@ -222,18 +256,30 @@
             const openDashboard = () => {
                 const baseUrl = window.location.href.split('?')[0];
                 const dashboardUrl = `${baseUrl}?page=dashboard`;
-                window.open(dashboardUrl, '_blank');
+                window.location.assign(dashboardUrl);
             };
 
             const handlePublishAndOpen = async (e) => {
                 e.preventDefault();
                 
-                const setoresArray = SECTORS_LIST.map(sector => ({
-                    id: sector.id,
-                    nome: sector.name,
-                    status: sectorsState[sector.id]?.status || '',
-                    prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
-                })).filter(s => s.status.trim() !== '');
+                const setoresArray = SECTORS_LIST.map(sector => {
+                    const statusValue = sectorsState[sector.id]?.status || '';
+                    const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                        text: line.trim(),
+                        completed: false
+                    }));
+
+                    if (atividades.length === 0) {
+                        return null;
+                    }
+
+                    return {
+                        id: sector.id,
+                        nome: sector.name,
+                        atividades: atividades,
+                        prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
+                    };
+                }).filter(s => s !== null);
 
                 const finalData = {
                     timestamp: Date.now(),
@@ -267,9 +313,9 @@
             
             const clearForm = () => {
                 const dateString = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
-                const clearedData = { data: dateString, turno: 'TURNO 1', setores: [] };
+                const clearedData = { data: dateString, turno: 'TURNO: A', setores: [] };
                 setSectorsState({});
-                setContextState({ data: dateString, turno: 'TURNO 1' });
+                setContextState({ data: dateString, turno: 'TURNO: A' });
                 setFeedback('Formulário limpo.');
                 saveDraft(clearedData);
             };
@@ -279,7 +325,7 @@
                     <header className="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
                         <div className="max-w-7xl mx-auto flex justify-between items-center">
                             <h1 className="text-xl font-semibold flex items-center">
-                                <span className="mr-2">📋</span> Interface de Entrada
+                                <span class="mr-2">📋</span> Planejamento Operacional - Indústria
                             </h1>
                             <div className="flex items-center space-x-3">
                                 <span className="text-sm hidden sm:block">Usuário: {currentUser.email}</span>
@@ -296,7 +342,7 @@
                     <form onSubmit={handlePublish} className="max-w-7xl mx-auto p-4 sm:p-6">
                         
                         {feedback && (
-                            <div className={`p-3 mb-4 rounded-md text-sm font-medium ${feedbackType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            <div className={`fixed-feedback p-3 mb-4 rounded-md text-sm font-medium ${feedbackType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                 {feedback}
                             </div>
                         )}
@@ -314,18 +360,23 @@
                                 />
                             </div>
                             <div className="flex items-center space-x-2">
-                                <label htmlFor="turno-ref" className="font-semibold text-gray-700 text-sm">Turno:</label>
-                                <select
-                                    id="turno-ref"
-                                    required
-                                    value={contextState.turno || 'TURNO 1'}
-                                    onChange={(e) => setContextState(prev => ({...prev, turno: e.target.value}))}
-                                    className="p-2 rounded-md border border-gray-300 bg-white shadow-sm text-sm"
-                                >
-                                    <option value="TURNO 1">Turno 1</option>
-                                    <option value="TURNO 2">Turno 2</option>
-                                    <option value="TURNO 3">Turno 3</option>
-                                </select>
+                                <label className="font-semibold text-gray-700 text-sm">Turno:</label>
+                                <div className="bg-gray-200 p-1 rounded-full flex items-center space-x-1">
+                                    {['TURNO: A', 'TURNO: B', 'TURNO: C'].map(turnoValue => (
+                                        <button
+                                            type="button"
+                                            key={turnoValue}
+                                            onClick={() => setContextState(prev => ({...prev, turno: turnoValue}))}
+                                            className={`px-5 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ease-in-out ${
+                                                contextState.turno === turnoValue
+                                                    ? 'bg-white text-blue-700 shadow'
+                                                    : 'bg-transparent text-gray-500 hover:bg-gray-300/50'
+                                            }`}
+                                        >
+                                            {turnoValue.replace('TURNO: ', '')}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
@@ -398,25 +449,60 @@
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
+                console.log("DashboardViewer: Initializing listener for PUBLIC_PLANNING_PATH");
                 if (!db) {
                     setLoading(false);
+                    console.log("DashboardViewer: Firestore DB not available.");
                     return;
                 }
                 
                 const unsubscribe = db.doc(PUBLIC_PLANNING_PATH).onSnapshot((docSnap) => {
                     if (docSnap.exists) {
-                        setPlanningData(docSnap.data());
+                        const data = docSnap.data();
+                        setPlanningData(data);
+                        console.log("DashboardViewer: Received data:", data);
                     } else {
                         setPlanningData(null);
+                        console.log("DashboardViewer: Document does not exist.");
                     }
                     setLoading(false);
                 }, (error) => {
-                    console.error("Erro no listener Firestore:", error);
+                    console.error("DashboardViewer: Firestore listener error:", error);
                     setLoading(false);
                 });
 
-                return () => unsubscribe();
+                return () => {
+                    console.log("DashboardViewer: Unsubscribing from Firestore listener.");
+                    unsubscribe();
+                };
             }, [db]);
+
+            const handleToggleComplete = async (sectorId, activityIndex) => {
+                const docRef = db.doc(PUBLIC_PLANNING_PATH);
+                try {
+                    const docSnap = await docRef.get();
+                    if (!docSnap.exists) return;
+
+                    const currentData = docSnap.data();
+                    const updatedSetores = currentData.setores.map(sector => {
+                        if (sector.id === sectorId) {
+                            const updatedAtividades = sector.atividades.map((atividade, idx) => {
+                                if (idx === activityIndex) {
+                                    return { ...atividade, completed: !atividade.completed };
+                                }
+                                return atividade;
+                            });
+                            return { ...sector, atividades: updatedAtividades };
+                        }
+                        return sector;
+                    });
+
+                    await docRef.update({ setores: updatedSetores });
+
+                } catch (error) {
+                    console.error("Erro ao atualizar status da atividade:", error);
+                }
+            };
 
             const getPriorityClass = (priority) => {
                 const p = priority ? priority.toUpperCase() : 'NORMAL';
@@ -484,9 +570,25 @@
                                                 {sector.prioridade}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                            {sector.status || 'Nenhum status fornecido.'}
-                                        </p>
+                                        <div className="mt-2">
+                                            {sector.atividades && sector.atividades.length > 0 ? (
+                                                sector.atividades.map((atividade, index) => (
+                                                    <div key={index} className="flex items-center mt-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={atividade.completed || false}
+                                                            onChange={() => handleToggleComplete(sector.id, index)}
+                                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        />
+                                                        <span className={`ml-2 text-sm text-gray-700 ${atividade.completed ? 'line-through text-gray-500' : ''}`}>
+                                                            {atividade.text}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm text-gray-700">Nenhum status fornecido.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 ))
                             ) : (
