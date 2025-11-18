@@ -227,8 +227,34 @@
             const { currentUser, db } = useContext(AuthContext);
             const [feedback, setFeedback] = useState('');
             const [feedbackType, setFeedbackType] = useState('success');
-            const [sectorsState, setSectorsState] = useState({});
-            const [contextState, setContextState] = useState({ data: '', turno: 'TURNO: A' });
+
+            // Carrega o estado inicial do localStorage ou define um padrão
+            const getInitialState = () => {
+                try {
+                    const savedContext = localStorage.getItem('planningContext');
+                    const savedSectors = localStorage.getItem('planningSectors');
+                    
+                    let context = savedContext ? JSON.parse(savedContext) : null;
+                    const sectors = savedSectors ? JSON.parse(savedSectors) : {};
+
+                    if (!context) {
+                        const now = new Date();
+                        const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                        context = { data: dateString, turno: 'TURNO: A' };
+                    }
+
+                    return { context, sectors };
+                } catch (error) {
+                    console.error("Erro ao carregar dados do localStorage:", error);
+                    const now = new Date();
+                    const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    return { context: { data: dateString, turno: 'TURNO: A' }, sectors: {} };
+                }
+            };
+
+            const initialState = getInitialState();
+            const [sectorsState, setSectorsState] = useState(initialState.sectors);
+            const [contextState, setContextState] = useState(initialState.context);
 
             const SECTORS_LIST = [
                 { name: 'ADUBO', id: 'adubo' },
@@ -251,9 +277,30 @@
 
             const getDraftPath = () => `planejamento_coi_drafts/${currentUser.uid}/drafts/current_planning`;
 
+            // Efeito para salvar o estado no localStorage a cada mudança
+            useEffect(() => {
+                try {
+                    localStorage.setItem('planningContext', JSON.stringify(contextState));
+                    localStorage.setItem('planningSectors', JSON.stringify(sectorsState));
+                } catch (error) {
+                    console.error("Erro ao salvar no localStorage:", error);
+                }
+            }, [contextState, sectorsState]);
+
+
             useEffect(() => {
                 const loadInitialData = async () => {
                     if (!currentUser) return;
+
+                    // Se já temos dados (do localStorage), não sobrescrevemos com o rascunho do Firestore
+                    const hasLocalData = Object.keys(sectorsState).length > 0;
+                    if (hasLocalData) {
+                        // Apenas damos um feedback de que o rascunho local foi carregado
+                        if (feedback === '') setFeedback('Rascunho local carregado.');
+                        return;
+                    }
+
+                    // Se não há dados locais, tentamos carregar do Firestore
                     try {
                         const docRef = db.doc(getDraftPath());
                         const docSnap = await docRef.get();
@@ -267,16 +314,12 @@
                             });
                             setSectorsState(sectorsObj);
                             setContextState({ data: data.data, turno: data.turno });
-                            setFeedback('Rascunho anterior carregado.');
-                        } else {
-                            const now = new Date();
-                            const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                            setContextState(prev => ({ ...prev, data: dateString }));
+                            setFeedback('Rascunho do servidor carregado.');
                         }
                     } catch (e) {
-                        console.error("Erro ao carregar rascunho:", e);
+                        console.error("Erro ao carregar rascunho do servidor:", e);
                         setFeedbackType('error');
-                        setFeedback('Erro ao carregar rascunho.');
+                        setFeedback('Erro ao carregar rascunho do servidor.');
                     }
                 };
                 loadInitialData();
@@ -290,6 +333,46 @@
                     console.error("Falha ao salvar rascunho:", e);
                 }
             };
+
+            // Efeito para salvar rascunho automaticamente no Firestore (com debounce)
+            useEffect(() => {
+                if (!currentUser || !db) return;
+
+                const handler = setTimeout(() => {
+                    const setoresArray = SECTORS_LIST.map(sector => {
+                        const statusValue = sectorsState[sector.id]?.status || '';
+                        const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                            text: line.trim(),
+                            completed: false
+                        }));
+
+                        if (atividades.length === 0 && !(sectorsState[sector.id]?.observacoes || '').trim()) {
+                            return null;
+                        }
+
+                        return {
+                            id: sector.id,
+                            nome: sector.name,
+                            atividades: atividades,
+                            prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL',
+                            observacoes: sectorsState[sector.id]?.observacoes || ''
+                        };
+                    }).filter(s => s !== null);
+
+                    const draftData = {
+                        timestamp: Date.now(),
+                        data: contextState.data,
+                        turno: contextState.turno,
+                        setores: setoresArray
+                    };
+                    
+                    saveDraft(draftData);
+                }, 1500); // Salva 1.5s após o usuário parar de digitar
+
+                return () => {
+                    clearTimeout(handler);
+                };
+            }, [sectorsState, contextState, currentUser, db]);
 
             const handlePublish = async (e) => {
                 e.preventDefault();
@@ -328,7 +411,7 @@
                 }
 
                 try {
-                    await saveDraft(finalData);
+                    await saveDraft(finalData); // Salva um último rascunho que é igual ao publicado
                     await db.doc(PUBLIC_PLANNING_PATH).set(finalData);
                     setFeedbackType('success');
                     setFeedback('Planejamento salvo e atualizado com sucesso!');
@@ -399,11 +482,18 @@
             
             const clearForm = () => {
                 const dateString = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
-                const clearedData = { data: dateString, turno: 'TURNO: A', setores: [] };
-                setSectorsState({});
-                setContextState({ data: dateString, turno: 'TURNO: A' });
+                const clearedContext = { data: dateString, turno: 'TURNO: A' };
+                const clearedSectors = {};
+
+                // Limpa o estado do React
+                setSectorsState(clearedSectors);
+                setContextState(clearedContext);
+
+                // A limpeza do estado acima acionará o useEffect para limpar o localStorage.
+                // Limpa também o rascunho do Firestore.
+                saveDraft({ data: dateString, turno: 'TURNO: A', setores: [] });
+
                 setFeedback('Formulário limpo.');
-                saveDraft(clearedData);
             };
 
             return (
@@ -417,6 +507,12 @@
                             </h1>
                             <div className="flex items-center space-x-3">
                                 <span className="text-sm hidden md:block">Usuário: {currentUser.email}</span>
+                                <button 
+                                    onClick={() => window.location.href = '?page=dashboard'}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Acessar Dashboard
+                                </button>
                                 <button 
                                     onClick={handleLogout} 
                                     className="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md text-sm"
@@ -470,8 +566,8 @@
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                             {SECTORS_LIST.map(sector => (
-                                <div key={sector.id} className="bg-white p-4 shadow-md rounded-lg border border-gray-200">
-                                    <h2 className="text-lg font-semibold text-gray-800 mb-2">{sector.name}</h2>
+                                <div key={sector.id} className="bg-white p-4 shadow-md rounded-lg border border-gray-200 overflow-hidden">
+                                    <h2 className="text-lg font-bold text-white bg-gray-700 -mx-4 -mt-4 mb-4 px-4 py-2">{sector.name}</h2>
                                     
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
                                         Status e Próximos Passos
@@ -485,20 +581,17 @@
                                         rows="4"
                                     />
                                     
-                                    <label className="block mt-3 text-xs font-medium text-gray-600">
-                                        Prioridade
-                                    </label>
-                                    <select
-                                        id={`priority-${sector.id}`}
-                                        value={sectorsState[sector.id]?.prioridade || 'NORMAL'}
-                                        onChange={(e) => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: e.target.value}}))}
-                                        className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm"
-                                    >
-                                        <option value="NORMAL">NORMAL</option>
-                                        <option value="BAIXA">BAIXA</option>
-                                        <option value="MÉDIA">MÉDIA</option>
-                                        <option value="ALTA">ALTA</option>
-                                    </select>
+                                    <div className="mt-3">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                            Prioridade
+                                        </label>
+                                        <div className="flex items-center space-x-1 mt-2">
+                                            <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'BAIXA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'BAIXA' ? 'bg-slate-500 text-white border-slate-500' : 'text-gray-600 hover:bg-slate-100'}`}>Baixa</button>
+                                            <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'NORMAL'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'NORMAL' ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-600 hover:bg-blue-100'}`}>Normal</button>
+                                            <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'MÉDIA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'MÉDIA' ? 'bg-orange-500 text-white border-orange-500' : 'text-gray-600 hover:bg-orange-100'}`}>Média</button>
+                                            <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'ALTA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'ALTA' ? 'bg-red-600 text-white border-red-600' : 'text-gray-600 hover:bg-red-100'}`}>Alta</button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -655,9 +748,17 @@
                                 <span className="hidden md:inline">Dashboard COI - Planejamento</span>
                                 <span className="md:hidden">Dashboard COI</span>
                             </h1>
-                            <div className="text-right text-xs sm:text-sm">
-                                <p className="font-semibold text-green-600">Status: Conectado</p>
-                                <p className="hidden sm:block">Última Atualização: {planningData ? new Date(planningData.timestamp).toLocaleTimeString('pt-BR') : 'N/A'}</p>
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={() => window.location.href = 'operacional_planning_input.html'}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Voltar ao Planejamento
+                                </button>
+                                <div className="text-right text-xs sm:text-sm">
+                                    <p className="font-semibold text-green-600">Status: Conectado</p>
+                                    <p className="hidden sm:block">Última Atualização: {planningData ? new Date(planningData.timestamp).toLocaleTimeString('pt-BR') : 'N/A'}</p>
+                                </div>
                             </div>
                         </div>
                     </header>
