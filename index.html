@@ -104,8 +104,8 @@
         // Gerenciador de estado de autenticação
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Se o usuário já está logado, redireciona para a Interface A
-                window.location.href = 'interfaceA.html';
+                // Se o usuário já está logado, redireciona para o Menu Principal
+                window.location.href = 'menu.html';
             } else {
                 // Se não há usuário, mostra a tela de login e esconde o carregamento
                 loadingScreen.style.display = 'none';

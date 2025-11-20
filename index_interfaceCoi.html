@@ -77,8 +77,8 @@
                 </div>
             </div>
             <div class="flex gap-3">
-                <a href="operacional_planning_input.html" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2">
-                    <span>Acessar Interface A</span>
+                <a href="menu.html" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2">
+                    <span>Voltar ao Menu</span>
                 </a>
                 <button onclick="app.switchView('dashboard')" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2">
                     <span>Painel de Monitoramento</span>
@@ -347,6 +347,14 @@
         // LÓGICA DE CONTROLE (Silos)
         // ====================================================
         document.addEventListener('DOMContentLoaded', () => {
+            // Handle initial view from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view');
+            if (view === 'dashboard') {
+                // Use a small timeout to ensure all elements are ready before switching view
+                setTimeout(() => app.switchView('dashboard'), 100);
+            }
+
             let selectedSilos = [];
             let siloStates = {};
             let isSequenceRunning = false;
