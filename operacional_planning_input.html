@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS9AvqprGrYkU/PowYniPneVpXNKxPpXzZy/GFxVxO6jKMPb/rb5iADdmPnpEENfmycQRxVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -506,6 +507,12 @@
                                 >
                                     Acessar Dashboard
                                 </button>
+                                <a 
+                                    href="index_interfaceCoi.html"
+                                    className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Acompanhamento de Descarga Silos
+                                </a>
                                 <button 
                                     onClick={handleLogout} 
                                     className="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md text-sm"
@@ -700,6 +707,25 @@
                 }
             };
 
+            const handleExportPdf = () => {
+                console.log("Botão Exportar para PDF clicado!"); // Adicionado para depuração
+                const element = document.getElementById('dashboard-content');
+                if (!element) {
+                    console.error("Element with ID 'dashboard-content' not found.");
+                    return;
+                }
+
+                const opt = {
+                    margin:       1,
+                    filename:     'planejamento_coi_dashboard.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, logging: true, dpi: 192, letterRendering: true },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                window.html2pdf().set(opt).from(element).save();
+            };
+
             const getPriorityClass = (priority) => {
                 const p = priority ? priority.toUpperCase() : 'NORMAL';
                 switch (p) {
@@ -744,11 +770,23 @@
                             </h1>
                             <div className="flex items-center space-x-4">
                                 <button
-                                    onClick={() => window.location.href = 'operacional_planning_input.html'}
+                                    onClick={() => window.location.href = 'https://operacaoindustria-boop.github.io/interfaceCoi/operacional_planning_input.html'}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded-md text-sm"
                                 >
                                     Voltar ao Planejamento
                                 </button>
+                                <button
+                                    onClick={handleExportPdf}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Exportar para PDF
+                                </button>
+                                <a 
+                                    href="index_interfaceCoi.html"
+                                    className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Acompanhamento de Descarga Silos
+                                </a>
                                 <div className="text-right text-xs sm:text-sm">
                                     <p className="font-semibold text-green-600">Status: Conectado</p>
                                     <p className="hidden sm:block">Última Atualização: {planningData ? new Date(planningData.timestamp).toLocaleTimeString('pt-BR') : 'N/A'}</p>
@@ -757,7 +795,7 @@
                         </div>
                     </header>
 
-                    <main className="max-w-6xl mx-auto p-4 sm:p-6">
+                    <main id="dashboard-content" className="max-w-6xl mx-auto p-4 sm:p-6">
                         <div className="bg-gray-100 p-3 rounded-md border border-gray-200 mb-6 text-center">
                             <p className="mt-1 text-sm text-gray-600">
                                 Data: <span className="font-semibold text-blue-700">{planningData?.data || 'N/A'}</span> | 
@@ -855,5 +893,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
 </body>
 </html>

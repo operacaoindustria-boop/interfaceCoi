@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle do Silo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+    /* Feedback visual para campos obrigatórios */
+    .input-required {
+        border-color: #dc2626 !important; /* Vermelho Tailwind */
+        box-shadow: 0 0 0 2px #dc262633;
+        animation: shake 0.2s 2;
+    }
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-4px); }
+        50% { transform: translateX(4px); }
+        75% { transform: translateX(-4px); }
+        100% { transform: translateX(0); }
+    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #e2e8f0;
+            color: #1a202c;
+        }
+        .text-green-500-custom {
+            color: #28a745;
+        }
+        .text-red-600-custom {
+            color: #dc3545;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            color: #1a202c;
+            width: 500px;
+        }
+        .report-box {
+            background-color: #f0f4f8;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .report-title {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        /* Classe de animação para piscar */
+        @keyframes blink-red {
+            0%, 49% {
+                color: #dc3545;
+            }
+            50%, 100% {
+                color: transparent;
+            }
+        }
+        .blinking-red {
+            animation: blink-red 1s step-end infinite;
+        }
+        /* Moved from inline style for #status-message */
+        #status-message {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            max-width: 90vw;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+<body class="min-h-screen bg-gray-50 font-sans text-gray-800">
+    <header class="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-lg sm:text-xl font-semibold flex items-center">
+                <span class="hidden sm:inline mr-2">⚙️</span>
+                <span class="hidden md:inline">Controle de Descarga de Silos</span>
+                <span class="md:hidden">Controle Silos</span>
+            </h1>
+            <div class="flex items-center space-x-3">
+                <span id="user-email" class="text-sm hidden md:block">Usuário: Convidado</span>
+                <button 
+                    onclick="window.location.href = 'operacional_planning_input.html'"
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                >
+                    Voltar ao Planejamento
+                </button>
+                <button 
+                    onclick="window.location.href = 'relatorio_descarga_silos_metas.html'"
+                    class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                >
+                    Relatório de Descarga dos Silos
+                </button>
+                <button id="logout-button" onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md text-sm" style="display:none;">
+                    Sair
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-6">
+        <div id="status-message" class="hidden mb-6 p-4 rounded-lg text-center bg-gray-900 text-gray-100 border border-gray-800 shadow-md" style="position:fixed;top:2rem;left:50%;transform:translateX(-50%);z-index:3000;max-width:90vw;width:100%;box-sizing:border-box;">
+            <h3 id="message-title" class="text-lg font-bold mb-2 text-gray-100 hidden"></h3>
+            <p id="message-text" class="mb-4 text-gray-100"></p>
+            <button id="close-message" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg mx-auto"> Fechar Mensagem</button>
+        </div>
+        <div class="flex flex-col items-center justify-center mb-6 gap-2">
+            <h1 class="text-xs sm:text-sm md:text-md font-bold text-gray-600 text-center">Controle do Silo</h1>
+            <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 text-center whitespace-nowrap">Selecione os Silos para Descarga</h2>
+        </div>
+
+        <!-- Seção de Silos (Cards) -->
+    <div id="silo-grid" class="grid grid-cols-2 xs:grid-grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
+            <!-- Silo cards will be generated here by JavaScript -->
+        </div>
+
+        <!-- Painel de Detalhes do Silo -->
+    <div id="silo-details-panel" class="hidden mt-4 sm:mt-8 p-2 sm:p-4 md:p-6 rounded-xl shadow-inner bg-gray-100 border-2 border-gray-300 w-full max-w-2xl mx-auto">
+            <h3 id="details-panel-title" class="text-xl font-bold mb-4 text-center">Controle Silo P-01</h3>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full">
+                <div class="flex flex-col items-center w-full md:w-auto">
+                    <label class="font-bold text-gray-700 mb-1">Total Toneladas</label>
+                    <input type="number" id="details-toneladas-input" class="w-24 p-1 rounded-md bg-white text-gray-900 border border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Ton.">
+                </div>
+                <div class="flex flex-col items-center w-full md:w-auto">
+                    <label class="font-bold text-gray-700 mb-1">Tempo</label>
+                    <span id="details-timer-display" class="font-mono text-gray-900 font-bold text-lg">00:00:00</span>
+                </div>
+                <div class="flex flex-col items-center w-full md:w-auto">
+                    <label class="font-bold text-gray-700 mb-1">Taxa</label>
+                    <span id="details-rate-display" class="font-bold text-lg">0.00 T/h</span>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-4 sm:mt-6 w-full justify-center">
+                <button id="details-btn-start" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-red-600 to-red-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">
+                    <span class="text-xl">▶</span>
+                    <span class="text-sm">Iniciar Descarga</span>
+                </button>
+                <button id="details-btn-stop" class="px-4 py-3 rounded-3xl font-bold text-gray-900 bg-gradient-to-r from-yellow-400 to-yellow-600 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">
+                    <span class="text-xl">⏸</span>
+                    <span class="text-sm">Pausar Descarga</span>
+                </button>
+                <button id="details-btn-end" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-green-600 to-green-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">
+                    <span class="text-xl">✅</span>
+                    <span class="text-sm">Finalizar Descarga</span>
+                </button>
+                <button id="details-btn-reset" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-600 to-gray-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">
+                    <span class="text-xl">🔄</span>
+                    <span class="text-sm">Zerar Tempo</span>
+                </button>
+            </div>
+            <div id="details-pause-reasons" class="text-red-600-custom font-bold text-xs mt-4 text-center"></div>
+            <span id="details-pause-timer" class="font-mono text-red-600-custom font-bold text-xs mt-1 hidden text-center"></span>
+            <div class="flex flex-col items-center w-full md:w-auto mt-2 sm:mt-4">
+                <label class="font-bold text-gray-700 mb-1">Estimativa de Tempo de Processo</label>
+                <span id="details-estimated-timer" class="font-mono text-gray-900 font-bold text-lg">00:00:00</span>
+            </div>
+        </div>
+
+        <!-- Botões de Ação Geral -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-8 w-full">
+            <button id="btn-sequencia" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg w-full md:w-1/3">
+                <span class="text-white">Iniciar Descarga Sequenciada</span>
+            </button>
+            <button id="btn-replicate" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg w-full md:w-1/3">
+                Cultura a Ser Processada
+            </button>
+            <button id="clear-all-btn" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg w-full md:w-1/3">
+                Limpar Seção
+            </button>
+        </div>
+        
+        <!-- Nova seção para exibir a sequência de descarga -->
+    <div id="sequence-display-area" class="mt-2 sm:mt-4 p-2 sm:p-4 rounded-lg bg-gray-100 border border-gray-300 text-gray-700 text-center font-bold hidden">
+            Sequência: 
+            <span id="global-sequence-display"></span>
+        </div>
+
+        <!-- Container de Relatórios -->
+    <div id="reports-container" class="mt-4 sm:mt-8 w-full">
+            <!-- Relatórios serão adicionados aqui -->
+        </div>
+    </div>
+    
+    <!-- Modal para mensagens de confirmação -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content text-center">
+            <h3 id="confirm-title" class="text-xl font-bold mb-4">Confirmação</h3>
+            <p id="confirm-message" class="mb-6 whitespace-pre-wrap">Você realmente deseja finalizar a descarga?</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-yes" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-green-600 to-green-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">Sim</button>
+                <button id="confirm-no" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-600 to-gray-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">Não</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para motivo da pausa -->
+    <div id="pause-modal" class="modal hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4">Motivo da Pausa da Descarga</h3>
+            <textarea id="pause-reason-input" class="w-full h-32 p-2 rounded-md bg-gray-200 text-gray-900 border border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Descreva o motivo da pausa..."></textarea>
+            <button id="pause-reason-confirm" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg mx-auto mt-4">Confirmar</button>
+        </div>
+    </div>
+    
+    <!-- Novo modal para input de toneladas -->
+    <div id="tonnage-modal" class="modal hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4">Quantidade de Toneladas</h3>
+            <p class="mb-4">Por favor, insira a quantidade de toneladas para o silo <span id="tonnage-silo-name" class="font-bold"></span> para continuar a sequência.</p>
+            <input type="number" id="tonnage-input" class="w-full p-2 rounded-md bg-gray-200 text-gray-900 border border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Toneladas">
+            <div class="flex flex-row justify-center gap-4 mt-4">
+                <button id="tonnage-confirm" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">Confirmar</button>
+                <button id="tonnage-cancel" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-500 to-gray-700 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Novo modal para selecionar cultura -->
+    <div id="culture-selection-modal" class="modal hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4">Cultura a Ser Processada</h3>
+            <p class="mb-4">Selecione a cultura que será processada em todos os silos:</p>
+            <div class="flex flex-col gap-2">
+                <button class="culture-option-btn bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors" data-culture="Braquiária">Braquiária</button>
+                <button class="culture-option-btn bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors" data-culture="Crotalária">Crotalária</button>
+                <button class="culture-option-btn bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors" data-culture="Milheto">Milheto</button>
+                <button class="culture-option-btn bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors" data-culture="Soja">Soja</button>
+            </div>
+            <button id="close-culture-modal" class="px-4 py-3 rounded-3xl font-bold text-white bg-gradient-to-r from-gray-800 to-gray-900 transition-transform transform hover:scale-105 flex items-center justify-center gap-3 text-sm whitespace-nowrap shadow-lg mx-auto mt-4">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Função centralizada para feedback visual em campos obrigatórios
+            function highlightField(field) {
+                if (!field) return;
+                field.classList.add('input-required');
+                // Adiciona ícone de alerta se não existir
+                if (!field.parentNode.querySelector('.input-alert')) {
+                    const alertIcon = document.createElement('span');
+                    alertIcon.className = 'input-alert';
+                    alertIcon.innerHTML = '<svg style="display:inline;vertical-align:middle;margin-left:6px;" width="18" height="18" fill="none" stroke="#dc2626" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="2" fill="#fff"/><path d="M12 8v4M12 16h.01" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/></svg>';
+                    field.parentNode.appendChild(alertIcon);
+                }
+                setTimeout(() => {
+                    field.classList.remove('input-required');
+                    const icon = field.parentNode.querySelector('.input-alert');
+                    if (icon) icon.remove();
+                }, 2000);
+            }
+
+            // Validação de campos obrigatórios ao tentar iniciar/confirmar ações
+            function validateRequiredFields(context) {
+                let valid = true;
+                // Toneladas no painel de detalhes
+                if (context === 'details-start') {
+                    if (!detailsToneladasInput.value || parseFloat(detailsToneladasInput.value) <= 0) {
+                        highlightField(detailsToneladasInput);
+                        valid = false;
+                    }
+                    // Cultura
+                    const siloName = detailsPanelTitle.textContent.replace('Controle Silo ', '');
+                    if (!siloStates[siloName].culture) {
+                        cultureOptionBtns.forEach(btn => highlightField(btn));
+                        valid = false;
+                    }
+                }
+                // Modal de toneladas
+                if (context === 'tonnage-modal') {
+                    if (!tonnageInput.value || parseFloat(tonnageInput.value) <= 0) {
+                        highlightField(tonnageInput);
+                        valid = false;
+                    }
+                }
+                // Modal de motivo da pausa
+                if (context === 'pause-modal') {
+                    if (!pauseReasonInput.value.trim()) {
+                        highlightField(pauseReasonInput);
+                        valid = false;
+                    }
+                }
+                return valid;
+            }
+
+            const siloGrid = document.getElementById('silo-grid');
+            const reportsContainer = document.getElementById('reports-container');
+            const btnSequencia = document.getElementById('btn-sequencia');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const replicateBtn = document.getElementById('btn-replicate');
+            const globalSequenceDisplay = document.getElementById('global-sequence-display');
+            const sequenceDisplayArea = document.getElementById('sequence-display-area');
+
+            const statusMessage = document.getElementById('status-message');
+            const messageTitle = document.getElementById('message-title');
+            const messageText = document.getElementById('message-text');
+            const closeMessageBtn = document.getElementById('close-message');
+            
+            const pauseModal = document.getElementById('pause-modal');
+            const pauseReasonInput = document.getElementById('pause-reason-input');
+            const pauseReasonConfirmBtn = document.getElementById('pause-reason-confirm');
+            
+            const tonnageModal = document.getElementById('tonnage-modal');
+            const tonnageSiloNameSpan = document.getElementById('tonnage-silo-name');
+            const tonnageInput = document.getElementById('tonnage-input');
+            const tonnageConfirmBtn = document.getElementById('tonnage-confirm');
+            const tonnageCancelBtn = document.getElementById('tonnage-cancel');
+            
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmYesBtn = document.getElementById('confirm-yes');
+            const confirmNoBtn = document.getElementById('confirm-no');
+
+            const cultureSelectionModal = document.getElementById('culture-selection-modal');
+            const cultureOptionBtns = document.querySelectorAll('.culture-option-btn');
+            const closeCultureModalBtn = document.getElementById('close-culture-modal');
+            
+            const detailsPanel = document.getElementById('silo-details-panel');
+            const detailsPanelTitle = document.getElementById('details-panel-title');
+            const detailsToneladasInput = document.getElementById('details-toneladas-input');
+            const detailsTimerDisplay = document.getElementById('details-timer-display');
+            const detailsRateDisplay = document.getElementById('details-rate-display');
+            const detailsPauseReasons = document.getElementById('details-pause-reasons');
+            const detailsPauseTimer = document.getElementById('details-pause-timer');
+            const detailsBtnStart = document.getElementById('details-btn-start');
+            const detailsBtnStop = document.getElementById('details-btn-stop');
+            const detailsBtnEnd = document.getElementById('details-btn-end');
+            const detailsBtnReset = document.getElementById('details-btn-reset');
+            const detailsEstimatedTimer = document.getElementById('details-estimated-timer');
+
+            const CULTURES = {
+                'Braquiária': 30,
+                'Crotalária': 50,
+                'Milheto': 40,
+                'Soja': 80
+            };
+
+            let selectedSilos = [];
+            let siloStates = {};
+            let isSequenceRunning = false;
+            let sequenceIndex = 0;
+            let siloToEndProcess = null;
+            let chartInstances = {};
+            let currentSilo = null;
+
+
+            // Funções do Modal de Mensagens
+            let autoCloseTimeout = null;
+            function showStatusMessage(title, message, autoClose = false) {
+                if (autoCloseTimeout) {
+                    clearTimeout(autoCloseTimeout);
+                }
+                // Se for erro, não exibe o título, só a mensagem
+                if (title === 'Erro') {
+                    if (messageTitle) {
+                        messageTitle.classList.add('hidden');
+                    }
+                } else {
+                    if (messageTitle) {
+                        messageTitle.textContent = title;
+                        messageTitle.classList.remove('hidden');
+                    }
+                }
+                if (messageText) {
+                    messageText.textContent = message;
+                }
+                if (statusMessage) {
+                    statusMessage.classList.remove('hidden');
+                    // Garante que o aviso seja visível mesmo se o usuário estiver no fim da tela
+                    setTimeout(() => {
+                        statusMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 50);
+                }
+                if (autoClose) {
+                    if (closeMessageBtn) {
+                        closeMessageBtn.classList.add('hidden');
+                    }
+                    autoCloseTimeout = setTimeout(() => {
+                        if (statusMessage) {
+                            statusMessage.classList.add('hidden');
+                        }
+                        if (closeMessageBtn) {
+                            closeMessageBtn.classList.remove('hidden');
+                        }
+                    }, 4000);
+                } else {
+                    if (closeMessageBtn) {
+                        closeMessageBtn.classList.remove('hidden');
+                    }
+                }
+            }
+
+            if (closeMessageBtn) {
+                closeMessageBtn.addEventListener('click', () => {
+                    if (statusMessage) {
+                        statusMessage.classList.add('hidden');
+                    }
+                    if (autoCloseTimeout) {
+                        clearTimeout(autoCloseTimeout);
+                    }
+                });
+            }
+            
+            let currentSiloForPause = null;
+            function showPauseModal(siloName) {
+                currentSiloForPause = siloName;
+                if (pauseModal) {
+                    pauseModal.classList.remove('hidden');
+                }
+            }
+
+            if (pauseReasonConfirmBtn) {
+                pauseReasonConfirmBtn.addEventListener('click', () => {
+                    if (!validateRequiredFields('pause-modal')) {
+                        showStatusMessage("Erro", "Por favor, preencha o motivo da pausa.", true);
+                        return;
+                    }
+                    const reason = pauseReasonInput.value || 'Não especificado';
+                    const siloState = siloStates[currentSiloForPause];
+                    const newPauseDuration = siloState.totalPauseTime - siloState.lastPauseTime;
+                    siloState.pauseReasons.push({ reason, duration: newPauseDuration });
+                    if (detailsPanel) {
+                        const reasonDisplay = detailsPanel.querySelector('#details-pause-reasons');
+                        if (reasonDisplay) {
+                            const newReason = document.createElement('div');
+                            newReason.textContent = `Motivo: ${reason} (${formatTime(newPauseDuration)})`;
+                            reasonDisplay.appendChild(newReason);
+                        }
+                    }
+                    siloState.lastPauseTime = siloState.totalPauseTime;
+                    pauseReasonInput.value = '';
+                    if (pauseModal) {
+                        pauseModal.classList.add('hidden');
+                    }
+                    showStatusMessage("Temporizador Pausado", `O temporizador do silo ${currentSiloForPause} foi pausado. Motivo: ${reason}`, true);
+                });
+            }
+            
+            if (confirmYesBtn) {
+                confirmYesBtn.addEventListener('click', () => {
+                    if (confirmModal) {
+                        confirmModal.classList.add('hidden');
+                    }
+                    endProcessLogic(siloToEndProcess);
+                });
+            }
+
+            if (confirmNoBtn) {
+                confirmNoBtn.addEventListener('click', () => {
+                    if (confirmModal) {
+                        confirmModal.classList.add('hidden');
+                    }
+                    siloToEndProcess = null;
+                });
+            }
+
+            if (tonnageConfirmBtn) {
+                tonnageConfirmBtn.addEventListener('click', () => {
+                    if (!validateRequiredFields('tonnage-modal')) {
+                        showStatusMessage("Erro", "Por favor, insira um valor válido para as toneladas.", true);
+                        return;
+                    }
+                    const toneladas = parseFloat(tonnageInput.value) || 0;
+                    const siloName = tonnageSiloNameSpan.textContent;
+                    const siloState = siloStates[siloName];
+                    siloState.toneladas = toneladas;
+                    // Atualiza o campo de toneladas no painel de detalhes
+                    if (currentSilo === siloName && detailsToneladasInput) {
+                        detailsToneladasInput.value = toneladas;
+                    }
+                    if (tonnageModal) {
+                        tonnageModal.classList.add('hidden');
+                    }
+                    // Corrigido: se estiver em sequência, inicia o processo e segue a sequência normalmente
+                    startSiloProcess(siloName);
+                });
+            }
+            if (tonnageCancelBtn) {
+                tonnageCancelBtn.addEventListener('click', () => {
+                    if (tonnageModal) {
+                        tonnageModal.classList.add('hidden');
+                    }
+                });
+            }
+
+            const siloData = [
+                "Silo Pulmão 01", "Silo Pulmão 02", "Silo Pulmão 03", "Silo Pulmão 04", "Silo Pulmão 05", "Silo Pulmão 06", "Silo Pulmão 07", "Silo Pulmão 08",
+                "Silo Pulmão 09", "Silo Pulmão 10", "Silo Pulmão 11", "Silo Pulmão 12", "Silo Pulmão 13", "Silo Pulmão 14", "Silo Pulmão 15", "Silo Pulmão 16"
+            ];
+            
+            // Gerar os cartões dos silos
+            if (siloGrid) {
+                siloData.forEach(item => {
+                    siloStates[item] = {
+                        seconds: 0,
+                        pausedSeconds: 0,
+                        isRunning: false,
+                        timerInterval: null,
+                        pauseTimerId: null,
+                        toneladas: 0,
+                        rate: 0,
+                        pauseStartTime: null,
+                        pauseReasons: [],
+                        totalPauseTime: 0,
+                        lastPauseTime: 0,
+                        culture: null,
+                        estimatedTime: 0,
+                        estimatedTimeInterval: null
+                    };
+                    const siloCard = document.createElement('div');
+                    siloCard.className = "silo-card cursor-pointer";
+                    siloCard.setAttribute('data-silo-name', item);
+                    siloCard.innerHTML = '<h4 class="font-bold text-lg">' + item + '</h4>' +
+                        '<p class="silo-culture-name font-semibold text-gray-700 mt-1">Cultura não definida</p>' + 
+                        '<p class="text-lg font-bold sequence-display text-gray-500" data-silo-name="' + item + '"></p>';
+                    siloGrid.appendChild(siloCard);
+                });
+            }
+            // Event listener para selecionar silos
+            if (siloGrid) {
+                siloGrid.addEventListener('click', (e) => {
+                    const siloCard = e.target.closest('.silo-card');
+                    if (!siloCard) return;
+
+                    const siloName = siloCard.dataset.siloName;
+                    
+                    // Permitir selecionar/desmarcar silos mesmo durante a sequência
+
+                    const index = selectedSilos.indexOf(siloName);
+                    
+                    if (index > -1) {
+                        // Se o silo já está selecionado, remove
+                        selectedSilos.splice(index, 1);
+                        siloCard.classList.remove('selected');
+                    } else {
+                        // Se o silo não está selecionado, adiciona
+                        selectedSilos.push(siloName);
+                        siloCard.classList.add('selected');
+                    }
+                    
+                    // Atualiza a visualização da sequência e do painel de detalhes
+                    updateDischargeSequence();
+                    
+                    if (selectedSilos.length > 0) {
+                        const siloToDisplay = currentSilo || selectedSilos[0];
+                        openDetailsPanel(siloToDisplay);
+                    } else {
+                        detailsPanel.classList.add('hidden');
+                    }
+                });
+            }
+
+            if (replicateBtn) {
+                replicateBtn.addEventListener('click', () => {
+                    if (cultureSelectionModal) {
+                        cultureSelectionModal.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            if (closeCultureModalBtn) {
+                closeCultureModalBtn.addEventListener('click', () => {
+                    if (cultureSelectionModal) {
+                        cultureSelectionModal.classList.add('hidden');
+                    }
+                });
+            }
+
+            if (cultureSelectionModal) {
+                cultureOptionBtns.forEach(function(button) {
+                    button.addEventListener('click', function(e) {
+                        const selectedCulture = e.target.dataset.culture;
+                        if (!selectedCulture) return;
+                        siloData.forEach(function(siloName) {
+                            siloStates[siloName].culture = selectedCulture;
+                            var cultureNameDisplay = document.querySelector('.silo-card[data-silo-name="' + siloName + '"] .silo-culture-name');
+                            if (cultureNameDisplay) {
+                                cultureNameDisplay.textContent = selectedCulture;
+                            }
+                        });
+                        if (cultureSelectionModal) {
+                            cultureSelectionModal.classList.add('hidden');
+                        }
+                        showStatusMessage("Sucesso", "Cultura '" + selectedCulture + "' replicada para todos os silos.", true);
+                    });
+                });
+            }
+
+            function openDetailsPanel(siloName) {
+                const siloState = siloStates[siloName];
+                
+                if (detailsPanelTitle) {
+                    detailsPanelTitle.textContent = 'Controle Silo ' + siloName;
+                }
+                if (detailsToneladasInput) {
+                    detailsToneladasInput.value = siloState.toneladas || '';
+                }
+                if (detailsTimerDisplay) {
+                    detailsTimerDisplay.textContent = formatTime(siloState.seconds);
+                }
+                if (detailsRateDisplay) {
+                    detailsRateDisplay.textContent = siloState.rate.toFixed(2) + ' T/h';
+                }
+                if (detailsPauseReasons) {
+                    detailsPauseReasons.innerHTML = siloState.pauseReasons.map(function(p) { return '<div>Motivo: ' + p.reason + ' (' + formatTime(p.duration) + ')</div>'; }).join('');
+                }
+                
+                if (siloState.pauseTimerId) {
+                    detailsPauseTimer.textContent = 'Tempo de Pausa do Processo: ' + formatTime(siloState.totalPauseTime);
+                    detailsPauseTimer.classList.remove('hidden');
+                } else {
+                    detailsPauseTimer.classList.add('hidden');
+                }
+
+                if (detailsEstimatedTimer) {
+                    const estimatedTime = siloState.estimatedTime;
+                    const remainingTime = estimatedTime - siloState.seconds;
+                    if (remainingTime > 0) {
+                        detailsEstimatedTimer.textContent = formatTime(Math.max(0, remainingTime));
+                        if (remainingTime <= 60) {
+                            detailsEstimatedTimer.classList.add('blinking-red');
+                        } else {
+                            detailsEstimatedTimer.classList.remove('blinking-red');
+                        }
+                    } else if (remainingTime <= 0 && siloState.isRunning) {
+                        detailsEstimatedTimer.textContent = "Tempo Ultrapassou, Meta Não Alcançada!";
+                        detailsEstimatedTimer.classList.remove('blinking-red');
+                    } else {
+                        detailsEstimatedTimer.textContent = formatTime(0);
+                        detailsEstimatedTimer.classList.remove('blinking-red');
+                    }
+                }
+
+                detailsBtnStart.dataset.siloName = siloName;
+                detailsBtnStop.dataset.siloName = siloName;
+                detailsBtnEnd.dataset.siloName = siloName;
+                detailsBtnReset.dataset.siloName = siloName;
+
+                if (detailsPanel) {
+                    detailsPanel.classList.remove('hidden');
+                }
+                currentSilo = siloName;
+            }
+            
+            // Event listeners para os botões do modal
+            if (detailsBtnStart) {
+                detailsBtnStart.addEventListener('click', () => {
+                    if (!validateRequiredFields('details-start')) {
+                        showStatusMessage("Erro", "Preencha todos os campos obrigatórios antes de iniciar a descarga.", true);
+                        return;
+                    }
+                    const siloName = detailsBtnStart.dataset.siloName;
+                    startSiloProcess(siloName);
+                });
+            }
+            if (detailsBtnStop) {
+                detailsBtnStop.addEventListener('click', () => {
+                    const siloName = detailsBtnStop.dataset.siloName;
+                    pauseSiloProcess(siloName);
+                });
+            }
+            if (detailsBtnEnd) {
+                detailsBtnEnd.addEventListener('click', () => {
+                    const siloName = detailsBtnEnd.dataset.siloName;
+                    siloToEndProcess = siloName;
+                    if (confirmModal) {
+                        confirmModal.classList.remove('hidden');
+                    }
+                });
+            }
+            if (detailsBtnReset) {
+                detailsBtnReset.addEventListener('click', () => {
+                    const siloName = detailsBtnReset.dataset.siloName;
+                    resetSiloProcess(siloName);
+                });
+            }
+            
+            if (detailsToneladasInput) {
+                detailsToneladasInput.addEventListener('input', (e) => {
+                    const siloName = detailsPanel.querySelector('h3').textContent.replace('Controle Silo ', '');
+                    siloStates[siloName].toneladas = parseFloat(e.target.value) || 0;
+                    const siloState = siloStates[siloName];
+                    if (siloState.toneladas > 0 && siloState.culture) {
+                        const estimatedTime = (siloState.toneladas / CULTURES[siloState.culture]) * 3600;
+                        siloState.estimatedTime = estimatedTime;
+                        if (detailsEstimatedTimer) {
+                            detailsEstimatedTimer.textContent = formatTime(estimatedTime);
+                        }
+                    } else if (detailsEstimatedTimer) {
+                        detailsEstimatedTimer.textContent = '00:00:00';
+                    }
+                });
+            }
+
+            function updateDischargeSequence() {
+                const sequenceDisplays = document.querySelectorAll('.sequence-display');
+                // Limpa todos os números de sequência
+                sequenceDisplays.forEach(display => {
+                    display.textContent = '';
+                });
+                // Itera sobre a lista de silos selecionados na ordem de seleção
+                selectedSilos.forEach((siloName, index) => {
+                    var display = document.querySelector('.sequence-display[data-silo-name="' + siloName + '"]');
+                    if (display) {
+                        // Atribui o número da sequência (1-based index)
+                        display.textContent = index + 1;
+                    }
+                });
+                // Atualiza a exibição global da sequência
+                if (globalSequenceDisplay) {
+                    var sequenceText = selectedSilos.length > 0 ? 'Sequência: (' + selectedSilos.join(', ') + ')' : '';
+                    globalSequenceDisplay.textContent = sequenceText;
+                }
+            }
+
+            if (btnSequencia) {
+                btnSequencia.addEventListener('click', () => {
+                    if (isSequenceRunning) {
+                        showStatusMessage("Atenção", "A sequência de descarga já está em andamento.", true);
+                        return;
+                    }
+                    if (selectedSilos.length === 0) {
+                        showStatusMessage("Erro", "Por favor, selecione pelo menos um silo para iniciar a sequência.", true);
+                        return;
+                    }
+                    
+                    isSequenceRunning = true;
+                    sequenceIndex = 0;
+                    if (btnSequencia) {
+                        btnSequencia.disabled = true;
+                    }
+                    showStatusMessage("Iniciando Sequência", "Iniciando a descarga do primeiro silo na sequência.", true);
+                    checkAndStartSiloProcess(selectedSilos[sequenceIndex]);
+                });
+            }
+
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', () => {
+                    isSequenceRunning = false;
+                    sequenceIndex = 0;
+                    if (btnSequencia) {
+                        btnSequencia.disabled = false;
+                    }
+                    if (reportsContainer) {
+                        reportsContainer.innerHTML = '';
+                    }
+                    selectedSilos = [];
+                    const siloCards = document.querySelectorAll('.silo-card');
+                    siloCards.forEach(card => {
+                        card.classList.remove('selected');
+                        const cultureNameDisplay = card.querySelector('.silo-culture-name');
+                        if (cultureNameDisplay) {
+                            cultureNameDisplay.textContent = 'Cultura não definida';
+                        }
+                    });
+                    detailsPanel.classList.add('hidden');
+                    for (const siloName in siloStates) {
+                        const siloState = siloStates[siloName];
+                        clearInterval(siloState.timerInterval);
+                        clearInterval(siloState.pauseTimerId);
+                        Object.assign(siloState, {
+                            seconds: 0,
+                            pausedSeconds: 0,
+                            isRunning: false,
+                            timerInterval: null,
+                            pauseTimerId: null,
+                            toneladas: 0,
+                            rate: 0,
+                            pauseStartTime: null,
+                            pauseReasons: [],
+                            culture: null,
+                            totalPauseTime: 0,
+                            estimatedTime: 0,
+                            estimatedTimeInterval: null
+                        });
+                    }
+                    updateDischargeSequence();
+                    showStatusMessage("Limpeza Concluída", "Todas as seções foram limpas com sucesso.", true);
+                });
+            }
+            
+            function checkAndStartSiloProcess(siloName) {
+                const siloState = siloStates[siloName];
+                if (!siloState.culture) {
+                            showStatusMessage("Erro", 'Por favor, selecione uma cultura para o silo ' + siloName + '.', true);
+                    if (btnSequencia) {
+                        btnSequencia.disabled = false;
+                    }
+                    isSequenceRunning = false;
+                    return;
+                }
+                if (siloState.toneladas === 0 || isNaN(siloState.toneladas)) {
+                    if (tonnageSiloNameSpan) {
+                         tonnageSiloNameSpan.textContent = siloName;
+                    }
+                    if (tonnageModal) {
+                        tonnageModal.classList.remove('hidden');
+                    }
+                } else {
+                     startSiloProcess(siloName);
+                }
+            }
+            
+            function startSiloProcess(siloName) {
+                const siloState = siloStates[siloName];
+                if (siloState.isRunning) {
+                    showStatusMessage("Atenção", "O temporizador para este silo já está em execução.", true);
+                    return;
+                }
+                
+                siloState.isRunning = true;
+
+                // Atualiza o painel de detalhes para o novo silo
+                if (currentSilo !== siloName) {
+                    openDetailsPanel(siloName);
+                } else {
+                    // Se já está mostrando, zera os campos
+                    if (detailsTimerDisplay) detailsTimerDisplay.textContent = '00:00:00';
+                    if (detailsRateDisplay) updateRateDisplay(detailsRateDisplay, 0, siloState.culture);
+                    if (detailsEstimatedTimer) detailsEstimatedTimer.textContent = formatTime((siloState.toneladas / CULTURES[siloState.culture]) * 3600 || 0);
+                    if (detailsPauseReasons) detailsPauseReasons.innerHTML = '';
+                    if (detailsPauseTimer) {
+                        detailsPauseTimer.textContent = 'Tempo de Pausa do Processo: 00:00:00';
+                        detailsPauseTimer.classList.add('hidden');
+                    }
+                }
+
+                if (siloState.pauseTimerId) {
+                    clearInterval(siloState.pauseTimerId);
+                    siloState.pauseTimerId = null;
+                    if(currentSilo === siloName) {
+                        detailsPauseTimer.classList.add('hidden');
+                    }
+                }
+
+                if (siloState.estimatedTimeInterval) {
+                    clearInterval(siloState.estimatedTimeInterval);
+                }
+
+                siloState.estimatedTime = (siloState.toneladas / CULTURES[siloState.culture]) * 3600;
+
+                siloState.estimatedTimeInterval = setInterval(() => {
+                    const remainingTime = siloState.estimatedTime - siloState.seconds;
+                    if (detailsEstimatedTimer && currentSilo === siloName) {
+                        detailsEstimatedTimer.textContent = formatTime(Math.max(0, remainingTime));
+                        if (remainingTime <= 60 && remainingTime > 0) {
+                            detailsEstimatedTimer.classList.add('blinking-red');
+                        } else if (remainingTime <= 0) {
+                            detailsEstimatedTimer.textContent = "Tempo Ultrapassou, Meta Não Alcançada!";
+                            detailsEstimatedTimer.classList.remove('blinking-red');
+                        } else {
+                            detailsEstimatedTimer.classList.remove('blinking-red');
+                        }
+                    }
+                    if (remainingTime <= 0) {
+                        clearInterval(siloState.estimatedTimeInterval);
+                    }
+                }, 1000);
+
+                siloState.timerInterval = setInterval(() => {
+                    siloState.seconds++;
+                    if(currentSilo === siloName) {
+                        detailsTimerDisplay.textContent = formatTime(siloState.seconds);
+                        siloState.rate = calculateRate(siloState.toneladas, siloState.seconds, siloState.culture);
+                        updateRateDisplay(detailsRateDisplay, siloState.rate, siloState.culture);
+                    }
+                }, 1000);
+            }
+            
+            function pauseSiloProcess(siloName) {
+                const siloState = siloStates[siloName];
+                if (siloState.isRunning) {
+                    siloState.isRunning = false;
+                    clearInterval(siloState.timerInterval);
+                    clearInterval(siloState.estimatedTimeInterval);
+                    
+                    if (!siloState.pauseTimerId) {
+                         siloState.pauseTimerId = setInterval(() => {
+                            siloState.totalPauseTime++;
+                            if(currentSilo === siloName) {
+                                detailsPauseTimer.textContent = 'Tempo de Pausa do Processo: ' + formatTime(siloState.totalPauseTime);
+                                detailsPauseTimer.classList.remove('hidden');
+                            }
+                        }, 1000);
+                    }
+                    
+                    showPauseModal(siloName);
+                }
+            }
+            
+            async function endProcessLogic(siloName) {
+                const siloState = siloStates[siloName];
+                if (siloState.isRunning) {
+                    siloState.isRunning = false;
+                    if (siloState.timerInterval) {
+                        clearInterval(siloState.timerInterval);
+                    }
+                }
+                if (siloState.pauseTimerId) {
+                     clearInterval(siloState.pauseTimerId);
+                     siloState.pauseTimerId = null;
+                }
+                if (siloState.estimatedTimeInterval) {
+                    clearInterval(siloState.estimatedTimeInterval);
+                    siloState.estimatedTimeInterval = null;
+                }
+                if (detailsEstimatedTimer && siloState.seconds < siloState.estimatedTime) {
+                    detailsEstimatedTimer.textContent = "Tempo Ultrapassou, Meta Não Alcançada!";
+                }
+
+                if (siloState.seconds > 0) {
+                    const totalProcessingSeconds = siloState.seconds - siloState.totalPauseTime;
+                    const finalTime = formatTime(totalProcessingSeconds);
+                    const finalRate = calculateRate(siloState.toneladas, totalProcessingSeconds, siloState.culture);
+                    const finalReport = await generateReport(
+                        siloName, 
+                        siloState.toneladas, 
+                        totalProcessingSeconds, 
+                        siloState.pauseReasons,
+                        siloState.culture
+                    );
+
+                    const reportBox = document.createElement('div');
+                    reportBox.className = "report-box";
+                    reportBox.innerHTML =
+                        '<div class="report-title">Relatório de Descarga do ' + siloName + '</div>' +
+                        '<p><strong>Cultura:</strong> ' + siloState.culture + '</p>' +
+                        '<p><strong>Tempo real de descarga:</strong> ' + finalTime + '</p>' +
+                        '<p><strong>Tempo de pausa total:</strong> ' + formatTime(siloState.totalPauseTime) + '</p>' +
+                        '<p><strong>Taxa de descarga:</strong> ' + finalRate.toFixed(2) + ' Toneladas/Hora</p>' +
+                        '<p>' + finalReport + '</p>' + 
+                        '<div class="mt-4 w-full md:flex gap-4 items-center">' +
+                            '<div class="md:w-1/2 w-full">' +
+                                '<canvas id="chart-' + siloName + '-rate"></canvas>' +
+                            '</div>' +
+                            '<div class="md:w-1/2 w-full">' +
+                                '<canvas id="chart-' + siloName + '-pauses"></canvas>' +
+                            '</div>' +
+                        '</div>' + 
+                        '<div class="flex justify-center mt-4">' + 
+                            '<button id="btn-suggest-' + siloName + '" class="btn btn-black">Analisar e Sugerir ✨</button>' + 
+                        '</div>' + 
+                        '<div id="suggestions-box-' + siloName + '" class="report-box mt-4 hidden">' + 
+                            '<h3 class="report-title">Sugestões de Otimização ✨</h3>' + 
+                            '<div id="suggestions-' + siloName + '" class="mt-2 text-gray-700"></div>' + 
+                        '</div>';
+                    if (reportsContainer) {
+                        reportsContainer.appendChild(reportBox);
+                    }
+                    
+                    const rateChartId = 'chart-' + siloName + '-rate';
+                    if (chartInstances[rateChartId]) {
+                        chartInstances[rateChartId].destroy();
+                    }
+                    chartInstances[rateChartId] = new Chart(document.getElementById(rateChartId), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Taxa de Descarga', 'Meta'],
+                            datasets: [{
+                                label: 'Taxa (T/h)',
+                                data: [finalRate, CULTURES[siloState.culture]],
+                                backgroundColor: [
+                                    finalRate >= CULTURES[siloState.culture] ? 'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)',
+                                    'rgba(255, 159, 64, 0.8)'
+                                ],
+                                borderColor: [
+                                    finalRate >= CULTURES[siloState.culture] ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Toneladas por Hora (T/h)'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Comparação de Desempenho'
+                                }
+                            }
+                        }
+                    });
+                    
+                    const pauseLabels = siloState.pauseReasons.map(p => p.reason);
+                    const pauseDurations = siloState.pauseReasons.map(p => p.duration);
+                    
+                    if (pauseLabels.length > 0) {
+                        const pausesChartId = 'chart-' + siloName + '-pauses';
+                        if (chartInstances[pausesChartId]) {
+                            chartInstances[pausesChartId].destroy();
+                        }
+                        chartInstances[pausesChartId] = new Chart(document.getElementById(pausesChartId), {
+                            type: 'pie',
+                            data: {
+                                labels: pauseLabels,
+                                datasets: [{
+                                    label: 'Duração da Pausa',
+                                    data: pauseDurations,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.8)',
+                                        'rgba(54, 162, 235, 0.8)',
+                                        'rgba(255, 206, 86, 0.8)',
+                                        'rgba(75, 192, 192, 0.8)',
+                                        'rgba(153, 102, 255, 0.8)',
+                                        'rgba(255, 159, 64, 0.8)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(255, 99, 132, 1)',
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(255, 206, 86, 1)',
+                                        'rgba(75, 192, 192, 1)',
+                                        'rgba(153, 102, 255, 1)',
+                                        'rgba(255, 159, 64, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Análise de Tempo de Pausa por Motivo'
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    document.getElementById('btn-suggest-' + siloName).addEventListener('click', async function() {
+                        const suggestionsBox = document.getElementById('suggestions-box-' + siloName);
+                        const suggestionsDiv = document.getElementById('suggestions-' + siloName);
+                        suggestionsBox.classList.remove('hidden');
+                        suggestionsDiv.textContent = 'Analisando dados...';
+                        const suggestions = await generateOptimizationSuggestions(siloState);
+                        suggestionsDiv.textContent = suggestions;
+                    });
+
+                    // Zera o temporizador do painel de detalhes se o painel estiver mostrando este silo
+                    if (currentSilo === siloName && detailsTimerDisplay) {
+                        detailsTimerDisplay.textContent = '00:00:00';
+                    }
+                    siloState.seconds = 0;
+                    siloState.pausedSeconds = 0;
+                    siloState.pauseReasons = [];
+                    siloState.toneladas = 0;
+                    siloState.rate = 0;
+                    
+                    showStatusMessage("Fim do Processamento", 'O processamento do silo ' + siloName + ' foi concluído. Veja o relatório abaixo.', true);
+
+                    if (isSequenceRunning) {
+                        sequenceIndex++;
+                        if (sequenceIndex < selectedSilos.length) {
+                            checkAndStartSiloProcess(selectedSilos[sequenceIndex]);
+                        } else {
+                            showStatusMessage("Sequência Concluída", "Todos os silos selecionados foram processados com sucesso.", true);
+                            isSequenceRunning = false;
+                            sequenceIndex = 0;
+                            if (btnSequencia) {
+                                btnSequencia.disabled = false;
+                            }
+                        }
+                    }
+                } else {
+                    showStatusMessage("Erro", "Nenhum temporizador ativo para este silo.", true);
+                }
+            }
+            
+            function resetSiloProcess(siloName) {
+                const siloState = siloStates[siloName];
+                const card = document.querySelector('.silo-card[data-silo-name="' + siloName + '"]');
+                
+                siloState.isRunning = false;
+                clearInterval(siloState.timerInterval);
+                if (siloState.pauseTimerId) {
+                    clearInterval(siloState.pauseTimerId);
+                    siloState.pauseTimerId = null;
+                }
+                if (siloState.estimatedTimeInterval) {
+                    clearInterval(siloState.estimatedTimeInterval);
+                    siloState.estimatedTimeInterval = null;
+                }
+                Object.assign(siloState, {
+                    seconds: 0,
+                    pausedSeconds: 0,
+                    isRunning: false,
+                    timerInterval: null,
+                    pauseTimerId: null,
+                    toneladas: 0,
+                    rate: 0,
+                    pauseStartTime: null,
+                    pauseReasons: [],
+                    culture: siloState.culture,
+                    totalPauseTime: 0,
+                    estimatedTime: 0
+                });
+                
+                // Update details panel UI
+                if (siloName === currentSilo) {
+                    detailsToneladasInput.value = '';
+                    detailsTimerDisplay.textContent = '00:00:00';
+                    detailsEstimatedTimer.textContent = '00:00:00';
+                    updateRateDisplay(detailsRateDisplay, 0, siloState.culture);
+                    detailsPauseReasons.innerHTML = '';
+                    if (detailsPauseTimer) {
+                        detailsPauseTimer.textContent = 'Tempo de Pausa do Processo: 00:00:00';
+                        detailsPauseTimer.classList.add('hidden');
+                    }
+                }
+                
+                showStatusMessage("Temporizador Zerado", 'O tempo do silo ' + siloName + ' foi zerado.', true);
+            }
+
+
+            function formatTime(sec) {
+                const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+                const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+                const s = (sec % 60).toString().padStart(2, '0');
+                return h + ':' + m + ':' + s;
+            }
+
+            function calculateRate(toneladas, seconds, culture) {
+                if (isNaN(toneladas) || toneladas <= 0 || seconds <= 0 || !culture) {
+                    return 0;
+                }
+                const target = CULTURES[culture];
+                return (toneladas / seconds) * 3600;
+            }
+
+            function updateRateDisplay(displayElement, rate, culture) {
+                const rateText = rate.toFixed(2) + ' T/h';
+                if (displayElement) {
+                    displayElement.textContent = rateText;
+                    if (CULTURES[culture] && rate >= CULTURES[culture]) {
+                        displayElement.classList.remove('text-red-600-custom');
+                        displayElement.classList.add('text-green-500-custom');
+                    } else {
+                        displayElement.classList.remove('text-green-500-custom');
+                        displayElement.classList.add('text-red-600-custom');
+                    }
+                }
+            }
+            
+            async function generateReport(siloName, toneladas, seconds, pauseReasons, culture) {
+                const rate = calculateRate(toneladas, seconds, culture);
+                const target = CULTURES[culture] || 'N/A';
+                
+                let formattedPauses = "";
+                if (pauseReasons.length > 0) {
+                    formattedPauses = "\n\n*Motivo(s) e Duração da(s) Pausa(s):*\n";
+                    pauseReasons.forEach(function(pause) {
+                        formattedPauses += '- ' + pause.reason + ' (' + formatTime(pause.duration) + ')\n';
+                    });
+                } else {
+                    formattedPauses = "Não houve pausas na descarga.";
+                }
+
+                var prompt =
+                    'Você é um gerente de operações de planta de silos. Com base nos seguintes dados, crie um breve relatório de descarga, com um título e um parágrafo. A meta de performance para a cultura ' + culture + ' é de ' + target + ' toneladas por hora.\n' +
+                    '- Silo: ' + siloName + '\n' +
+                    '- Cultura: ' + culture + '\n' +
+                    '- Total de toneladas processadas: ' + toneladas + ' toneladas\n' +
+                    '- Tempo total de descarga: ' + formatTime(seconds) + '\n' +
+                    '- Taxa de descarga média: ' + rate.toFixed(2) + ' toneladas/hora\n' +
+                    '- Motivos de pausa: ' + formattedPauses + '\n';
+
+                // Tentar a API Gemini primeiro
+                try {
+                    const payload = {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        model: "gemini-2.5-flash-preview-05-20"
+                    };
+                    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta da API Gemini: ' + response.status + ' ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    const generatedText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (generatedText) return generatedText;
+                } catch (error) {
+                    // fallback Copilot
+                }
+                // Geração local simulando Copilot
+                var relatorio = 'Relatório de Descarga\n';
+                relatorio += 'Silo: ' + siloName + '\n';
+                relatorio += 'Cultura: ' + culture + '\n';
+                relatorio += 'Total de toneladas processadas: ' + toneladas + ' toneladas\n';
+                relatorio += 'Tempo total de descarga: ' + formatTime(seconds) + '\n';
+                relatorio += 'Taxa de descarga média: ' + rate.toFixed(2) + ' toneladas/hora\n';
+                if (rate < target) {
+                    relatorio += 'Atenção: a taxa ficou abaixo da meta de ' + target + ' t/h.\n';
+                } else {
+                    relatorio += 'Meta de taxa de descarga atingida ou superada!\n';
+                }
+                relatorio += formattedPauses;
+                return relatorio;
+            }
+            
+            async function generateOptimizationSuggestions(siloState) {
+                const target = CULTURES[siloState.culture] || 'N/A';
+                var prompt = 'Análise de Desempenho:\n' +
+                    '- Taxa de descarga: ' + siloState.rate.toFixed(2) + ' T/h\n' +
+                    '- Meta: ' + target + ' T/h\n' +
+                    '- Tempo total de descarga: ' + formatTime(siloState.seconds - siloState.pausedSeconds) + '\n' +
+                    '- Tempo total de pausa: ' + formatTime(siloState.pausedSeconds) + '\n' +
+                    '- Motivos de Pausa: ' + siloState.pauseReasons.map(function(p) { return p.reason + ' (' + formatTime(p.duration) + ')'; }).join(', ') + '\n\n' +
+                    'Com base nesses dados de desempenho de descarga de um silo, atue como um consultor de otimização de operações de planta. Forneça de 3 a 5 sugestões práticas, curtas e diretas, em formato de lista (usando bullet points), sobre como o operador poderia melhorar a eficiência da próxima descarga. Se a taxa de descarga for menor que a meta, foque nas pausas. Se for maior que a meta, sugira formas de manter a consistência e eficiência.';
+
+                try {
+                    const payload = {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        model: "gemini-2.5-flash-preview-05-20"
+                    };
+                    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta da API Gemini: ' + response.status + ' ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    const generatedText = result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+                    return generatedText || "Não foi possível gerar as sugestões com a API Gemini.";
+                } catch (error) {
+                    console.error("Erro na chamada da API Gemini, tentando Copilot:", error);
+                    return "Não foi possível gerar as sugestões. Tente novamente mais tarde.";
+                }
+            }
+        });
+    </script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        // --- Configuração do Firebase ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
+            authDomain: "integracaocoi.firebaseapp.com",
+            projectId: "integracaocoi",
+            storageBucket: "integracaocoi.firebasestorage.app",
+            messagingSenderId: "177203745489",
+            appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
+        };
+
+        // Inicializa Firebase
+        const app = firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            const userEmailSpan = document.getElementById('user-email');
+            if (userEmailSpan) {
+                userEmailSpan.textContent = user ? user.email : 'Convidado';
+            }
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.style.display = user ? 'inline-block' : 'none';
+            }
+        });
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                // Redirect to login page or planning page after logout
+                window.location.href = 'operacional_planning_input.html';
+            }).catch(e => console.error("Erro ao deslogar:", e));
+        }
+    </script>
+</body>
+</html>
