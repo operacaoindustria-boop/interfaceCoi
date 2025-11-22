@@ -13,18 +13,12 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; padding: 1rem; }
-        
-        /* Utilitários de Animação e UI */
         .input-required { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
         @keyframes blink-red { 0%, 49% { color: #ef4444; } 50%, 100% { color: transparent; } }
         .blinking-red { animation: blink-red 1s step-end infinite; }
-        
-        /* Cores Semânticas */
         .text-green-custom { color: #16a34a; }
         .text-red-custom { color: #dc2626; }
-
-        /* Cards de Operação */
         .silo-card {
             background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 1rem; padding: 1.5rem;
             transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -34,39 +28,34 @@
         .silo-card:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: translateY(-4px); border-color: #94a3b8; }
         .silo-card.selected { border-color: #2563eb; background-color: #eff6ff; ring: 2px solid #2563eb; }
         .compact-btn { font-size: 0.875rem; padding: 0.5rem; line-height: 1; font-weight: 600; display: flex; align-items: center; justify-content: center; }
-        
-        /* Dashboard Styles */
         .dash-card { background-color: #ffffff; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .section-title { font-size: 1.125rem; font-weight: 600; color: #334155; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        
-        /* Tabela */
         .table-container { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th, .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 0.875rem; white-space: nowrap; }
         .data-table th { background-color: #f8fafc; font-weight: 600; color: #475569; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
         .data-table tr:last-child td { border-bottom: none; }
         .data-table tr:hover { background-color: #f1f5f9; }
-
-        /* Modais */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 3000; }
         .modal-content { background-color: #fff; padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-width: 95%; width: 480px; animation: popIn 0.2s ease-out; }
         @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .hidden { display: none !important; }
-
         #status-message { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 4000; width: auto; max-width: 90%; }
+        /* Tab Styles */
+        .tab-button { padding: 0.75rem 1.5rem; font-weight: 600; border-bottom: 3px solid transparent; color: #64748b; transition: all 0.2s; font-size: 0.95rem; }
+        .tab-button:hover { color: #334155; }
+        .tab-button.active { color: #0f172a; border-color: #2563eb; }
+        /* Config List Styles */
+        .culture-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; }
+        .culture-item:hover { border-color: #cbd5e1; }
     </style>
 </head>
 <body>
-    
-    <!-- Notificações -->
     <div id="status-message" class="hidden px-6 py-3 rounded-full shadow-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 transform translate-y-0 opacity-100">
-        <span id="message-icon"></span>
-        <span id="message-text"></span>
+        <span id="message-icon"></span><span id="message-text"></span>
     </div>
 
-    <!-- ========================================== -->
-    <!-- VIEW 1: CONTROLE OPERACIONAL (SILOS)      -->
-    <!-- ========================================== -->
+    <!-- VIEW 1: CONTROLE -->
     <section id="view-control" class="w-full max-w-[1600px] mx-auto transition-opacity duration-300">
         <header class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b border-slate-200 pb-6">
             <div>
@@ -77,192 +66,172 @@
                 </div>
             </div>
             <div class="flex gap-3">
-                <a href="menu.html" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2">
-                    <span>Voltar ao Menu</span>
-                </a>
+                <a href="menu.html" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2"><span>Voltar ao Menu</span></a>
                 <button onclick="app.switchView('dashboard')" class="group px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition shadow-sm flex items-center gap-2">
-                    <span>Painel de Monitoramento</span>
-                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                    <span>Painel de Monitoramento</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                 </button>
             </div>
         </header>
-
-        <!-- Botões de Comando -->
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col sm:flex-row gap-3 justify-center">
-            <button id="btn-sequencia" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm flex items-center justify-center gap-2">
-                <span>▶</span> Iniciar Sequência
-            </button>
-            <button id="btn-replicate" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center gap-2">
-                <span>⚡</span> Definir Cultura em Lote
-            </button>
-            <button id="clear-all-btn" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition flex items-center justify-center gap-2">
-                <span>🗑️</span> Limpar Painel
-            </button>
+            <button id="btn-sequencia" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm flex items-center justify-center gap-2"><span>▶</span> Iniciar Sequência</button>
+            <button id="btn-replicate" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center gap-2"><span>⚡</span> Definir Cultura em Lote</button>
+            <button id="clear-all-btn" class="flex-1 max-w-xs px-4 py-3 rounded-lg font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition flex items-center justify-center gap-2"><span>🗑️</span> Limpar Painel</button>
         </div>
-
-        <!-- Info Sequência -->
-        <div id="sequence-display-area" class="hidden mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg text-center text-blue-800 text-sm mx-auto max-w-2xl">
-            <span class="font-bold">Sequência Ativa:</span> <span id="global-sequence-display"></span>
-        </div>
-
-        <!-- Grid de Silos -->
-        <div id="silo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Cards injetados via JS -->
-        </div>
+        <div id="sequence-display-area" class="hidden mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg text-center text-blue-800 text-sm mx-auto max-w-2xl"><span class="font-bold">Sequência Ativa:</span> <span id="global-sequence-display"></span></div>
+        <div id="silo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
     </section>
 
-
-    <!-- ========================================== -->
-    <!-- VIEW 2: DASHBOARD MONITORAMENTO           -->
-    <!-- ========================================== -->
+    <!-- VIEW 2: DASHBOARD -->
     <section id="view-dashboard" class="hidden w-full max-w-[1600px] mx-auto animate-fade-in">
         <header class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b border-slate-200 pb-6">
-            <div>
-                <h1 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Gestão & Analytics</h1>
-                <h2 class="text-2xl md:text-3xl font-bold text-slate-900">Relatório de Ritmo</h2>
-            </div>
+            <div><h1 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Gestão & Analytics</h1><h2 class="text-2xl md:text-3xl font-bold text-slate-900">Relatório de Ritmo</h2></div>
             <div class="flex gap-3">
-                <button onclick="app.switchView('control')" class="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Voltar
-                </button>
-                <button id="btn-export-pdf" class="px-5 py-2.5 rounded-lg bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Exportar PDF
-                </button>
+                <button onclick="app.switchView('control')" class="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Voltar</button>
+                <button id="btn-export-pdf" class="px-5 py-2.5 rounded-lg bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 transition flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>Exportar PDF</button>
             </div>
         </header>
+        
+        <div id="dashboard-tabs" class="flex border-b border-slate-300 mb-6 overflow-x-auto whitespace-nowrap">
+            <button class="tab-button active" data-tab="performance">Performance Global</button>
+            <button class="tab-button" data-tab="pauses">Gestão de Paradas</button>
+            <button class="tab-button" data-tab="config">⚙️ Configuração</button>
+        </div>
 
-        <!-- Filtros -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-8">
-            <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                Filtros de Período
-            </h3>
+        <!-- Filtros Globais -->
+        <div id="dashboard-filters" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-8">
+            <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>Filtros de Período</h3>
             <div class="flex flex-col sm:flex-row gap-4 items-end">
-                <div class="flex-1 w-full sm:w-auto">
-                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Data Início</label>
-                    <input type="date" id="filter-start" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="flex-1 w-full sm:w-auto">
-                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Data Fim</label>
-                    <input type="date" id="filter-end" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button id="apply-filters" class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Filtrar</button>
-                    <button id="clear-filters" class="flex-1 sm:flex-none px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition">Limpar</button>
-                </div>
+                <div class="flex-1 w-full sm:w-auto"><label class="block text-xs font-medium text-slate-500 mb-1.5">Data Início</label><input type="date" id="filter-start" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                <div class="flex-1 w-full sm:w-auto"><label class="block text-xs font-medium text-slate-500 mb-1.5">Data Fim</label><input type="date" id="filter-end" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                <div class="flex gap-2 w-full sm:w-auto"><button id="apply-filters" class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Filtrar</button><button id="clear-filters" class="flex-1 sm:flex-none px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition">Limpar</button></div>
             </div>
         </div>
 
-        <!-- Conteúdo PDF -->
-        <div id="pdf-content" class="space-y-6">
-            <!-- KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="dash-card relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10"><svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path></svg></div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ritmo Médio</p>
-                    <h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-performance">0.00</span> <span class="text-sm text-slate-500 font-normal">T/h</span></h3>
-                    <p class="text-xs text-slate-400 mt-2">Média geral do período</p>
+        <div id="dashboard-content-container">
+            <!-- TAB 1 -->
+            <div id="tab-performance-content" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="dash-card border-l-4 border-blue-500"><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ritmo Médio</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-performance">0.00</span> <span class="text-sm text-slate-500 font-normal">T/h</span></h3></div>
+                    <div class="dash-card border-l-4 border-indigo-500"><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume Total</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-toneladas">0.00</span> <span class="text-sm text-slate-500 font-normal">T</span></h3></div>
+                    <div class="dash-card border-l-4 border-teal-500"><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Operações</p><h3 id="kpi-count" class="text-3xl font-bold text-slate-900 mt-1">0</h3></div>
                 </div>
-                <div class="dash-card relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10"><svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg></div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume Total</p>
-                    <h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-toneladas">0.00</span> <span class="text-sm text-slate-500 font-normal">T</span></h3>
-                    <p class="text-xs text-slate-400 mt-2">Total descarregado</p>
-                </div>
-                <div class="dash-card relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10"><svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg></div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Operações</p>
-                    <h3 id="kpi-count" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
-                    <p class="text-xs text-slate-400 mt-2">Descargas finalizadas</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="dash-card"><h3 class="section-title">Volume Total por Dia (Ton)</h3><div class="h-72"><canvas id="volume-day-chart"></canvas></div></div><div class="dash-card"><h3 class="section-title">Ritmo Médio por Produto (T/h)</h3><div class="h-72"><canvas id="rate-product-chart"></canvas></div></div></div>
+                
+                <div class="dash-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="section-title mb-0">Histórico de Operações</h3>
+                        <!-- BUSCA NA TABELA DE PERFORMANCE -->
+                        <div class="flex items-center gap-2">
+                            <div class="relative">
+                                <input type="date" id="table-search-perf" class="pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <button id="btn-table-search-perf" class="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </button>
+                            </div>
+                            <button id="btn-table-clear-perf" class="text-slate-400 hover:text-red-500 hidden"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="table-container"><table id="silo-detail-table" class="data-table"><thead><tr><th>Data</th> <th>Silo</th> <th>Produto</th> <th>Usuário</th> <th>Duração</th> <th>Peso (T)</th> <th>Ritmo (T/h)</th></tr></thead><tbody><tr id="loading-row"><td colspan="7" class="text-center py-8 text-slate-400">Carregando dados...</td></tr></tbody></table></div>
                 </div>
             </div>
-
-            <!-- Gráficos -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="dash-card">
-                    <h3 class="section-title">Volume Total por Dia (Ton)</h3>
-                    <div class="h-72"><canvas id="volume-day-chart"></canvas></div>
+            
+            <!-- TAB 2 -->
+            <div id="tab-pauses-content" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="dash-card border-l-4 border-amber-500"><p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Tempo Total Parado</p><h3 id="kpi-pause-time" class="text-3xl font-bold text-slate-900 mt-1">00:00:00</h3></div>
+                    <div class="dash-card border-l-4 border-red-500"><p class="text-xs font-bold text-red-600 uppercase tracking-wider">Perda Estimada</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-pause-loss">0.00</span> <span class="text-sm text-slate-500 font-normal">T</span></h3></div>
+                    <div id="btn-view-bottlenecks" class="dash-card border-l-4 border-slate-500 cursor-pointer hover:bg-slate-50 transition group relative"><div class="absolute top-3 right-3 text-slate-300 group-hover:text-slate-500 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><p class="text-xs font-bold text-slate-600 uppercase tracking-wider">Principal Gargalo</p><h3 id="kpi-pause-reason" class="text-xl font-bold text-slate-900 mt-2 truncate">Nenhum</h3><p class="text-xs text-blue-600 mt-2 font-medium flex items-center gap-1">Clique para ver ranking <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></p></div>
                 </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="dash-card"><h3 class="section-title">Distribuição dos Motivos</h3><div class="h-72 flex justify-center"><canvas id="pause-reasons-chart"></canvas></div></div><div class="dash-card"><h3 class="section-title">Impacto no Tempo (Minutos)</h3><div class="h-72"><canvas id="pause-duration-chart"></canvas></div></div></div>
+                
                 <div class="dash-card">
-                    <h3 class="section-title">Ritmo Médio por Produto (T/h)</h3>
-                    <div class="h-72"><canvas id="rate-product-chart"></canvas></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="section-title mb-0">Detalhamento de Paradas</h3>
+                        <!-- BUSCA NA TABELA DE PAUSAS -->
+                        <div class="flex items-center gap-2">
+                            <div class="relative">
+                                <input type="date" id="table-search-pause" class="pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <button id="btn-table-search-pause" class="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </button>
+                            </div>
+                            <button id="btn-table-clear-pause" class="text-slate-400 hover:text-red-500 hidden"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="table-container"><table id="pause-detail-table" class="data-table"><thead><tr><th>Data / Hora</th> <th>Silo</th> <th>Motivo</th> <th>Duração</th> <th>Perda Est. (T)</th></tr></thead><tbody><tr id="loading-row-pause"><td colspan="5" class="text-center py-8 text-slate-400">Selecione o período...</td></tr></tbody></table></div>
                 </div>
             </div>
-
-            <!-- Tabela -->
-            <div class="dash-card">
-                <h3 class="section-title">Histórico de Operações</h3>
-                <div class="table-container">
-                    <table id="silo-detail-table" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th> <th>Silo</th> <th>Produto</th> <th>Usuário</th> <th>Duração</th> <th>Peso (T)</th> <th>Ritmo (T/h)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr id="loading-row"><td colspan="7" class="text-center py-8 text-slate-400">Carregando dados...</td></tr>
-                        </tbody>
-                    </table>
+            
+            <!-- TAB 3 -->
+            <div id="tab-config-content" class="hidden">
+                <div class="dash-card max-w-4xl mx-auto">
+                    <h3 class="section-title text-slate-800 mb-6">Administração de Culturas e Metas</h3>
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-8">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div><h4 class="text-orange-800 font-bold text-lg flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Zona de Reset</h4><p class="text-orange-700 text-sm mt-1">Esta ação limpará a visualização atual e resetará os cronômetros dos silos. Os dados históricos no banco não serão afetados.</p></div>
+                            <button id="btn-clear-db" class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md transition transform hover:scale-105 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Limpar Tela</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 h-fit">
+                            <h4 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Adicionar Nova Cultura</h4>
+                            <div class="space-y-4">
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome da Cultura</label><input type="text" id="new-culture-name" class="w-full p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Trigo"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Meta de Ritmo (T/h)</label><input type="number" id="new-culture-target" class="w-full p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00"></div>
+                                <button id="btn-add-culture" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">Adicionar Cultura</button>
+                            </div>
+                        </div>
+                        <div><h4 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Culturas Cadastradas</h4><div id="cultures-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scroll"><div class="text-center py-8 text-slate-400 text-sm">Carregando configurações...</div></div></div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="mt-8 text-center"><button id="btn-tech-login" class="text-xs text-slate-300 hover:text-slate-500 underline">Login Técnico (Teste Local)</button></div>
     </section>
 
-    <!-- Modais de Controle (Preservados) -->
-    <div id="confirm-modal" class="modal hidden">
-        <div class="modal-content text-center">
-            <h3 class="text-xl font-bold mb-2 text-slate-900">Confirmar Finalização</h3>
-            <p class="mb-6 text-slate-500">Deseja encerrar a descarga e salvar o relatório?</p>
+    <!-- Modais -->
+    <div id="confirm-modal" class="modal hidden"><div class="modal-content text-center"><h3 class="text-xl font-bold mb-2 text-slate-900">Confirmar Finalização</h3><p class="mb-6 text-slate-500">Deseja encerrar a descarga e salvar o relatório?</p><div class="flex justify-center gap-3"><button id="confirm-yes" class="px-5 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700">Sim, Finalizar</button><button id="confirm-no" class="px-5 py-2.5 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancelar</button></div></div></div>
+    <div id="pause-modal" class="modal hidden"><div class="modal-content"><h3 class="text-lg font-bold mb-4 text-slate-900">Registrar Pausa</h3><label class="block text-xs font-medium text-slate-500 mb-1">Motivo</label><textarea id="pause-reason-input" class="w-full h-24 p-3 rounded-lg bg-slate-50 text-slate-900 border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none resize-none mb-4" placeholder="Ex: Manutenção mecânica..."></textarea><button id="pause-reason-confirm" class="w-full px-4 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Confirmar Pausa</button></div></div>
+    <div id="tonnage-modal" class="modal hidden"><div class="modal-content text-center"><h3 class="text-lg font-bold mb-2 text-slate-900">Definir Carga Inicial</h3><p class="mb-4 text-slate-500 text-sm">Informe a quantidade para <span id="tonnage-silo-name" class="font-bold text-slate-800"></span></p><input type="number" id="tonnage-input" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-300 text-center text-2xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none mb-6" placeholder="0.00"><div class="flex gap-3"><button id="tonnage-confirm" class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Confirmar</button><button id="tonnage-cancel" class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancelar</button></div></div></div>
+    
+    <div id="clear-db-modal" class="modal hidden">
+        <div class="modal-content text-center border-t-4 border-orange-500">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4">
+                <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-slate-900">Limpar Visualização?</h3>
+            <p class="mb-6 text-slate-600 text-sm">Os gráficos e tabelas serão limpos localmente. Os dados salvos no banco permanecerão seguros.</p>
             <div class="flex justify-center gap-3">
-                <button id="confirm-yes" class="px-5 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700">Sim, Finalizar</button>
-                <button id="confirm-no" class="px-5 py-2.5 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancelar</button>
+                <button id="confirm-clear-db" class="px-5 py-2.5 rounded-lg font-semibold text-white bg-orange-500 hover:bg-orange-600 shadow-md">Sim, Limpar Tela</button>
+                <button id="cancel-clear-db" class="px-5 py-2.5 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancelar</button>
             </div>
         </div>
     </div>
-
-    <div id="pause-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold mb-4 text-slate-900">Registrar Pausa</h3>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Motivo</label>
-            <textarea id="pause-reason-input" class="w-full h-24 p-3 rounded-lg bg-slate-50 text-slate-900 border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none resize-none mb-4" placeholder="Ex: Manutenção mecânica..."></textarea>
-            <button id="pause-reason-confirm" class="w-full px-4 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Confirmar Pausa</button>
-        </div>
-    </div>
-
-    <div id="tonnage-modal" class="modal hidden">
-        <div class="modal-content text-center">
-            <h3 class="text-lg font-bold mb-2 text-slate-900">Definir Carga Inicial</h3>
-            <p class="mb-4 text-slate-500 text-sm">Informe a quantidade para <span id="tonnage-silo-name" class="font-bold text-slate-800"></span></p>
-            <input type="number" id="tonnage-input" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-300 text-center text-2xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none mb-6" placeholder="0.00">
-            <div class="flex gap-3">
-                <button id="tonnage-confirm" class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Confirmar</button>
-                <button id="tonnage-cancel" class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancelar</button>
+    
+    <!-- NOVO: Modal de Detalhes de Gargalos -->
+    <div id="bottleneck-modal" class="modal hidden">
+        <div class="modal-content max-w-2xl">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <div><h3 class="text-xl font-bold text-slate-900">Ranking de Motivos de Parada</h3><p class="text-sm text-slate-500 mt-1">Ordenado por tempo total de impacto na produção.</p></div>
+                <button id="close-bottleneck-modal" class="p-2 rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
+            <div id="bottleneck-list" class="space-y-3 max-h-[60vh] overflow-y-auto custom-scroll pr-2"></div>
         </div>
     </div>
 
     <div id="culture-selection-modal" class="modal hidden">
         <div class="modal-content">
             <h3 class="text-lg font-bold mb-4 text-slate-900">Cultura em Lote</h3>
-            <div class="grid grid-cols-1 gap-2">
-                <button class="culture-option-btn p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-blue-300 text-left font-medium text-slate-700 transition" data-culture="Braquiária">🌱 Braquiária</button>
-                <button class="culture-option-btn p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-blue-300 text-left font-medium text-slate-700 transition" data-culture="Crotalária">🌿 Crotalária</button>
-                <button class="culture-option-btn p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-blue-300 text-left font-medium text-slate-700 transition" data-culture="Milheto">🌾 Milheto</button>
-                <button class="culture-option-btn p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-blue-300 text-left font-medium text-slate-700 transition" data-culture="Soja">🫘 Soja</button>
-            </div>
+            <div id="culture-options-container" class="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto"></div>
             <button id="close-culture-modal" class="mt-4 w-full text-sm text-slate-500 hover:text-slate-800 font-medium">Cancelar</button>
         </div>
     </div>
 
-    <!-- LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, getDocs, doc, setDoc, onSnapshot, updateDoc, deleteDoc, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO FIREBASE (Integracaocoi) ---
         const firebaseConfig = {
             apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
             authDomain: "integracaocoi.firebaseapp.com",
@@ -271,550 +240,506 @@
             messagingSenderId: "177203745489",
             appId: "1:177203745489:web:4c7ebd68e7b03819032bf0"
         };
-        // -------------------------------
 
-        const CULTURES = { 'Braquiária': 30, 'Crotalária': 50, 'Milheto': 40, 'Soja': 80 };
+        const DEFAULT_CULTURES = { 'Braquiária': 30, 'Crotalária': 50, 'Milheto': 40, 'Soja': 80 };
         const SILO_NAMES = Array.from({length: 16}, (_, i) => `Silo Pulmão ${String(i + 1).padStart(2, '0')}`);
 
         let app, db, auth;
-        let chartVolume, chartRate;
+        let chartVolume, chartRate, chartPauseReason, chartPauseDuration;
         let cachedData = [];
+        let currentGlobalFilteredData = []; // Holds data after global filtering
         let currentUser = null;
+        let currentDashboardTab = 'performance';
+        let siloCultures = { ...DEFAULT_CULTURES };
+        let configUnsubscribe = null;
+        let currentPauseReasonsData = {};
 
-        // Init Firebase & Auth
         async function initApp() {
             try {
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                
-                // Escuta mudança de estado de Auth (Login/Logout)
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        // Usuário logado
                         currentUser = user;
-                        document.getElementById('user-display').textContent = user.email;
-                        document.getElementById('user-display').classList.remove('hidden');
-                        console.log("Usuário conectado:", user.email);
+                        const ud = document.getElementById('user-display');
+                        if(ud) { ud.textContent = user.email; ud.classList.remove('hidden'); }
+                        if (!document.getElementById('view-dashboard').classList.contains('hidden')) fetchDashboardData();
+                        if (!configUnsubscribe) {
+                            const configRef = doc(db, 'silo_config', 'general');
+                            configUnsubscribe = onSnapshot(configRef, (docSnap) => {
+                                if (docSnap.exists()) { siloCultures = docSnap.data(); }
+                                else { setDoc(configRef, DEFAULT_CULTURES).catch(console.warn); siloCultures = DEFAULT_CULTURES; }
+                                renderCulturesList();
+                            }, (error) => {
+                                console.warn("Config sync warning:", error);
+                                siloCultures = DEFAULT_CULTURES; renderCulturesList();
+                            });
+                        }
                     } else {
-                        // Ninguém logado
                         currentUser = null;
-                        document.getElementById('user-display').classList.add('hidden');
-                        showNotification('info', 'Modo visitante: Login necessário para salvar dados.');
+                        const ud = document.getElementById('user-display');
+                        if(ud) ud.classList.add('hidden');
+                        if (configUnsubscribe) { configUnsubscribe(); configUnsubscribe = null; }
+                        showNotification('info', 'Acesso Restrito: Faça login para operar.');
                     }
                 });
-
-            } catch (e) { 
-                console.error("Erro Firebase Init:", e); 
-                showNotification('error', 'Erro de conexão com BD'); 
-            }
+            } catch (e) { console.error("Erro Init:", e); showNotification('error', 'Erro de conexão'); }
         }
         initApp();
 
-        // Router SPA
+        function renderCulturesList() {
+            const list = document.getElementById('cultures-list');
+            const modalContainer = document.getElementById('culture-options-container');
+            if (!list || !modalContainer) return;
+            list.innerHTML = ''; modalContainer.innerHTML = '';
+            Object.entries(siloCultures).sort().forEach(([name, target]) => {
+                const item = document.createElement('div');
+                item.className = 'culture-item';
+                item.innerHTML = `<div><span class="block font-bold text-slate-800">${name}</span><span class="text-xs text-slate-500">Meta Atual: ${target} T/h</span></div>
+                    <div class="flex items-center gap-2"><input type="number" value="${target}" class="w-20 p-1 text-sm border rounded text-center outline-none focus:border-blue-500 target-edit-input" data-name="${name}"><button class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold hover:bg-blue-200 btn-save-target" data-name="${name}">Salvar</button><button class="px-2 py-1 text-red-400 hover:text-red-600 btn-delete-culture" data-name="${name}" title="Excluir">✕</button></div>`;
+                list.appendChild(item);
+                const btn = document.createElement('button');
+                btn.className = 'culture-option-btn p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-blue-300 text-left font-medium text-slate-700 transition w-full';
+                btn.dataset.culture = name;
+                btn.innerHTML = `🌱 ${name} <span class="float-right text-xs text-slate-400 mt-1">${target} T/h</span>`;
+                btn.onclick = () => applyCultureToAll(name);
+                modalContainer.appendChild(btn);
+            });
+        }
+
+        const safeAddClick = (id, handler) => { const el = document.getElementById(id); if(el) el.addEventListener('click', handler); };
+        safeAddClick('btn-add-culture', async () => {
+            const name = document.getElementById('new-culture-name').value.trim();
+            const target = parseFloat(document.getElementById('new-culture-target').value);
+            if (!name || !target || target <= 0) return showNotification('error', 'Dados inválidos');
+            try { await updateDoc(doc(db, 'silo_config', 'general'), { [name]: target }); document.getElementById('new-culture-name').value=''; document.getElementById('new-culture-target').value=''; showNotification('success', 'Cultura adicionada!'); } catch (e) { showNotification('error', 'Erro ao adicionar'); }
+        });
+
+        safeAddClick('btn-clear-db', () => { document.getElementById('clear-db-modal').classList.remove('hidden'); });
+        safeAddClick('cancel-clear-db', () => { document.getElementById('clear-db-modal').classList.add('hidden'); });
+        safeAddClick('confirm-clear-db', () => {
+            document.getElementById('clear-db-modal').classList.add('hidden');
+            cachedData = [];
+            renderTable([]);
+            updateCharts([]);
+            renderPauseAnalysis([]);
+            window.dispatchEvent(new CustomEvent('reset-all-silos'));
+            showNotification('success', 'Visualização limpa (Banco preservado).');
+        });
+
+        // HANDLER DO NOVO MODAL DE GARGALOS
+        safeAddClick('btn-view-bottlenecks', () => {
+            const list = document.getElementById('bottleneck-list');
+            if(!list) return;
+            list.innerHTML = '';
+            
+            // Converter objeto em array e ordenar por duração
+            const sortedReasons = Object.entries(currentPauseReasonsData)
+                .map(([reason, data]) => ({ reason, ...data }))
+                .sort((a, b) => b.duration - a.duration);
+
+            if(sortedReasons.length === 0) {
+                list.innerHTML = '<div class="text-center py-8 text-slate-400">Nenhum dado de pausa no período.</div>';
+            } else {
+                const maxDur = sortedReasons[0].duration; // Para barra de progresso relativa
+                
+                sortedReasons.forEach(item => {
+                    const pct = (item.duration / maxDur) * 100;
+                    const h = Math.floor(item.duration / 3600);
+                    const m = Math.floor((item.duration % 3600) / 60);
+                    const s = Math.floor(item.duration % 60); // Include seconds
+                    const durStr = h > 0 ? `${h}h ${m}m ${s}s` : (m > 0 ? `${m}m ${s}s` : `${s}s`);
+                    
+                    const el = document.createElement('div');
+                    el.className = 'p-3 bg-slate-50 rounded-lg border border-slate-100';
+                    el.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-slate-700 text-sm">${item.reason}</span>
+                            <span class="font-mono text-xs font-bold text-slate-500">${durStr}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500 rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="mt-1 text-[10px] text-slate-400 text-right">${item.count} ocorrência(s)</div>
+                    `;
+                    list.appendChild(el);
+                });
+            }
+            document.getElementById('bottleneck-modal').classList.remove('hidden');
+        });
+        safeAddClick('close-bottleneck-modal', () => document.getElementById('bottleneck-modal').classList.add('hidden'));
+
+
+        const culturesList = document.getElementById('cultures-list');
+        if(culturesList) {
+            culturesList.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('btn-save-target')) {
+                    const name = e.target.dataset.name;
+                    const input = e.target.previousElementSibling;
+                    const newTarget = parseFloat(input.value);
+                    if (newTarget > 0) { try { await updateDoc(doc(db, 'silo_config', 'general'), { [name]: newTarget }); showNotification('success', 'Meta atualizada!'); } catch(err) { showNotification('error', 'Erro ao salvar meta'); } }
+                }
+                if (e.target.classList.contains('btn-delete-culture')) {
+                    const name = e.target.dataset.name;
+                    if (confirm(`Excluir cultura "${name}"?`)) { try { await updateDoc(doc(db, 'silo_config', 'general'), { [name]: deleteField() }); showNotification('success', 'Cultura removida.'); } catch(err) { showNotification('error', 'Erro ao remover'); } }
+                }
+            });
+        }
+
+        function applyCultureToAll(c) { window.dispatchEvent(new CustomEvent('apply-culture', { detail: { culture: c } })); document.getElementById('culture-selection-modal').classList.add('hidden'); showNotification('success', `Cultura ${c} aplicada.`); }
+
         window.app = {
             switchView: (viewName) => {
                 document.getElementById('view-control').classList.add('hidden');
                 document.getElementById('view-dashboard').classList.add('hidden');
-                
-                if (viewName === 'dashboard') {
-                    document.getElementById('view-dashboard').classList.remove('hidden');
-                    fetchDashboardData();
-                } else {
-                    document.getElementById('view-control').classList.remove('hidden');
-                }
-                window.scrollTo(0, 0);
+                if (viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); fetchDashboardData(); switchDashboardTab(currentDashboardTab); } else { document.getElementById('view-control').classList.remove('hidden'); } window.scrollTo(0, 0);
             }
+        };
+
+        window.switchDashboardTab = function(tabId) {
+            currentDashboardTab = tabId;
+            document.querySelectorAll('.tab-button').forEach(btn => { btn.classList.remove('active'); if(btn.dataset.tab === tabId) btn.classList.add('active'); });
+            document.getElementById('tab-performance-content').classList.add('hidden');
+            document.getElementById('tab-pauses-content').classList.add('hidden');
+            document.getElementById('tab-config-content').classList.add('hidden');
+            document.getElementById('dashboard-filters').classList.remove('hidden');
+            if(tabId === 'performance') document.getElementById('tab-performance-content').classList.remove('hidden');
+            if(tabId === 'pauses') { document.getElementById('tab-pauses-content').classList.remove('hidden'); if(cachedData.length > 0) renderPauseAnalysis(cachedData); }
+            if(tabId === 'config') { document.getElementById('tab-config-content').classList.remove('hidden'); document.getElementById('dashboard-filters').classList.add('hidden'); }
         };
 
         function showNotification(type, text) {
             const el = document.getElementById('status-message');
             const icon = document.getElementById('message-icon');
             const txt = document.getElementById('message-text');
-            
-            el.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-xl text-sm font-medium flex items-center gap-2 z-50 transition-all duration-300 ${type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white'}`;
+            el.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-xl text-sm font-medium flex items-center gap-2 z-50 transition-all duration-300 ${type === 'error' ? 'bg-red-500 text-white' : (type === 'info' ? 'bg-orange-500 text-white' : 'bg-slate-800 text-white')}`;
             icon.innerHTML = type === 'success' ? '✅' : (type === 'error' ? '⚠️' : 'ℹ️');
             txt.textContent = text;
-            
             el.classList.remove('hidden', 'translate-y-[-20px]', 'opacity-0');
-            setTimeout(() => {
-                el.classList.add('translate-y-[-20px]', 'opacity-0');
-                setTimeout(() => el.classList.add('hidden'), 300);
-            }, 3000);
+            setTimeout(() => { el.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => el.classList.add('hidden'), 300); }, 3000);
         }
 
-        // ====================================================
-        // LÓGICA DE CONTROLE (Silos)
-        // ====================================================
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle initial view from URL parameter
+            renderCulturesList(); 
             const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view');
-            if (view === 'dashboard') {
-                // Use a small timeout to ensure all elements are ready before switching view
-                setTimeout(() => app.switchView('dashboard'), 100);
-            }
+            if (urlParams.get('view') === 'dashboard') setTimeout(() => app.switchView('dashboard'), 100);
+            
+            safeAddClick('btn-tech-login', async () => { const e=prompt("Email:"); const p=prompt("Senha:"); if(e&&p){try{await signInWithEmailAndPassword(auth,e,p);showNotification('success','OK');}catch(err){showNotification('error','Falha');}} });
+            safeAddClick('dashboard-tabs', (e) => { if(e.target.classList.contains('tab-button')) switchDashboardTab(e.target.dataset.tab); });
+            
+            // Filter Handlers
+            safeAddClick('apply-filters', applyFilters);
+            safeAddClick('clear-filters', () => { document.getElementById('filter-start').value=''; document.getElementById('filter-end').value=''; applyFilters(); });
 
-            let selectedSilos = [];
-            let siloStates = {};
-            let isSequenceRunning = false;
-            let sequenceIndex = 0;
-            let siloToEnd = null;
-            let pauseSiloTarget = null;
+            // Table Search Handlers
+            safeAddClick('btn-table-search-perf', () => filterTableByDate('table-search-perf', 'performance'));
+            safeAddClick('btn-table-clear-perf', () => clearTableSearch('table-search-perf', 'btn-table-clear-perf', 'performance'));
+            safeAddClick('btn-table-search-pause', () => filterTableByDate('table-search-pause', 'pauses'));
+            safeAddClick('btn-table-clear-pause', () => clearTableSearch('table-search-pause', 'btn-table-clear-pause', 'pauses'));
 
-            const els = {
-                grid: document.getElementById('silo-grid'),
-                modalConfirm: document.getElementById('confirm-modal'),
-                modalPause: document.getElementById('pause-modal'),
-                modalTonnage: document.getElementById('tonnage-modal'),
-                modalCulture: document.getElementById('culture-selection-modal')
-            };
+            safeAddClick('btn-export-pdf', () => {
+                let contentId = 'tab-performance-content';
+                if(currentDashboardTab==='pauses') contentId='tab-pauses-content'; if(currentDashboardTab==='config') contentId='tab-config-content';
+                showNotification('info', 'Gerando PDF...');
+                html2canvas(document.getElementById(contentId), { scale: 2, backgroundColor: '#ffffff' }).then(c => {
+                    const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                    const h = (c.height * pdf.internal.pageSize.getWidth()) / c.width;
+                    pdf.setFontSize(16); pdf.text(`Relatório: ${currentDashboardTab.toUpperCase()}`, 10, 15);
+                    pdf.setFontSize(10); pdf.text(`Gerado: ${new Date().toLocaleString()}`, 10, 22);
+                    pdf.addImage(c.toDataURL('image/png'), 'PNG', 0, 30, pdf.internal.pageSize.getWidth(), h);
+                    pdf.save(`Relatorio_${currentDashboardTab}.pdf`); showNotification('success', 'PDF baixado.');
+                });
+            });
 
-            // Render Cards
+            let selectedSilos = [], siloStates = {}, isSequenceRunning = false, sequenceIndex = 0, siloToEnd = null, pauseSiloTarget = null;
+            const els = { grid: document.getElementById('silo-grid'), modalConfirm: document.getElementById('confirm-modal'), modalPause: document.getElementById('pause-modal'), modalTonnage: document.getElementById('tonnage-modal'), modalCulture: document.getElementById('culture-selection-modal') };
+
+            window.addEventListener('apply-culture', (e) => {
+                const c = e.detail.culture;
+                SILO_NAMES.forEach(n => {
+                    siloStates[n].culture = c;
+                    const card = document.querySelector(`.silo-card[data-name="${n}"]`);
+                    const lb = card.querySelector('.cult-label');
+                    lb.textContent = c; lb.classList.add('text-blue-600', 'font-bold');
+                    if (siloStates[n].ton > 0) { siloStates[n].estTime = (siloStates[n].ton / siloCultures[c]) * 3600; updateCardUI(n); }
+                });
+            });
+
+            window.addEventListener('reset-all-silos', () => {
+                SILO_NAMES.forEach(n => {
+                     resetProc(n); 
+                     siloStates[n].culture = null;
+                     const c = document.querySelector(`.silo-card[data-name="${n}"]`);
+                     if(c) {
+                         c.querySelector('.cult-label').textContent = 'Nenhuma cultura';
+                         c.querySelector('.cult-label').classList.remove('text-blue-600', 'font-bold');
+                         c.classList.remove('selected');
+                         c.querySelector('.seq-badge').classList.remove('opacity-100', 'scale-100');
+                     }
+                });
+                selectedSilos = [];
+                updateSeqBadges();
+            });
+
             SILO_NAMES.forEach(name => {
-                siloStates[name] = { 
-                    seconds: 0, paused: 0, running: false, timer: null, pauseTimer: null, estTimer: null,
-                    ton: 0, rate: 0, pauses: [], culture: null, estTime: 0, lastPauseMark: 0
-                };
-                
+                siloStates[name] = { seconds: 0, paused: 0, running: false, timer: null, pauseTimer: null, estTimer: null, ton: 0, rate: 0, pauses: [], culture: null, estTime: 0, lastPauseMark: 0, processed: 0, currentPauseStart: null };
                 const card = document.createElement('div');
                 card.className = "silo-card group relative";
                 card.dataset.name = name;
                 card.innerHTML = `
-                    <div class="flex justify-between items-start w-full mb-3">
-                        <div>
-                            <h4 class="font-bold text-lg text-slate-800 leading-tight">${name}</h4>
-                            <p class="cult-label text-xs font-medium text-slate-400 mt-1">Nenhuma cultura</p>
-                        </div>
-                        <span class="seq-badge opacity-0 scale-0 transition-all duration-300 text-xs font-bold text-white bg-blue-600 px-2.5 py-1 rounded-full shadow-sm"></span>
-                    </div>
-                    
-                    <!-- Área de Input Melhorada -->
+                    <div class="flex justify-between items-start w-full mb-3"><div><h4 class="font-bold text-lg text-slate-800">${name}</h4><p class="cult-label text-xs font-medium text-slate-400 mt-1">Nenhuma cultura</p></div><span class="seq-badge opacity-0 scale-0 transition-all duration-300 text-xs font-bold text-white bg-blue-600 px-2.5 py-1 rounded-full shadow-sm"></span></div>
                     <div class="bg-slate-100 rounded-lg p-4 border border-slate-200 mb-4 shadow-inner">
                         <div class="flex justify-between items-end mb-3">
-                            <div class="text-left w-1/2 pr-2">
-                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">Carga (T)</label>
-                                <div class="relative">
-                                    <input type="number" class="inp-ton w-full bg-white text-lg font-bold text-slate-900 border border-slate-300 rounded-md px-2 py-1 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none shadow-sm transition-all placeholder-slate-400" placeholder="0.00">
-                                </div>
-                            </div>
-                            <div class="text-right w-1/2 pl-2">
-                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Tempo</label>
-                                <div class="disp-time font-mono text-xl text-slate-800 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">00:00:00</div>
-                            </div>
+                            <div class="text-left w-1/2 pr-2"><label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">Carga (T)</label><input type="number" class="inp-ton w-full bg-white text-lg font-bold text-slate-900 border border-slate-300 rounded-md px-2 py-1 outline-none shadow-sm" placeholder="0.00"></div>
+                            <div class="text-right w-1/2 pl-2"><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Tempo</label><div class="disp-time font-mono text-xl text-slate-800 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">00:00:00</div></div>
                         </div>
-                        
-                        <div class="w-full h-2 bg-slate-300 rounded-full overflow-hidden mb-2">
-                             <div class="progress-bar h-full bg-blue-600 w-0 transition-all duration-500"></div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-200">
-                             <div class="flex flex-col">
-                                <span class="text-[10px] font-bold text-slate-500 uppercase">Taxa Atual</span>
-                                <span class="disp-rate text-sm font-bold text-slate-700">0.00 T/h</span>
-                             </div>
-                             <div class="flex flex-col text-right">
-                                <span class="text-[10px] font-bold text-slate-500 uppercase">Estimativa</span>
-                                <span class="disp-est text-sm font-mono text-slate-700">00:00:00</span>
-                             </div>
-                        </div>
+                        <div class="w-full h-2 bg-slate-300 rounded-full overflow-hidden mb-2"><div class="progress-bar h-full bg-blue-600 w-0 transition-all duration-500"></div></div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-200"><div class="flex flex-col"><span class="text-[10px] font-bold text-slate-500 uppercase">Processado (Est.)</span><span class="disp-rate text-sm font-bold text-slate-700">0.00 T</span></div><div class="flex flex-col text-right"><span class="text-[10px] font-bold text-slate-500 uppercase">Estimativa</span><span class="disp-est text-sm font-mono text-slate-700">00:00:00</span></div></div>
                     </div>
-
                     <div class="disp-pause text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 p-2 rounded mb-3 hidden text-center">Em Pausa</div>
-
-                    <div class="grid grid-cols-4 gap-2 mt-auto">
-                        <button data-act="start" class="compact-btn rounded-md text-white bg-slate-800 hover:bg-slate-900 transition shadow-sm active:scale-95" title="Iniciar"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-1.484a1 1 0 000-1.664l-3-1.484z" clip-rule="evenodd"></path></svg></button>
-                        <button data-act="pause" class="compact-btn rounded-md text-slate-700 bg-amber-300 hover:bg-amber-400 transition shadow-sm active:scale-95" title="Pausar"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
-                        <button data-act="end" class="compact-btn rounded-md text-white bg-green-600 hover:bg-green-700 transition shadow-sm active:scale-95" title="Finalizar"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></button>
-                        <button data-act="reset" class="compact-btn rounded-md text-slate-600 bg-slate-200 hover:bg-slate-300 transition shadow-sm active:scale-95" title="Resetar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
-                    </div>
-                `;
+                    <div class="grid grid-cols-4 gap-2 mt-auto"><button data-act="start" class="compact-btn rounded-md text-white bg-slate-800 hover:bg-slate-900 shadow-sm active:scale-95">▶</button><button data-act="pause" class="compact-btn rounded-md text-slate-700 bg-amber-300 hover:bg-amber-400 shadow-sm active:scale-95">⏸</button><button data-act="end" class="compact-btn rounded-md text-white bg-green-600 hover:bg-green-700 shadow-sm active:scale-95">✅</button><button data-act="reset" class="compact-btn rounded-md text-slate-600 bg-slate-200 hover:bg-slate-300 shadow-sm active:scale-95">🔄</button></div>`;
                 els.grid.appendChild(card);
             });
 
-            // Events
             els.grid.addEventListener('click', e => {
-                const card = e.target.closest('.silo-card');
-                if (!card) return;
-                const name = card.dataset.name;
-                
+                const card = e.target.closest('.silo-card'); if(!card) return; const name = card.dataset.name;
                 const btn = e.target.closest('button');
-                if (btn) {
+                if(btn) {
                     const act = btn.dataset.act;
-                    if (act === 'start') startProc(name);
-                    if (act === 'pause') pauseProc(name);
-                    if (act === 'end') { siloToEnd = name; els.modalConfirm.classList.remove('hidden'); }
-                    if (act === 'reset') resetProc(name);
-                } else if (!e.target.matches('input')) {
-                    toggleSelect(name, card);
-                }
+                    if(act==='start') startProc(name); if(act==='pause') pauseProc(name);
+                    if(act==='end') { siloToEnd=name; els.modalConfirm.classList.remove('hidden'); }
+                    if(act==='reset') resetProc(name);
+                } else if(!e.target.matches('input')) toggleSelect(name, card);
             });
+            els.grid.addEventListener('input', e => { if(e.target.matches('.inp-ton')) { const name = e.target.closest('.silo-card').dataset.name; siloStates[name].ton = parseFloat(e.target.value)||0; updateCardUI(name); } });
 
-            els.grid.addEventListener('input', e => {
-                if (e.target.matches('.inp-ton')) {
-                    const name = e.target.closest('.silo-card').dataset.name;
-                    siloStates[name].ton = parseFloat(e.target.value) || 0;
-                    updateCardUI(name);
-                }
-            });
-
-            // Core Functions (Silos)
-            function toggleSelect(name, card) {
-                const idx = selectedSilos.indexOf(name);
-                if (idx > -1) {
-                    selectedSilos.splice(idx, 1);
-                    card.classList.remove('selected');
-                    card.querySelector('.seq-badge').classList.remove('opacity-100', 'scale-100');
-                    card.querySelector('.seq-badge').classList.add('opacity-0', 'scale-0');
-                } else {
-                    selectedSilos.push(name);
-                    card.classList.add('selected');
-                    card.querySelector('.seq-badge').classList.remove('opacity-0', 'scale-0');
-                    card.querySelector('.seq-badge').classList.add('opacity-100', 'scale-100');
-                }
-                updateSeqBadges();
-            }
-
-            function updateSeqBadges() {
-                selectedSilos.forEach((name, i) => {
-                    const badge = document.querySelector(`.silo-card[data-name="${name}"] .seq-badge`);
-                    if(badge) badge.textContent = i + 1;
-                });
-                const area = document.getElementById('sequence-display-area');
-                if (selectedSilos.length > 0) {
-                    area.classList.remove('hidden');
-                    document.getElementById('global-sequence-display').textContent = `(${selectedSilos.join(', ')})`;
-                } else {
-                    area.classList.add('hidden');
-                }
-            }
-
-            function startProc(name) {
-                const s = siloStates[name];
-                if (s.running) return;
-                const card = document.querySelector(`.silo-card[data-name="${name}"]`);
-                s.ton = parseFloat(card.querySelector('.inp-ton').value) || 0;
-
-                if (s.ton <= 0) { showNotification('error', 'Defina as toneladas.'); return; }
-                if (!s.culture) { showNotification('error', 'Defina a cultura.'); return; }
-
-                s.running = true;
-                clearInterval(s.timer); clearInterval(s.pauseTimer); clearInterval(s.estTimer);
-                s.estTime = (s.ton / CULTURES[s.culture]) * 3600;
+            function toggleSelect(name, card) { const idx = selectedSilos.indexOf(name); if(idx>-1){ selectedSilos.splice(idx,1); card.classList.remove('selected'); card.querySelector('.seq-badge').classList.remove('opacity-100','scale-100'); } else { selectedSilos.push(name); card.classList.add('selected'); card.querySelector('.seq-badge').classList.add('opacity-100','scale-100'); } updateSeqBadges(); }
+            function updateSeqBadges() { selectedSilos.forEach((n,i) => document.querySelector(`.silo-card[data-name="${n}"] .seq-badge`).textContent = i+1); document.getElementById('sequence-display-area').classList.toggle('hidden', selectedSilos.length===0); if(selectedSilos.length>0) document.getElementById('global-sequence-display').textContent = `(${selectedSilos.join(', ')})`; }
+            function startProc(name) { const s = siloStates[name]; if(s.running) return; const card = document.querySelector(`.silo-card[data-name="${name}"]`); s.ton = parseFloat(card.querySelector('.inp-ton').value)||0; if(s.ton<=0 || !s.culture) return showNotification('error', 'Defina carga/cultura'); s.running=true; clearInterval(s.timer); clearInterval(s.pauseTimer); s.estTime=(s.ton/siloCultures[s.culture])*3600; s.timer=setInterval(()=>{ s.seconds++; const rate=siloCultures[s.culture]/3600; s.processed=rate*(s.seconds-s.paused); updateCardUI(name); },1000); s.estTimer=setInterval(()=>updateCardUI(name),1000); updateCardUI(name); }
+            function pauseProc(name) { 
+                const s=siloStates[name]; 
+                if(!s.running) return; 
+                s.running=false; 
+                clearInterval(s.timer); 
+                clearInterval(s.estTimer); 
+                pauseSiloTarget=name; 
                 
-                s.timer = setInterval(() => { s.seconds++; s.rate = (s.ton / (s.seconds - s.paused)) * 3600; updateCardUI(name); }, 1000);
-                s.estTimer = setInterval(() => updateCardUI(name), 1000);
-                updateCardUI(name);
+                // Store exact pause start time
+                s.currentPauseStart = new Date().toISOString();
+
+                s.pauseTimer=setInterval(()=>{s.paused++; updateCardUI(name);},1000); 
+                els.modalPause.classList.remove('hidden'); 
             }
-
-            function pauseProc(name) {
-                const s = siloStates[name];
-                if (!s.running) return;
-                s.running = false;
-                clearInterval(s.timer); clearInterval(s.estTimer);
-                pauseSiloTarget = name;
-                s.pauseTimer = setInterval(() => { s.paused++; updateCardUI(name); }, 1000);
-                els.modalPause.classList.remove('hidden');
-            }
-
-            function resetProc(name) {
-                const s = siloStates[name];
-                clearInterval(s.timer); clearInterval(s.pauseTimer); clearInterval(s.estTimer);
-                Object.assign(s, { seconds: 0, paused: 0, running: false, timer: null, pauseTimer: null, ton: 0, rate: 0, pauses: [], lastPauseMark: 0 });
-                const card = document.querySelector(`.silo-card[data-name="${name}"]`);
-                card.querySelector('.inp-ton').value = '';
-                updateCardUI(name);
-            }
-
-            function updateCardUI(name) {
-                const s = siloStates[name];
-                const card = document.querySelector(`.silo-card[data-name="${name}"]`);
-                if(!card) return;
-
-                const fmt = (sec) => new Date(sec * 1000).toISOString().substr(11, 8);
-                card.querySelector('.disp-time').textContent = fmt(s.seconds);
-                
-                const rEl = card.querySelector('.disp-rate');
-                rEl.textContent = isFinite(s.rate) ? s.rate.toFixed(2) + ' T/h' : '0.00 T/h';
-                rEl.className = `disp-rate text-xs font-bold ${s.culture && s.rate >= CULTURES[s.culture] ? 'text-green-600' : (s.rate > 0 ? 'text-red-600' : 'text-slate-700')}`;
-
-                const rem = s.estTime - s.seconds;
-                const progress = Math.min(100, (s.seconds / s.estTime) * 100) || 0;
-                card.querySelector('.progress-bar').style.width = `${progress}%`;
-                
-                card.querySelector('.disp-est').textContent = `${s.culture && s.ton > 0 ? (rem > 0 ? fmt(rem) : "00:00:00") : "00:00:00"}`;
-
-                const pEl = card.querySelector('.disp-pause');
-                if (s.paused > 0) {
-                    pEl.textContent = `Pausa: ${fmt(s.paused)}`;
-                    pEl.classList.remove('hidden');
-                } else { pEl.classList.add('hidden'); }
-            }
-
+            function resetProc(name) { const s=siloStates[name]; clearInterval(s.timer); clearInterval(s.pauseTimer); clearInterval(s.estTimer); Object.assign(s,{seconds:0, paused:0, running:false, timer:null, pauseTimer:null, ton:0, rate:0, pauses:[], lastPauseMark:0, processed:0, currentPauseStart: null}); document.querySelector(`.silo-card[data-name="${name}"] .inp-ton`).value=''; updateCardUI(name); }
+            function updateCardUI(name) { const s=siloStates[name]; const card=document.querySelector(`.silo-card[data-name="${name}"]`); if(!card)return; const fmt=sec=>new Date(sec*1000).toISOString().substr(11,8); card.querySelector('.disp-time').textContent=fmt(s.seconds); card.querySelector('.disp-rate').textContent=(s.processed||0).toFixed(2)+' T'; const rem=s.estTime-s.seconds; const prog=s.estTime>0?Math.min(100,(s.seconds/s.estTime)*100):0; card.querySelector('.progress-bar').style.width=`${prog}%`; card.querySelector('.disp-est').textContent=`${s.culture&&s.ton>0?(rem>0?fmt(rem):"00:00:00"):"00:00:00"}`; const pEl=card.querySelector('.disp-pause'); if(s.paused>0){ pEl.textContent=`Pausa: ${fmt(s.paused)}`; pEl.classList.remove('hidden'); } else pEl.classList.add('hidden'); }
             async function finalizeSilo(name) {
-                const s = siloStates[name];
-                s.running = false;
-                clearInterval(s.timer); clearInterval(s.pauseTimer); clearInterval(s.estTimer);
-
-                const procTime = s.seconds - s.paused;
-                if (procTime > 0 && db && currentUser) { // Só salva se usuário logado
-                    const finalRate = (s.ton / procTime) * 3600;
-                    const h = new Date().getHours();
-                    const shift = (h >= 6 && h < 14) ? 'Turno A' : (h >= 14 && h < 22) ? 'Turno B' : 'Turno C';
-                    
-                    try {
-                        await addDoc(collection(db, `silo_reports`), {
-                            siloName: name, culture: s.culture, toneladas: s.ton,
-                            totalProcessingSeconds: procTime, totalPauseTime: s.paused,
-                            finalRate: parseFloat(finalRate.toFixed(2)), targetRate: CULTURES[s.culture],
-                            performanceVsTarget: parseFloat((finalRate - CULTURES[s.culture]).toFixed(2)),
-                            pauseReasons: s.pauses, shift: shift, 
-                            userId: currentUser.uid, 
-                            userEmail: currentUser.email, // Salva quem fez
-                            timestamp: new Date().toISOString()
-                        });
-                        showNotification('success', `Dados salvos por ${currentUser.email}.`);
-                    } catch(e) { console.error(e); showNotification('error', 'Erro ao salvar.'); }
-                } else if (procTime > 0 && !currentUser) {
-                    showNotification('error', 'Faça login para salvar os dados.');
+                const s = siloStates[name]; s.running=false; clearInterval(s.timer); clearInterval(s.pauseTimer); clearInterval(s.estTimer);
+                let procTime = Math.max(1, s.seconds - s.paused); 
+                
+                if (db && currentUser) {
+                    const finalRate = (s.ton/procTime)*3600;
+                    const h = new Date().getHours(); const shift = (h>=6&&h<14)?'Turno A':(h>=14&&h<22)?'Turno B':'Turno C';
+                    try { 
+                        await addDoc(collection(db,`silo_reports`), { 
+                            siloName:name, culture:s.culture, toneladas:s.ton, 
+                            totalProcessingSeconds:procTime, totalPauseTime:s.paused, 
+                            finalRate:parseFloat(finalRate.toFixed(2)), targetRate:siloCultures[s.culture], 
+                            performanceVsTarget:parseFloat((finalRate-siloCultures[s.culture]).toFixed(2)), 
+                            pauseReasons:s.pauses, shift:shift, userId:currentUser.uid, userEmail:currentUser.email, 
+                            timestamp:new Date().toISOString() 
+                        }); 
+                        showNotification('success',`Dados salvos por ${currentUser.email}`); 
+                    } catch(e){
+                        console.error("Erro Firestore:", e); 
+                        showNotification('error', 'Erro ao salvar no banco');
+                    }
+                } else if (!currentUser) {
+                    showNotification('error', 'Erro: Usuário não logado');
                 }
 
-                s.seconds = 0; s.paused = 0; s.pauses = []; s.lastPauseMark = 0; s.ton = 0;
-                const card = document.querySelector(`.silo-card[data-name="${name}"]`);
-                card.querySelector('.inp-ton').value = '';
-                updateCardUI(name);
-
-                if (isSequenceRunning) {
-                    sequenceIndex++;
-                    if (sequenceIndex < selectedSilos.length) checkAndStartSeq(selectedSilos[sequenceIndex]);
-                    else { isSequenceRunning = false; document.getElementById('btn-sequencia').disabled = false; showNotification('info', 'Sequência concluída.'); }
+                resetProc(name); 
+                if(isSequenceRunning) { 
+                    sequenceIndex++; 
+                    if(sequenceIndex<selectedSilos.length) checkAndStartSeq(selectedSilos[sequenceIndex]); 
+                    else { isSequenceRunning=false; document.getElementById('btn-sequencia').disabled=false; showNotification('info','Fim sequência'); } 
                 }
             }
-
-            // Sequence Control
-            document.getElementById('btn-sequencia').onclick = () => {
-                if (selectedSilos.length === 0) return showNotification('error', 'Selecione silos.');
-                isSequenceRunning = true; sequenceIndex = 0;
-                document.getElementById('btn-sequencia').disabled = true;
-                checkAndStartSeq(selectedSilos[0]);
-            };
-
-            function checkAndStartSeq(name) {
-                const s = siloStates[name];
-                if (!s.culture) {
-                    isSequenceRunning = false; document.getElementById('btn-sequencia').disabled = false;
-                    return showNotification('error', `${name} sem cultura.`);
-                }
-                if (s.ton <= 0) {
-                    document.getElementById('tonnage-silo-name').textContent = name;
-                    document.getElementById('tonnage-input').value = '';
-                    els.modalTonnage.classList.remove('hidden');
-                } else {
-                    startProc(name);
-                }
-            }
-
-            // Global Handlers
-            document.getElementById('confirm-yes').onclick = () => { els.modalConfirm.classList.add('hidden'); finalizeSilo(siloToEnd); };
-            document.getElementById('confirm-no').onclick = () => els.modalConfirm.classList.add('hidden');
             
-            document.getElementById('pause-reason-confirm').onclick = () => {
-                const r = document.getElementById('pause-reason-input').value || 'Sem motivo';
-                const s = siloStates[pauseSiloTarget];
-                s.pauses.push({ reason: r, duration: s.paused - s.lastPauseMark });
-                s.lastPauseMark = s.paused;
-                document.getElementById('pause-reason-input').value = '';
-                els.modalPause.classList.add('hidden');
-            };
-
-            document.getElementById('tonnage-confirm').onclick = () => {
-                const val = parseFloat(document.getElementById('tonnage-input').value);
-                if (val > 0) {
-                    const name = document.getElementById('tonnage-silo-name').textContent;
-                    siloStates[name].ton = val;
-                    document.querySelector(`.silo-card[data-name="${name}"] .inp-ton`).value = val;
-                    els.modalTonnage.classList.add('hidden');
-                    startProc(name);
-                }
-            };
-            document.getElementById('tonnage-cancel').onclick = () => {
-                isSequenceRunning = false; document.getElementById('btn-sequencia').disabled = false;
-                els.modalTonnage.classList.add('hidden');
-            };
-
-            document.getElementById('btn-replicate').onclick = () => els.modalCulture.classList.remove('hidden');
-            document.getElementById('close-culture-modal').onclick = () => els.modalCulture.classList.add('hidden');
-            
-            document.querySelectorAll('.culture-option-btn').forEach(btn => {
-                btn.onclick = (e) => {
-                    const c = e.target.dataset.culture;
-                    SILO_NAMES.forEach(n => {
-                        siloStates[n].culture = c;
-                        const card = document.querySelector(`.silo-card[data-name="${n}"]`);
-                        const lb = card.querySelector('.cult-label');
-                        lb.textContent = c; lb.classList.add('text-blue-600', 'font-bold');
-                        if (siloStates[n].ton > 0) {
-                            siloStates[n].estTime = (siloStates[n].ton / CULTURES[c]) * 3600;
-                            updateCardUI(n);
-                        }
-                    });
-                    els.modalCulture.classList.add('hidden');
-                    showNotification('success', 'Cultura replicada.');
-                }
+            safeAddClick('btn-sequencia', ()=>{ if(selectedSilos.length===0) return showNotification('error','Selecione silos'); isSequenceRunning=true; sequenceIndex=0; document.getElementById('btn-sequencia').disabled=true; checkAndStartSeq(selectedSilos[0]); });
+            safeAddClick('confirm-yes', ()=>{ els.modalConfirm.classList.add('hidden'); finalizeSilo(siloToEnd); });
+            safeAddClick('confirm-no', ()=>{ els.modalConfirm.classList.add('hidden'); });
+            safeAddClick('pause-reason-confirm', ()=>{ 
+                const r = document.getElementById('pause-reason-input').value || 'Sem motivo'; 
+                const s = siloStates[pauseSiloTarget]; 
+                const timestamp = s.currentPauseStart || new Date().toISOString();
+                s.pauses.push({ reason: r, duration: s.paused - s.lastPauseMark, ts: timestamp });
+                s.lastPauseMark = s.paused; 
+                s.currentPauseStart = null; 
+                document.getElementById('pause-reason-input').value=''; 
+                els.modalPause.classList.add('hidden'); 
             });
-            
-            document.getElementById('clear-all-btn').onclick = () => {
-                SILO_NAMES.forEach(n => { resetProc(n); siloStates[n].culture = null; });
-                document.querySelectorAll('.cult-label').forEach(el => { el.textContent = 'Nenhuma cultura'; el.classList.remove('text-blue-600', 'font-bold'); });
-                selectedSilos = [];
-                document.querySelectorAll('.selected').forEach(el => { el.classList.remove('selected'); el.querySelector('.seq-badge').classList.add('opacity-0'); });
-                updateSeqBadges();
-            };
+            safeAddClick('tonnage-confirm', ()=>{ const val=parseFloat(document.getElementById('tonnage-input').value); if(val>0){ const n=document.getElementById('tonnage-silo-name').textContent; siloStates[n].ton=val; document.querySelector(`.silo-card[data-name="${n}"] .inp-ton`).value=val; els.modalTonnage.classList.add('hidden'); startProc(n); } });
+            safeAddClick('tonnage-cancel', ()=>{ isSequenceRunning=false; document.getElementById('btn-sequencia').disabled=false; els.modalTonnage.classList.add('hidden'); });
+            safeAddClick('btn-replicate', ()=>{ els.modalCulture.classList.remove('hidden'); });
+            safeAddClick('close-culture-modal', ()=>{ els.modalCulture.classList.add('hidden'); });
+            safeAddClick('clear-all-btn', ()=>{ SILO_NAMES.forEach(n=>{ resetProc(n); siloStates[n].culture=null; const c=document.querySelector(`.silo-card[data-name="${n}"]`); c.querySelector('.cult-label').textContent='Nenhuma cultura'; c.querySelector('.cult-label').classList.remove('text-blue-600','font-bold'); c.classList.remove('selected'); c.querySelector('.seq-badge').classList.remove('opacity-100','scale-100'); }); selectedSilos=[]; updateSeqBadges(); });
+            document.querySelectorAll('.culture-option-btn').forEach(b=>{ b.onclick=(e)=>{ const c=e.target.dataset.culture; SILO_NAMES.forEach(n=>{ siloStates[n].culture=c; const card=document.querySelector(`.silo-card[data-name="${n}"]`); card.querySelector('.cult-label').textContent=c; card.querySelector('.cult-label').classList.add('text-blue-600','font-bold'); if(siloStates[n].ton>0) { siloStates[n].estTime=(siloStates[n].ton/siloCultures[c])*3600; updateCardUI(n); } }); els.modalCulture.classList.add('hidden'); showNotification('success','Cultura replicada'); } });
         });
 
-        // ====================================================
-        // LÓGICA DE DASHBOARD
-        // ====================================================
+        // Dashboard Data (Fetch)
         window.fetchDashboardData = async function() {
             if (!db) return;
-            const tbody = document.querySelector('#silo-detail-table tbody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">Carregando dados...</td></tr>';
-
+            if (!auth.currentUser) { document.querySelector('#silo-detail-table tbody').innerHTML='<tr><td colspan="7" class="text-center py-8 text-red-500">Acesso Restrito</td></tr>'; return; }
             try {
-                const q = query(collection(db, `silo_reports`));
-                const snap = await getDocs(q);
-                cachedData = snap.docs.map(d => d.data());
-                cachedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const q = query(collection(db, `silo_reports`)); const snap = await getDocs(q);
+                cachedData = snap.docs.map(d => d.data()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                currentGlobalFilteredData = cachedData; // Store for local filter reference
                 applyFilters();
-            } catch (e) { console.error(e); showNotification('error', 'Erro ao carregar dados.'); }
-        };
-
-        // Filtros
-        document.getElementById('apply-filters').onclick = applyFilters;
-        document.getElementById('clear-filters').onclick = () => {
-            document.getElementById('filter-start').value = '';
-            document.getElementById('filter-end').value = '';
-            applyFilters();
+            } catch (e) { console.error(e); showNotification('error', 'Erro dados'); }
         };
 
         function applyFilters() {
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
-            
+            const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value;
             let filtered = cachedData;
-            if (start) {
-                const dStart = new Date(start); dStart.setHours(0,0,0,0);
-                filtered = filtered.filter(d => new Date(d.timestamp) >= dStart);
-            }
-            if (end) {
-                const dEnd = new Date(end); dEnd.setHours(23,59,59,999);
-                filtered = filtered.filter(d => new Date(d.timestamp) <= dEnd);
-            }
+            if (start) { const d = new Date(start); d.setHours(0,0,0,0); filtered = filtered.filter(r => new Date(r.timestamp) >= d); }
+            if (end) { const d = new Date(end); d.setHours(23,59,59,999); filtered = filtered.filter(r => new Date(r.timestamp) <= d); }
+            currentGlobalFilteredData = filtered; // Update available dataset for local search
+            renderTable(filtered); updateCharts(filtered); renderPauseAnalysis(filtered);
+        }
 
-            if (filtered.length === 0) {
-                document.querySelector('#silo-detail-table tbody').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">Nenhum registro no período.</td></tr>';
-                updateKPIs(0, 0, 0);
-                return;
+        // New Local Table Filter Logic
+        function filterTableByDate(inputId, type) {
+            const dateVal = document.getElementById(inputId).value;
+            if (!dateVal) return; 
+            
+            // Use current global filtered data as base
+            const baseData = currentGlobalFilteredData || cachedData;
+            
+            // Filter specifically by day
+            const targetDate = new Date(dateVal).toLocaleDateString('pt-BR');
+            const tableSubset = baseData.filter(r => new Date(r.timestamp).toLocaleDateString('pt-BR') === targetDate);
+
+            if(type === 'performance') {
+                renderTable(tableSubset); // Updates only performance table & KPIs locally
+                document.getElementById('btn-table-clear-perf').classList.remove('hidden');
+            } else if(type === 'pauses') {
+                renderPauseAnalysis(tableSubset); // Updates pause table & charts locally
+                document.getElementById('btn-table-clear-pause').classList.remove('hidden');
             }
-            renderTable(filtered);
-            updateCharts(filtered);
+        }
+
+        function clearTableSearch(inputId, btnClearId, type) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(btnClearId).classList.add('hidden');
+            
+            // Restore global filtered view
+            if(type === 'performance') renderTable(currentGlobalFilteredData);
+            else if(type === 'pauses') renderPauseAnalysis(currentGlobalFilteredData);
         }
 
         function renderTable(data) {
-            const tbody = document.querySelector('#silo-detail-table tbody');
-            tbody.innerHTML = '';
-            let totalT = 0, rateSum = 0;
-
-            data.forEach(r => {
-                totalT += r.toneladas || 0;
-                rateSum += r.finalRate || 0;
-                const start = new Date(r.timestamp);
-                const durH = Math.floor(r.totalProcessingSeconds / 3600);
-                const durM = Math.floor((r.totalProcessingSeconds % 3600) / 60);
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="text-xs text-slate-500">${start.toLocaleDateString('pt-BR')} ${start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</td>
-                    <td class="font-medium text-slate-700">${r.siloName}</td>
-                    <td><span class="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded border border-slate-200">${r.culture || '-'}</span></td>
-                    <td class="text-xs text-slate-500">${r.userEmail || 'Desconhecido'}</td>
-                    <td>${durH}h ${durM}min</td>
-                    <td>${r.toneladas.toFixed(2)}</td>
-                    <td class="font-bold ${r.finalRate >= r.targetRate ? 'text-green-600' : 'text-amber-600'}">${r.finalRate.toFixed(2)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            const tbody = document.querySelector('#silo-detail-table tbody'); tbody.innerHTML = '';
+            if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-slate-400">Nenhum dado para este filtro.</td></tr>'; return; }
             
-            updateKPIs(totalT, data.length > 0 ? rateSum / data.length : 0, data.length);
-        }
+            let totalT = 0, rateSum = 0;
+            data.forEach(r => {
+                totalT += r.toneladas||0; rateSum += r.finalRate||0;
+                const d = new Date(r.timestamp);
+                // FIXED: Formatting duration to include seconds HH:MM:SS
+                const totalSec = r.totalProcessingSeconds || 0;
+                const h = Math.floor(totalSec / 3600).toString().padStart(2, '0');
+                const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2, '0');
+                const s = Math.floor(totalSec % 60).toString().padStart(2, '0');
+                const durationStr = `${h}:${m}:${s}`;
 
-        function updateKPIs(totalVol, avgRate, count) {
-            document.getElementById('kpi-toneladas').innerHTML = `${totalVol.toFixed(2)} <span class="text-sm text-slate-400 font-normal">T</span>`;
-            document.getElementById('kpi-performance').innerHTML = `${avgRate.toFixed(2)} <span class="text-sm text-slate-400 font-normal">T/h</span>`;
-            document.getElementById('kpi-count').textContent = count;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="text-xs text-slate-500">${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</td><td class="font-medium">${r.siloName}</td><td>${r.culture||'-'}</td><td class="text-xs">${r.userEmail||'-'}</td><td class="font-mono text-slate-600">${durationStr}</td><td>${r.toneladas.toFixed(2)}</td><td class="font-bold ${r.finalRate>=r.targetRate?'text-green-600':'text-amber-600'}">${r.finalRate.toFixed(2)}</td></tr>`;
+            });
+            // CORRECTED KPI CALCULATION: Weighted Average (Total Ton / Total Hours) instead of simple average of rates
+            let weightedAvgRate = 0;
+            if (data.length > 0) {
+                const totalHours = data.reduce((acc, r) => acc + (r.totalProcessingSeconds / 3600), 0);
+                weightedAvgRate = totalHours > 0 ? (totalT / totalHours) : 0;
+            }
+            
+            document.getElementById('kpi-toneladas').textContent=totalT.toFixed(2); 
+            document.getElementById('kpi-performance').textContent=weightedAvgRate.toFixed(2); 
+            document.getElementById('kpi-count').textContent=data.length;
         }
 
         function updateCharts(data) {
-            const days = {};
-            const prods = {}; 
-
-            data.forEach(r => {
-                const dayStr = new Date(r.timestamp).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-                days[dayStr] = (days[dayStr] || 0) + r.toneladas;
-                
-                const p = r.culture || 'Outros';
-                if(!prods[p]) prods[p] = { sum: 0, count: 0 };
-                prods[p].sum += r.finalRate;
-                prods[p].count++;
-            });
-
-            const dayLabels = Object.keys(days).reverse(); 
-            const dayValues = Object.values(days).reverse();
-            
-            if (chartVolume) chartVolume.destroy();
-            chartVolume = new Chart(document.getElementById('volume-day-chart'), {
-                type: 'line',
-                data: {
-                    labels: dayLabels,
-                    datasets: [{ label: 'Volume (Ton)', data: dayValues, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} }, scales: { y: { beginAtZero: true } } }
-            });
-
-            const prodLabels = Object.keys(prods);
-            const prodValues = prodLabels.map(k => prods[k].sum / prods[k].count);
-            
-            if (chartRate) chartRate.destroy();
-            chartRate = new Chart(document.getElementById('rate-product-chart'), {
-                type: 'bar',
-                data: {
-                    labels: prodLabels,
-                    datasets: [{ label: 'Ritmo Médio (T/h)', data: prodValues, backgroundColor: '#0f172a', borderRadius: 4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} }, scales: { y: { beginAtZero: true } } }
-            });
+            const days = {}, prods = {};
+            data.forEach(r => { const d = new Date(r.timestamp).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); days[d]=(days[d]||0)+r.toneladas; const p=r.culture||'Outros'; if(!prods[p]) prods[p]={sum:0,cnt:0}; prods[p].sum+=r.finalRate; prods[p].cnt++; });
+            if(chartVolume) chartVolume.destroy(); chartVolume = new Chart(document.getElementById('volume-day-chart'), { type: 'line', data: { labels: Object.keys(days).reverse(), datasets: [{ label: 'Vol (T)', data: Object.values(days).reverse(), borderColor:'#3b82f6', fill:true }] }, options:{responsive:true, maintainAspectRatio:false} });
+            if(chartRate) chartRate.destroy(); chartRate = new Chart(document.getElementById('rate-product-chart'), { type: 'bar', data: { labels: Object.keys(prods), datasets: [{ label: 'Ritmo (T/h)', data: Object.keys(prods).map(k=>prods[k].sum/prods[k].cnt), backgroundColor:'#0f172a' }] }, options:{responsive:true, maintainAspectRatio:false} });
         }
 
-        // PDF
-        document.getElementById('btn-export-pdf').onclick = () => {
-            const el = document.getElementById('pdf-content');
-            showNotification('info', 'Gerando PDF...');
-            html2canvas(el, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-                const img = canvas.toDataURL('image/png');
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const w = pdf.internal.pageSize.getWidth();
-                const h = (canvas.height * w) / canvas.width;
-                pdf.setFontSize(16);
-                pdf.text("Relatório de Ritmo e Operações", 10, 15);
-                pdf.setFontSize(10);
-                pdf.text(`Gerado em: ${new Date().toLocaleString()} por ${currentUser?.email || 'Desconhecido'}`, 10, 22);
-                pdf.addImage(img, 'PNG', 0, 30, w, h);
-                pdf.save('Relatorio_Ritmo.pdf');
-                showNotification('success', 'PDF baixado.');
+        function renderPauseAnalysis(data) {
+            let totalSec=0, loss=0, reasons={}, details=[];
+            data.forEach(r => { if(r.totalPauseTime>0) { totalSec+=r.totalPauseTime; loss+=(r.totalPauseTime/3600)*r.targetRate; if(r.pauseReasons) r.pauseReasons.forEach(p => { if(!reasons[p.reason]) reasons[p.reason]={count:0,dur:0}; reasons[p.reason].count++; reasons[p.reason].dur+=p.duration; 
+            
+            // UPDATED: Push timestamp details to array
+            const pauseDate = p.ts ? new Date(p.ts) : new Date(r.timestamp);
+            details.push({d: pauseDate, s:r.siloName, r:p.reason, dur:p.duration, loss:(p.duration/3600)*r.targetRate}); }); } });
+            
+            const h=Math.floor(totalSec/3600), m=Math.floor((totalSec%3600)/60);
+            document.getElementById('kpi-pause-time').textContent=`${h}h ${m}m`; document.getElementById('kpi-pause-loss').textContent=loss.toFixed(2);
+            
+            // CORRECTED: Find max reason by DURATION (Gargalo = Time Lost)
+            let maxReason = 'Nenhum', maxDuration = 0;
+            for (const [k,v] of Object.entries(reasons)) {
+                if(v.dur > maxDuration){ maxDuration=v.dur; maxReason=k; }
+            }
+            document.getElementById('kpi-pause-reason').textContent=maxReason;
+            
+            // Store data globally for modal
+            currentPauseReasonsData = {};
+            Object.entries(reasons).forEach(([k, v]) => {
+                currentPauseReasonsData[k] = { count: v.count, duration: v.dur };
             });
-        };
+            
+            const tbody = document.querySelector('#pause-detail-table tbody'); tbody.innerHTML=''; 
+            
+            if(details.length===0) {
+                tbody.innerHTML='<tr><td colspan="5" class="text-center py-4 text-slate-400">Sem pausas no período.</td></tr>';
+            } else {
+                details.sort((a,b)=>b.loss-a.loss);
+                details.forEach(p=>{ 
+                    // UPDATED: Render date AND time
+                    const dateStr = p.d.toLocaleDateString('pt-BR');
+                    const timeStr = p.d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const pdH = Math.floor(p.dur / 3600).toString().padStart(2, '0');
+                    const pdM = Math.floor((p.dur % 3600) / 60).toString().padStart(2, '0');
+                    const pdS = Math.floor(p.dur % 60).toString().padStart(2, '0');
+                    const pdStr = `${pdH}:${pdM}:${pdS}`;
+                    
+                    // REMOVED THE MINUS SIGN BEFORE p.loss.toFixed(2)
+                    tbody.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="text-xs text-slate-600">${dateStr} <span class="text-slate-400">|</span> ${timeStr}</td><td>${p.s}</td><td>${p.r}</td><td class="font-mono">${pdStr}</td><td class="text-red-600">${p.loss.toFixed(2)} T</td></tr>`; 
+                });
+            }
 
+            const labels=Object.keys(reasons);
+            if(chartPauseReason) chartPauseReason.destroy(); chartPauseReason=new Chart(document.getElementById('pause-reasons-chart'),{type:'doughnut',data:{labels,datasets:[{data:labels.map(k=>reasons[k].count),backgroundColor:['#f59e0b','#ef4444','#64748b','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false}});
+            // CORRECTED: Use toFixed(2) for decimal minutes so small pauses show up
+            if(chartPauseDuration) chartPauseDuration.destroy(); 
+            chartPauseDuration=new Chart(document.getElementById('pause-duration-chart'),{
+                type:'bar',
+                data:{
+                    labels,
+                    datasets:[{
+                        label:'Minutos',
+                        data:labels.map(k=>(reasons[k].dur/60).toFixed(2)), // Allows decimals like 0.5 min
+                        backgroundColor: labels.map((_, i) => `hsl(${30 + i * 30}, 90%, 50%)`) // Distinct colors
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
     </script>
 </body>
 </html>
