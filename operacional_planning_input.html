@@ -377,7 +377,8 @@
                     const statusValue = sectorsState[sector.id]?.status || '';
                     const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
                         text: line.trim(),
-                        completed: false
+                        completed: false,
+                        status: sectorsState[sector.id]?.kanbanStatus || 'todo'
                     }));
 
                     if (atividades.length === 0) {
@@ -431,7 +432,8 @@
                     const statusValue = sectorsState[sector.id]?.status || '';
                     const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
                         text: line.trim(),
-                        completed: false
+                        completed: false,
+                        status: sectorsState[sector.id]?.kanbanStatus || 'todo'
                     }));
 
                     if (atividades.length === 0) {
@@ -588,6 +590,16 @@
                                                 <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'ALTA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'ALTA' ? 'bg-red-600 text-white border-red-600' : 'text-gray-600 hover:bg-red-100'}`}>Alta</button>
                                             </div>
                                         </div>
+
+                                        <div className="mt-3">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                Status Kanban
+                                            </label>
+                                            <div className="flex items-center space-x-1 mt-2">
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], kanbanStatus: 'todo'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.kanbanStatus || 'todo') === 'todo' ? 'bg-gray-500 text-white border-gray-500' : 'text-gray-600 hover:bg-gray-100'}`}>A fazer</button>
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], kanbanStatus: 'doing'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.kanbanStatus || 'todo') === 'doing' ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-600 hover:bg-blue-100'}`}>Fazendo</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -655,7 +667,7 @@
                 };
             }, [db]);
 
-            const handleToggleComplete = async (sectorId, activityIndex) => {
+            const handleUpdateActivityStatus = async (sectorId, activityIndex, newStatus) => {
                 const docRef = db.doc(PUBLIC_PLANNING_PATH);
                 try {
                     const docSnap = await docRef.get();
@@ -666,7 +678,7 @@
                         if (sector.id === sectorId) {
                             const updatedAtividades = sector.atividades.map((atividade, idx) => {
                                 if (idx === activityIndex) {
-                                    return { ...atividade, completed: !atividade.completed };
+                                    return { ...atividade, status: newStatus, completed: newStatus === 'done' };
                                 }
                                 return atividade;
                             });
@@ -700,6 +712,152 @@
 
                 } catch (error) {
                     console.error("Erro ao atualizar observação:", error);
+                }
+            };
+
+            const handleArchiveAndDownload = async () => {
+                if (!planningData) return;
+
+                const doneItems = [];
+                planningData.setores.forEach(sector => {
+                    (sector.atividades || []).forEach(activity => {
+                        if (activity.status === 'done' || activity.completed) {
+                            doneItems.push({
+                                sector: sector.nome,
+                                activity: activity.text,
+                                priority: sector.prioridade || 'NORMAL',
+                                date: planningData.data,
+                                turn: planningData.turno
+                            });
+                        }
+                    });
+                });
+
+                if (doneItems.length === 0) {
+                    alert("Não há itens concluídos para arquivar.");
+                    return;
+                }
+
+                const csvHeader = "Data,Turno,Setor,Atividade,Prioridade\n";
+                const csvRows = doneItems.map(item =>
+                    `"${item.date}","${item.turn}","${item.sector}","${item.activity}","${item.priority}"`
+                ).join("\n");
+                const csvContent = csvHeader + csvRows;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `planejamento_concluido_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                const historyData = {
+                    ...planningData,
+                    archivedAt: new Date().toISOString()
+                };
+                await db.collection('historico_planejamento').add(historyData);
+
+                const newSetores = planningData.setores.map(sector => {
+                    const newAtividades = (sector.atividades || []).filter(
+                        activity => activity.status !== 'done' && !activity.completed
+                    );
+                    return { ...sector, atividades: newAtividades };
+                }).filter(sector => sector.atividades.length > 0);
+
+                await db.doc(PUBLIC_PLANNING_PATH).update({ setores: newSetores });
+
+                alert("Itens concluídos foram arquivados e o download do CSV foi iniciado.");
+            };
+
+            const handleSendToSheet = async () => {
+                if (!planningData) {
+                    alert("Não há dados de planejamento para enviar.");
+                    return;
+                }
+
+                const doneItems = [];
+                planningData.setores.forEach(sector => {
+                    (sector.atividades || []).forEach(activity => {
+                        if (activity.status === 'done' || activity.completed) {
+                            doneItems.push([
+                                planningData.data || '',
+                                planningData.turno || '',
+                                sector.nome || '',
+                                activity.text || '',
+                                sector.prioridade || 'NORMAL'
+                            ]);
+                        }
+                    });
+                });
+
+                if (doneItems.length === 0) {
+                    alert("Não há itens na coluna 'Feito' para enviar.");
+                    return;
+                }
+
+                const appsScriptUrl = "https://script.google.com/a/macros/attosementes.com.br/s/AKfycbzZ6iOyti3qPTfSK-qOoOBhII7phkrRFQdUV91Iaz1mBk7cC-rc0pL2Nhira3dJzgY/exec";
+
+                try {
+                    const response = await fetch(appsScriptUrl, {
+                        method: 'POST',
+                        mode: 'cors', // Important for cross-origin requests
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
+                        body: JSON.stringify(doneItems) // Send the array directly
+                    });
+
+                    if (response.ok) {
+                        // Even if the response is opaque/redirect, 'ok' suggests the request was accepted.
+                        alert(`Sucesso! ${doneItems.length} itens foram enviados para a planilha. A planilha pode levar um momento para atualizar.`);
+                        // Optionally, try to parse JSON but don't fail if it's not JSON
+                        try {
+                            const result = await response.json();
+                            console.log("Resposta do script:", result);
+                        } catch (e) {
+                            console.log("A resposta do script não era JSON. Isso é esperado em alguns casos.");
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        console.error("Falha na requisição HTTP:", response.status, errorText);
+                        alert(`Falha ao contatar o servidor. Status: ${response.status}. Verifique o console para a resposta do servidor.`);
+                    }
+                } catch (error) {
+                    console.error("Erro ao enviar dados para a planilha:", error);
+                    alert("Ocorreu um erro ao enviar os dados. Verifique o console para mais detalhes e certifique-se que está conectado à internet.");
+                }
+            };
+
+            const handleClearDoneColumn = async () => {
+                if (!planningData) return;
+
+                const hasDoneItems = planningData.setores.some(sector => 
+                    (sector.atividades || []).some(activity => activity.status === 'done' || activity.completed)
+                );
+
+                if (!hasDoneItems) {
+                    alert("Não há itens na coluna 'Feito' para limpar.");
+                    return;
+                }
+
+                if (!confirm("Tem certeza que deseja limpar todos os itens da coluna 'Feito'? Esta ação não pode ser desfeita.")) {
+                    return;
+                }
+
+                const newSetores = planningData.setores.map(sector => {
+                    const newAtividades = (sector.atividades || []).filter(
+                        activity => activity.status !== 'done' && !activity.completed
+                    );
+                    return { ...sector, atividades: newAtividades };
+                }).filter(sector => sector.atividades.length > 0 || (sector.observacoes && sector.observacoes.trim() !== '')); // Keep sectors that still have activities or observations
+
+                try {
+                    await db.doc(PUBLIC_PLANNING_PATH).update({ setores: newSetores });
+                    alert("A coluna 'Feito' foi limpa com sucesso.");
+                } catch (error) {
+                    console.error("Erro ao limpar a coluna 'Feito':", error);
+                    alert("Ocorreu um erro ao limpar a coluna. Verifique o console.");
                 }
             };
 
@@ -754,6 +912,77 @@
                     </div>
                 );
             }
+
+            const KanbanBoard = ({ setores, onUpdateActivityStatus, onSendToSheet, onClearDoneColumn }) => {
+                const columns = {
+                    todo: { title: 'A Fazer', atividades: [] },
+                    doing: { title: 'Fazendo', atividades: [] },
+                    done: { title: 'Feito', atividades: [] },
+                };
+
+                setores.forEach(sector => {
+                    (sector.atividades || []).forEach((atividade, index) => {
+                        const card = { sector, atividade, index };
+                        if (atividade.status === 'doing') {
+                            columns.doing.atividades.push(card);
+                        } else if (atividade.status === 'done' || atividade.completed) {
+                            columns.done.atividades.push(card);
+                        } else {
+                            columns.todo.atividades.push(card);
+                        }
+                    });
+                });
+
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {Object.keys(columns).map(key => (
+                            <div key={key} className="bg-gray-100 rounded-lg p-4">
+                                <h3 className="text-lg font-bold text-gray-800 mb-4">{columns[key].title}</h3>
+                                <div className="space-y-4">
+                                    {columns[key].atividades.map(({ sector, atividade, index }) => (
+                                        <div key={`${sector.id}-${index}`} className={`bg-white p-4 rounded-md shadow-sm border-l-4 ${getPriorityClass(sector.prioridade)}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="text-base font-bold text-gray-800">{sector.nome}</h4>
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(sector.prioridade)}`}>
+                                                    {sector.prioridade}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-700">{atividade.text}</p>
+                                            <div className="mt-4 flex justify-end space-x-2">
+                                                {atividade.status !== 'todo' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'todo')} className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded">A fazer</button>
+                                                )}
+                                                {atividade.status !== 'doing' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'doing')} className="text-xs bg-blue-200 hover:bg-blue-300 text-blue-700 px-2 py-1 rounded">Fazendo</button>
+                                                )}
+                                                {atividade.status !== 'done' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'done')} className="text-xs bg-green-200 hover:bg-green-300 text-green-700 px-2 py-1 rounded">Feito</button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {key === 'done' && (
+                                    <div className="mt-4 space-y-2">
+                                        <button
+                                            onClick={onSendToSheet}
+                                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            Enviar para Planilha
+                                        </button>
+                                        <button
+                                            onClick={onClearDoneColumn}
+                                            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            Limpar Coluna 'Feito'
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
             
             return (
                 <div className="min-h-screen bg-gray-50">
@@ -793,53 +1022,17 @@
                             </p>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-                            {sortedSetores.length > 0 ? (
-                                sortedSetores.map(sector => (
-                                    <div key={sector.id} className={`bg-white p-4 rounded-md shadow-sm border-l-4 ${getPriorityClass(sector.prioridade)}`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="text-base font-bold text-gray-800">{sector.nome}</h3>
-                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(sector.prioridade)}`}>
-                                                {sector.prioridade}
-                                            </span>
-                                        </div>
-                                        <div className="mt-2">
-                                            {sector.atividades && sector.atividades.length > 0 ? (
-                                                sector.atividades.map((atividade, index) => (
-                                                    <div key={index} className="flex items-center mt-1">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={atividade.completed || false}
-                                                            onChange={() => handleToggleComplete(sector.id, index)}
-                                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                        />
-                                                        <span className={`ml-2 text-sm text-gray-700 ${atividade.completed ? 'line-through text-gray-500' : ''}`}>
-                                                            {atividade.text}
-                                                        </span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-sm text-gray-700">Nenhum status fornecido.</p>
-                                            )}
-                                        </div>
-                                        <div className="mt-4">
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                                                Observações
-                                            </label>
-                                            <textarea
-                                                placeholder="Adicione observações sobre as atividades..."
-                                                value={sector.observacoes || ''}
-                                                onChange={(e) => handleObservationChange(sector.id, e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-inner text-sm"
-                                                rows="3"
-                                            />
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-center text-gray-500 p-6 col-span-full">Nenhum planejamento disponível.</p>
-                            )}
-                        </div>
+                        {sortedSetores.length > 0 ? (
+                            <KanbanBoard
+                                setores={sortedSetores}
+                                onUpdateActivityStatus={handleUpdateActivityStatus}
+                                onUpdateObservation={handleObservationChange}
+                                onSendToSheet={handleSendToSheet}
+                                onClearDoneColumn={handleClearDoneColumn}
+                            />
+                        ) : (
+                            <p className="text-center text-gray-500 p-6 col-span-full">Nenhum planejamento disponível.</p>
+                        )}
                     </main>
                 </div>
             );
