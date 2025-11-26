@@ -31,6 +31,7 @@
         }
         .silo-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         .silo-card.selected { border: 2px solid #2563eb; background: #eff6ff; }
+        .silo-card.paused { border: 2px solid #f59e0b; background: #fffbeb; } /* Estilo visual para pausa */
         
         .dash-card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .section-title { font-size: 1.125rem; font-weight: 600; color: #334155; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -62,12 +63,15 @@
         .culture-item:hover { border-color: #cbd5e1; }
         
         /* PDCA Styles */
-        .pdca-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .pdca-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
         .pdca-card { padding: 1.5rem; border-radius: 0.75rem; color: white; position: relative; overflow: hidden; }
         .pdca-card h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 700; }
         .pdca-card .value { font-size: 1.75rem; font-weight: 800; }
         .pdca-card .sub { font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem; }
         .pdca-icon { position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg); }
+        
+        @media (min-width: 768px) { .pdca-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .pdca-grid { grid-template-columns: repeat(4, 1fr); } }
     </style>
 </head>
 <body>
@@ -99,7 +103,7 @@
                 <a href="menu.html" class="btn-primary bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">Voltar ao Menu</a>
                 <button onclick="window.app.switchView('dashboard')" class="btn-primary flex items-center gap-2">
                     <span>Painel de Monitoramento</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 </button>
             </div>
         </header>
@@ -136,7 +140,7 @@
             <button class="tab-button active" data-tab="performance">Performance Global</button>
             <button class="tab-button" data-tab="pauses">Gestão de Paradas</button>
             <button class="tab-button" data-tab="individual">Detalhe por Silo</button>
-            <button class="tab-button" data-tab="shift-production">Produção por Turno</button> <!-- NOVA ABA -->
+            <button class="tab-button" data-tab="shift-production">Produção por Turno</button>
             <button class="tab-button" data-tab="config">⚙️ Configuração</button>
         </div>
 
@@ -180,10 +184,8 @@
 
         <!-- Conteúdo Dinâmico -->
         <div id="dashboard-content-container">
-            
             <!-- TAB 1: PERFORMANCE GLOBAL -->
             <div id="tab-performance-content" class="space-y-6">
-                <!-- ... (Mantido como estava) ... -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="dash-card border-l-4 border-blue-500"><p class="text-xs font-bold text-slate-500 uppercase">Ritmo Médio (Global)</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-performance">0.00</span> <span class="text-sm font-normal text-slate-500">T/h</span></h3></div>
                     <div class="dash-card border-l-4 border-indigo-500"><p class="text-xs font-bold text-slate-500 uppercase">Volume Total</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-toneladas">0.00</span> <span class="text-sm font-normal text-slate-500">T</span></h3></div>
@@ -207,7 +209,6 @@
 
             <!-- TAB 2: GESTÃO DE PARADAS -->
             <div id="tab-pauses-content" class="hidden space-y-6">
-                <!-- ... (Mantido como estava) ... -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="dash-card border-l-4 border-amber-500"><p class="text-xs font-bold text-amber-600 uppercase">Tempo Total Parado</p><h3 id="kpi-pause-time" class="text-3xl font-bold text-slate-900 mt-1">0h 0m 0s</h3></div>
                     <div class="dash-card border-l-4 border-red-500"><p class="text-xs font-bold text-red-600 uppercase">Perda Estimada</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-pause-loss">0.00</span> <span class="text-sm font-normal text-slate-500">T</span></h3></div>
@@ -235,7 +236,6 @@
 
             <!-- TAB 3: DETALHE POR SILO -->
             <div id="tab-individual-content" class="hidden space-y-6">
-                <!-- ... (Mantido como estava) ... -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1 space-y-4">
                         <div class="dash-card bg-blue-50 border-blue-100">
@@ -253,77 +253,22 @@
                 <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Histórico do Silo</h3><div class="table-container"><table id="individual-table" class="data-table"><thead><tr><th>Data</th><th>Produto</th><th>Turno</th><th>Duração</th><th>Peso</th><th>Ritmo</th></tr></thead><tbody></tbody></table></div></div>
                 <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Histórico de Paradas (Pausas)</h3><div class="table-container"><table id="individual-pauses-table" class="data-table"><thead><tr><th>Data/Hora</th><th>Motivo</th><th>Duração</th><th>Perda Est. (T)</th></tr></thead><tbody></tbody></table></div></div>
             </div>
-            
-            <!-- TAB 5 (NOVA): PRODUÇÃO POR TURNO (PDCA & ANALYTICS) -->
+
+            <!-- TAB 5: PRODUÇÃO POR TURNO -->
             <div id="tab-shift-production-content" class="hidden space-y-6">
-                
-                <!-- PDCA CYCLE VISUAL -->
-                <div class="pdca-grid">
-                    <div class="pdca-card bg-gradient-to-br from-blue-500 to-blue-700">
-                        <h4>Plan (Planejado)</h4>
-                        <div class="value" id="pdca-plan">0 T</div>
-                        <div class="sub">Meta baseada no histórico</div>
-                        <span class="pdca-icon">P</span>
-                    </div>
-                    <div class="pdca-card bg-gradient-to-br from-purple-500 to-purple-700">
-                        <h4>Do (Executado)</h4>
-                        <div class="value" id="pdca-do">0 T</div>
-                        <div class="sub">Produção real filtrada</div>
-                        <span class="pdca-icon">D</span>
-                    </div>
-                    <div class="pdca-card bg-gradient-to-br from-amber-500 to-amber-600">
-                        <h4>Check (Desvio)</h4>
-                        <div class="value" id="pdca-check">0%</div>
-                        <div class="sub">Variação vs Meta</div>
-                        <span class="pdca-icon">C</span>
-                    </div>
-                    <div class="pdca-card bg-gradient-to-br from-emerald-500 to-emerald-700">
-                        <h4>Act (Ação)</h4>
-                        <div class="value text-lg" id="pdca-act">Manter Ritmo</div>
-                        <div class="sub">Recomendação automática</div>
-                        <span class="pdca-icon">A</span>
-                    </div>
-                </div>
-
-                <!-- GRÁFICOS DE TURNO -->
+                <!-- PDCA REMOVED -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="dash-card">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">Comparativo de Produção por Turno</h3>
-                        <div class="h-72"><canvas id="shift-comparison-chart"></canvas></div>
-                    </div>
-                    <div class="dash-card">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">Eficiência Horária (Média T/h)</h3>
-                        <div class="h-72"><canvas id="hourly-trend-chart"></canvas></div>
-                    </div>
+                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Comparativo de Produção por Turno</h3><div class="h-72"><canvas id="shift-comparison-chart"></canvas></div></div>
+                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Eficiência Horária (Média T/h)</h3><div class="h-72"><canvas id="hourly-trend-chart"></canvas></div></div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- RANKING DE OPERADORES -->
-                    <div class="dash-card lg:col-span-2">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">Ranking de Operadores (Top Produtividade)</h3>
-                        <div class="h-64"><canvas id="user-ranking-chart"></canvas></div>
-                    </div>
-                    
-                    <!-- TABELA RESUMO OPERADORES -->
-                    <div class="dash-card overflow-hidden flex flex-col">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">Detalhe Operadores</h3>
-                        <div class="overflow-y-auto flex-1 pr-2 custom-scroll">
-                            <table class="w-full text-sm" id="user-ranking-table">
-                                <thead class="bg-slate-50 text-slate-500 text-xs uppercase sticky top-0">
-                                    <tr><th class="p-2 text-left">Usuário</th><th class="p-2 text-right">Total (T)</th></tr>
-                                </thead>
-                                <tbody class="text-slate-700 font-medium">
-                                    <!-- JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="dash-card lg:col-span-2"><h3 class="text-sm font-bold text-slate-700 mb-4">Ranking de Operadores (Top Produtividade)</h3><div class="h-64"><canvas id="user-ranking-chart"></canvas></div></div>
+                    <div class="dash-card overflow-hidden flex flex-col"><h3 class="text-sm font-bold text-slate-700 mb-4">Detalhe Operadores</h3><div class="overflow-y-auto flex-1 pr-2 custom-scroll"><table class="w-full text-sm" id="user-ranking-table"><thead class="bg-slate-50 text-slate-500 text-xs uppercase sticky top-0"><tr><th class="p-2 text-left">Usuário</th><th class="p-2 text-right">Total (T)</th></tr></thead><tbody class="text-slate-700 font-medium"></tbody></table></div></div>
                 </div>
             </div>
 
             <!-- TAB 4: CONFIGURAÇÃO -->
             <div id="tab-config-content" class="hidden space-y-6">
-                <!-- ... (Mantido como estava) ... -->
                 <div class="dash-card max-w-5xl mx-auto">
                     <h3 class="text-lg font-bold text-slate-800 mb-6 border-b pb-2">Administração do Sistema</h3>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -388,7 +333,6 @@
         const SILO_NAMES = Array.from({length: 16}, (_, i) => `Silo Pulmão ${String(i + 1).padStart(2, '0')}`);
 
         let app, db, auth, chartVolume, chartRate, chartPauseReason, chartPauseDuration, chartComparison;
-        // Novas variáveis para gráficos da aba de turno
         let chartShiftComp, chartHourlyTrend, chartUserRank;
         let cachedData = [], currentGlobalFilteredData = [], currentUser = null;
         let currentDashboardTab = 'performance';
@@ -401,6 +345,21 @@
              B: { start: "14:00", end: "22:00" },
              C: { start: "22:00", end: "06:00" }
         };
+
+        // Estado Global (Elevado para o escopo do módulo)
+        let selectedSilos = [], siloStates = {}, isSequenceRunning = false, sequenceIndex = 0, siloToEnd = null, pauseSiloTarget = null;
+        
+        // Inicializa o estado dos silos imediatamente
+        SILO_NAMES.forEach(n => {
+             siloStates[n] = {
+                 seconds:0, paused:0, running:false, processed:0, 
+                 pauses:[], culture:null, currentPauseStart:null, 
+                 ton:0, estTime:0, pauseTimer: null 
+             };
+        });
+
+        // Referência DOM Elements (serão populados após load)
+        let els = {};
 
         // 1. Funções de UI (Helper)
         const safeAddClick = (id, handler) => { const el = document.getElementById(id); if(el) el.addEventListener('click', handler); };
@@ -422,7 +381,178 @@
             return `${s}s`;
         }
 
-        // 2. Funções de Dados
+        // 2. Funções de Lógica Operacional (Elevadas para o escopo do módulo)
+        function startProc(n){ 
+            const s=siloStates[n]; 
+            if(s.running) return; 
+            const c=document.querySelector(`.silo-card[data-name="${n}"]`); 
+            s.ton=parseFloat(c.querySelector('.inp-ton').value)||0; 
+            if(s.ton<=0||!s.culture) return showNotification('error','Defina dados'); 
+            
+            // Se estava pausado, finaliza a pausa e reinicia o processo principal
+            if(s.currentPauseStart) {
+                 // Para o cronometro de pausa da UI
+                 if (s.pauseTimer) clearInterval(s.pauseTimer);
+                 s.pauseTimer = null;
+
+                 const pauseDuration = (Date.now() - new Date(s.currentPauseStart).getTime()) / 1000;
+                 s.paused += pauseDuration;
+                 s.pauses.push({
+                     reason: s.pendingPauseReason || 'Retomada',
+                     duration: pauseDuration,
+                     ts: s.currentPauseStart
+                 });
+                 s.currentPauseStart = null;
+                 s.pendingPauseReason = null;
+                 c.querySelector('.disp-pause').classList.add('hidden');
+                 c.classList.remove('paused'); // Remove estilo visual de pausa
+            }
+            
+            if (!s.startTime) s.startTime = Date.now();
+            
+            s.running=true; 
+            clearInterval(s.timer); 
+            // Salva estTime para garantir consistência durante a operação
+            s.estTime = (s.ton / siloCultures[s.culture]) * 3600; 
+            
+            // Timer principal (Processo)
+            s.timer=setInterval(()=>{
+                const now = Date.now();
+                s.seconds = (now - s.startTime) / 1000 - s.paused;
+                s.processed=(siloCultures[s.culture]/3600)*s.seconds; 
+                updateCardUI(n);
+            },1000); 
+            updateCardUI(n); 
+        }
+        
+        function pauseProc(n){ 
+            const s=siloStates[n]; if(!s.running)return; 
+            
+            // 1. Para o timer principal (congela produção)
+            s.running = false; 
+            clearInterval(s.timer); 
+            
+            // 2. Inicia estado de pausa
+            pauseSiloTarget = n; 
+            s.currentPauseStart = new Date().toISOString(); 
+            
+            const c = document.querySelector(`.silo-card[data-name="${n}"]`);
+            c.classList.add('paused'); // Adiciona estilo visual
+            const pauseDisplay = c.querySelector('.disp-pause');
+            pauseDisplay.classList.remove('hidden');
+            
+            // 3. Inicia Cronômetro de Pausa exclusivo para a UI
+            if (s.pauseTimer) clearInterval(s.pauseTimer);
+            s.pauseTimer = setInterval(() => {
+                const now = Date.now();
+                const pauseStart = new Date(s.currentPauseStart).getTime();
+                const elapsedPause = (now - pauseStart) / 1000;
+                pauseDisplay.textContent = `Em Pausa: ${formatDuration(elapsedPause)}`;
+            }, 1000);
+
+            if(els.modalPause) els.modalPause.classList.remove('hidden'); 
+        }
+        
+        function resetProc(n){ 
+            const s=siloStates[n]; 
+            clearInterval(s.timer); 
+            if (s.pauseTimer) clearInterval(s.pauseTimer);
+
+            // Reseta estado completo
+            Object.assign(s, {
+                seconds:0, paused:0, running:false, processed:0, pauses:[], 
+                startTime:null, currentPauseStart:null, 
+                ton:0, estTime:0, pauseTimer: null 
+            }); 
+            
+            document.querySelector(`.silo-card[data-name="${n}"] .inp-ton`).value=''; 
+            const c=document.querySelector(`.silo-card[data-name="${n}"]`);
+            c.classList.remove('paused');
+            c.querySelector('.disp-pause').classList.add('hidden');
+            c.querySelector('.disp-pause').textContent = 'Em Pausa'; // Reset text
+            updateCardUI(n); 
+        }
+        
+        function updateCardUI(n){ 
+            const s=siloStates[n]; const c=document.querySelector(`.silo-card[data-name="${n}"]`); if(!c)return; 
+            
+            const f=v=>new Date(Math.max(0,v)*1000).toISOString().substr(11,8); 
+            
+            // Tempo Decorrido (Crescente) - Congelado se em pausa
+            c.querySelector('.disp-time').textContent=f(s.seconds); 
+            
+            // Volume Processado - Congelado se em pausa
+            c.querySelector('.disp-rate').textContent=s.processed.toFixed(2)+' T'; 
+            
+            // Lógica de Estimativa (Decrescente)
+            let totalEst = 0;
+            if (s.estTime && (s.running || s.paused > 0 || s.seconds > 0)) {
+                totalEst = s.estTime;
+            } else if (s.ton > 0 && s.culture && siloCultures[s.culture]) {
+                totalEst = (s.ton / siloCultures[s.culture]) * 3600;
+            }
+            
+            // Cálculo do tempo restante (Countdown)
+            const remaining = Math.max(0, totalEst - s.seconds);
+            c.querySelector('.disp-est').textContent = f(remaining);
+
+            // Barra de Progresso
+            const pct = totalEst > 0 ? Math.min(100, (s.seconds / totalEst) * 100) : 0; 
+            c.querySelector('.progress-bar').style.width=pct+'%'; 
+        }
+
+        function checkAndStartSeq(n){ 
+            const s=siloStates[n]; 
+            if(!s.culture){
+                isSequenceRunning=false;
+                document.getElementById('btn-sequencia').disabled=false;
+                return showNotification('error','Sem cultura');
+            } 
+            if(s.ton<=0){
+                document.getElementById('tonnage-silo-name').textContent=n;
+                document.getElementById('tonnage-input').value='';
+                if(els.modalTonnage) els.modalTonnage.classList.remove('hidden');
+            } else {
+                startProc(n); 
+            }
+        }
+
+        // Função Global corrigida para aplicar cultura a todos
+        window.applyCultureToAll = (cultureName) => {
+            document.getElementById('culture-selection-modal').classList.add('hidden');
+            SILO_NAMES.forEach(n => {
+                const s = siloStates[n];
+                // Só altera cultura se não estiver rodando ou se estiver pausado
+                if (!s.running) {
+                    s.culture = cultureName;
+                    const card = document.querySelector(`.silo-card[data-name="${n}"]`);
+                    if (card) {
+                        card.querySelector('.cult-label').textContent = cultureName;
+                        card.querySelector('.cult-label').classList.add('text-blue-600','font-bold');
+                    }
+                    // Atualiza estimativa se já houver tonelagem definida
+                    updateCardUI(n);
+                }
+            });
+            showNotification('success', `Cultura '${cultureName}' aplicada aos silos.`);
+        };
+
+        // Função Global para deletar cultura (usada em string onclick)
+        window.deleteCulture = async (cultureName) => {
+            if(confirm(`Deseja excluir a cultura ${cultureName}?`)) {
+                try {
+                    await updateDoc(doc(db, 'silo_config', 'general'), {
+                        [cultureName]: deleteField()
+                    });
+                    // A UI atualizará automaticamente via snapshot listener
+                } catch(e) {
+                    console.error(e);
+                    showNotification('error', 'Erro ao excluir cultura');
+                }
+            }
+        }
+
+        // Funções de Dados (Helpers)
         function parseLocalStart(dateStr) { if (!dateStr) return null; const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 0, 0, 0, 0); }
         function parseLocalEnd(dateStr) { if (!dateStr) return null; const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 23, 59, 59, 999); }
         
@@ -445,16 +575,20 @@
                         document.getElementById('user-display').classList.remove('hidden');
                         if (!document.getElementById('view-dashboard').classList.contains('hidden')) fetchDashboardData();
                         
+                        // Listen for Config Changes
                         if (!configUnsubscribe) {
-                            configUnsubscribe = onSnapshot(doc(db, 'silo_config', 'general'), (snap) => {
+                            // Cultures
+                            onSnapshot(doc(db, 'silo_config', 'general'), (snap) => {
                                 if (snap.exists()) siloCultures = snap.data();
                                 else setDoc(doc(db, 'silo_config', 'general'), DEFAULT_CULTURES);
                                 renderCulturesList();
                             });
                             
+                            // Shifts - New Listener
                             onSnapshot(doc(db, 'silo_config', 'shifts'), (snap) => {
                                 if (snap.exists()) {
                                     shiftConfig = snap.data();
+                                    // Update UI inputs
                                     if(document.getElementById('shift-a-start')) {
                                         document.getElementById('shift-a-start').value = shiftConfig.A?.start || "06:00";
                                         document.getElementById('shift-a-end').value = shiftConfig.A?.end || "14:00";
@@ -476,7 +610,7 @@
                 });
             } catch (e) { console.error(e); showNotification('error', 'Erro de conexão'); }
         }
-        initApp();
+        initApp(); // Chama initApp
 
         // 4. Lógica do Dashboard
         function renderCulturesList() {
@@ -489,34 +623,57 @@
             list.innerHTML = ''; modal.innerHTML = '';
             Object.entries(siloCultures).sort().forEach(([k, v]) => {
                 const div = document.createElement('div'); div.className = 'culture-item'; div.innerHTML = `<div><span class="font-bold block text-sm">${k}</span><span class="text-xs text-slate-500">${v} T/h</span></div><button class="text-red-500 hover:text-red-700 text-sm px-2" onclick="deleteCulture('${k}')">✕</button>`; list.appendChild(div);
-                const btn = document.createElement('button'); btn.className = 'culture-option-btn w-full p-3 border rounded-lg text-left hover:bg-blue-50 mb-1'; btn.innerHTML = `<span class="font-bold text-slate-700 text-sm">${k}</span> <span class="float-right text-xs text-slate-400 mt-0.5">${v} T/h</span>`; btn.onclick=()=>applyCultureToAll(k); modal.appendChild(btn);
+                const btn = document.createElement('button'); btn.className = 'culture-option-btn w-full p-3 border rounded-lg text-left hover:bg-blue-50 mb-1'; btn.innerHTML = `<span class="font-bold text-slate-700 text-sm">${k}</span> <span class="float-right text-xs text-slate-400 mt-0.5">${v} T/h</span>`; 
+                // Aqui chamamos a função que agora está no escopo global
+                btn.onclick = () => window.applyCultureToAll(k); 
+                modal.appendChild(btn);
             });
         }
         
-        // GLOBAL EXPORT FUNCTIONS
+        // GLOBAL EXPORT CSV FUNCTION
         window.exportFullCSV = () => {
              if(!cachedData || cachedData.length === 0) return showNotification('error', 'Sem dados para exportar.');
              const headers = ['Data/Hora', 'Silo', 'Cultura', 'Turno', 'Usuário', 'Duração (s)', 'Volume (T)', 'Taxa Real (T/h)', 'Meta (T/h)', 'Performance'];
              const rows = cachedData.map(r => [
                  new Date(r.timestamp).toLocaleString('pt-BR'),
-                 r.siloName, r.culture, r.shift, r.userEmail, r.totalProcessingSeconds, r.toneladas, r.finalRate, r.targetRate, r.performanceVsTarget
+                 r.siloName,
+                 r.culture,
+                 r.shift,
+                 r.userEmail,
+                 r.totalProcessingSeconds,
+                 r.toneladas,
+                 r.finalRate,
+                 r.targetRate,
+                 r.performanceVsTarget
              ]);
-             const csvContent = "data:text/csv;charset=utf-8," + headers.join(";") + "\n" + rows.map(e => e.join(";")).join("\n");
+             
+             const csvContent = "data:text/csv;charset=utf-8," 
+                 + headers.join(";") + "\n" 
+                 + rows.map(e => e.join(";")).join("\n"); 
+                 
              const encodedUri = encodeURI(csvContent);
              const link = document.createElement("a");
              link.setAttribute("href", encodedUri);
              link.setAttribute("download", `historico_silos_${new Date().toISOString().split('T')[0]}.csv`);
-             document.body.appendChild(link); link.click();
+             document.body.appendChild(link);
+             link.click();
         };
         
+        // GLOBAL EXPORT CONFIG JSON FUNCTION
         window.exportConfigJSON = () => {
              if(!siloCultures) return showNotification('error', 'Configurações não carregadas.');
-             const configData = { cultures: siloCultures, shifts: shiftConfig, exportedAt: new Date().toISOString() };
+             const configData = {
+                 cultures: siloCultures,
+                 shifts: shiftConfig,
+                 exportedAt: new Date().toISOString()
+             };
+             
              const jsonContent = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(configData, null, 2));
              const link = document.createElement("a");
              link.setAttribute("href", jsonContent);
              link.setAttribute("download", `backup_config_silos_${new Date().toISOString().split('T')[0]}.json`);
-             document.body.appendChild(link); link.click();
+             document.body.appendChild(link);
+             link.click();
              showNotification('success', 'Backup de configurações baixado.');
         };
 
@@ -569,16 +726,16 @@
         function applyFilters() {
             const start = document.getElementById('filter-start').value;
             const end = document.getElementById('filter-end').value;
-            const shiftVal = document.getElementById('filter-shift').value;
-            const siloVal = document.getElementById('filter-silo').value;
+            const shift = document.getElementById('filter-shift').value;
+            const silo = document.getElementById('filter-silo').value;
 
             let d = cachedData;
             if(start) { const dt=parseLocalStart(start); d=d.filter(r=>new Date(r.timestamp)>=dt); }
             if(end) { const dt=parseLocalEnd(end); d=d.filter(r=>new Date(r.timestamp)<=dt); }
             
-            if (shiftVal && shiftVal !== 'all') d = d.filter(r => r.shift === shiftVal);
-            if (currentDashboardTab === 'individual' && siloVal && siloVal !== 'all') {
-                d = d.filter(r => r.siloName === siloVal);
+            if (shift && shift !== 'all') d = d.filter(r => r.shift === shift);
+            if (currentDashboardTab === 'individual' && silo && silo !== 'all') {
+                d = d.filter(r => r.siloName === silo);
             }
 
             currentGlobalFilteredData = d;
@@ -589,25 +746,50 @@
             if (currentDashboardTab === 'shift-production') renderShiftProductionTab(d);
         }
 
-        // --- Renderers ---
+        function filterTable(inputId, type) {
+            const val = document.getElementById(inputId).value;
+            if(!val) return;
+            const target = new Date(val).toLocaleDateString('pt-BR');
+            const subset = (currentGlobalFilteredData||cachedData).filter(r => new Date(r.timestamp).toLocaleDateString('pt-BR') === target);
+            if(type==='perf') { renderTable(subset); document.getElementById('btn-table-clear-perf').classList.remove('hidden'); }
+            if(type==='pause') { renderPausesTable(subset); document.getElementById('btn-table-clear-pause').classList.remove('hidden'); }
+        }
+
+        function clearTable(inputId, btnId, type) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(btnId).classList.add('hidden');
+            if(type==='perf') renderTable(currentGlobalFilteredData);
+            if(type==='pause') renderPausesTable(currentGlobalFilteredData);
+        }
+
         function renderPerformanceTab(data) {
-            // (Logic maintained from previous snippet, ensured correct scope)
             let tot=0, hrs=0; data.forEach(r=>{ tot+=r.toneladas||0; hrs+=(r.totalProcessingSeconds||0)/3600; });
             document.getElementById('kpi-toneladas').textContent = tot.toFixed(2);
             document.getElementById('kpi-performance').textContent = (hrs>0 ? tot/hrs : 0).toFixed(2);
             document.getElementById('kpi-count').textContent = data.length;
-            
+
             const days={}, prods={};
             data.forEach(r=>{ 
                 const d=new Date(r.timestamp).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); days[d]=(days[d]||0)+r.toneladas;
                 const p=r.culture||'Outros'; if(!prods[p]) prods[p]={s:0,c:0}; prods[p].s+=r.finalRate; prods[p].c++;
             });
 
-            if(chartVolume) chartVolume.destroy();
-            chartVolume = new Chart(document.getElementById('volume-day-chart'), { type: 'line', data: { labels: Object.keys(days).reverse(), datasets: [{ label: 'Vol (T)', data: Object.values(days).reverse(), borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false } });
-            
-            if(chartRate) chartRate.destroy();
-            chartRate = new Chart(document.getElementById('rate-product-chart'), { type: 'bar', data: { labels: Object.keys(prods), datasets: [{ label: 'Média (T/h)', data: Object.keys(prods).map(k=>prods[k].s/prods[k].c), backgroundColor: '#0f172a', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(2) } }, scales: { y: { beginAtZero: true, grace: '10%' } } } });
+            if(window.ChartDataLabels) {
+                if(chartVolume) chartVolume.destroy();
+                chartVolume = new Chart(document.getElementById('volume-day-chart'), { type: 'line', data: { labels: Object.keys(days).reverse(), datasets: [{ label: 'Vol (T)', data: Object.values(days).reverse(), borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 4, color: '#334155', font: { weight: 'bold', size: 10 }, formatter: (v) => v.toFixed(2), offset: 4 } }, scales: { y: { beginAtZero: true, grace: '15%' } } } });
+                
+                if(chartRate) chartRate.destroy();
+                chartRate = new Chart(document.getElementById('rate-product-chart'), { 
+                    type: 'bar', 
+                    data: { labels: Object.keys(prods), datasets: [{ label: 'Média (T/h)', data: Object.keys(prods).map(k=>prods[k].s/prods[k].c), backgroundColor: '#0f172a', borderRadius: 4 }] }, 
+                    plugins: [window.ChartDataLabels],
+                    options: { 
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(2) } },
+                        scales: { y: { beginAtZero: true, grace: '10%' } }
+                    } 
+                });
+            }
             
             renderTable(data);
         }
@@ -638,18 +820,33 @@
             document.getElementById('kpi-pause-loss').textContent=loss.toFixed(2);
             
             let maxR='Nenhum', maxDuration = 0;
-            for (const [k,v] of Object.entries(reasons)) { if(v > maxDuration){ maxDuration=v; maxR=k; } }
+            for (const [k,v] of Object.entries(reasons)) {
+                if(v > maxDuration){ maxDuration=v; maxR=k; }
+            }
             const maxDurStr = formatDuration(maxDuration);
             document.getElementById('kpi-pause-reason').innerHTML=`${maxR} <span class="block text-sm font-normal text-slate-500">${maxDurStr}</span>`;
 
-            if(chartPauseReason) chartPauseReason.destroy();
-            chartPauseReason=new Chart(document.getElementById('pause-reasons-chart'),{type:'doughnut',data:{labels:Object.keys(reasons),datasets:[{data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:['#f59e0b','#ef4444','#64748b','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false}});
-            
-            if(chartPauseDuration) chartPauseDuration.destroy();
-            chartPauseDuration=new Chart(document.getElementById('pause-duration-chart'),{type:'bar',data:{labels:Object.keys(reasons),datasets:[{label:'Minutos',data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:'#f59e0b'}]}, plugins:[window.ChartDataLabels], options:{responsive:true,maintainAspectRatio:false, plugins:{datalabels:{anchor:'end',align:'top',color:'#334155',font:{weight:'bold'},formatter:(v)=>v}}, scales:{y:{beginAtZero:true,grace:'10%'}}}});
+            if (window.ChartDataLabels) {
+                if(chartPauseReason) chartPauseReason.destroy();
+                chartPauseReason=new Chart(document.getElementById('pause-reasons-chart'),{type:'doughnut',data:{labels:Object.keys(reasons),datasets:[{data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:['#f59e0b','#ef4444','#64748b','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false}});
+                
+                if(chartPauseDuration) chartPauseDuration.destroy();
+                chartPauseDuration=new Chart(document.getElementById('pause-duration-chart'),{
+                    type:'bar',
+                    data:{labels:Object.keys(reasons),datasets:[{label:'Minutos',data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:'#f59e0b'}]},
+                    plugins: [window.ChartDataLabels], 
+                    options:{
+                        responsive:true, maintainAspectRatio:false,
+                        plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v } },
+                        scales: { y: { beginAtZero: true, grace: '10%' } }
+                    }
+                });
+            }
             
             currentPauseReasonsData = {}; 
-            Object.entries(reasons).forEach(([k, v]) => { currentPauseReasonsData[k] = { count: reasonsCount[k] || 1, duration: v }; }); 
+            Object.entries(reasons).forEach(([k, v]) => { 
+                currentPauseReasonsData[k] = { count: reasonsCount[k] || 1, duration: v }; 
+            }); 
 
             renderPausesTable(list);
         }
@@ -673,18 +870,30 @@
             document.getElementById('ind-rate').textContent=(hrs>0?tot/hrs:0).toFixed(2)+' T/h';
 
             const sorted = [...data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-            if(chartComparison) chartComparison.destroy();
-            chartComparison = new Chart(document.getElementById('performance-comparison-chart'), {
-                type:'bar',
-                data: {
-                    labels: sorted.map(r=>new Date(r.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})),
-                    datasets: [
-                        { label:'Real', data:sorted.map(r=>r.finalRate), backgroundColor: sorted.map(r=>r.finalRate>=r.targetRate?'rgba(22, 163, 74, 0.7)':'rgba(220, 38, 38, 0.7)'), borderColor: sorted.map(r => r.finalRate >= r.targetRate ? '#15803d' : '#b91c1c'), borderWidth: 1, order: 2 },
-                        { label:'Meta', data:sorted.map(r=>r.targetRate), type:'line', borderColor:'#3b82f6', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 1 }
-                    ]
-                },
-                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}, plugins: { tooltip: { callbacks: { footer: (items) => { const r=items.find(i=>i.datasetIndex===0)?.raw||0; const m=items.find(i=>i.datasetIndex===1)?.raw||0; const diff=r-m; return `Desvio: ${diff>0?'+':''}${diff.toFixed(2)} T/h`; } } } } }
-            });
+            
+            if (window.ChartDataLabels) {
+                if(chartComparison) chartComparison.destroy();
+                chartComparison = new Chart(document.getElementById('performance-comparison-chart'), {
+                    type:'bar',
+                    data: {
+                        labels: sorted.map(r => {
+                            const d = new Date(r.timestamp);
+                            const time = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                            return [time, r.siloName, r.culture]; 
+                        }),
+                        datasets: [
+                            { label:'Real', data:sorted.map(r=>r.finalRate), backgroundColor: sorted.map(r=>r.finalRate>=r.targetRate?'rgba(22, 163, 74, 0.7)':'rgba(220, 38, 38, 0.7)'), borderColor: sorted.map(r => r.finalRate >= r.targetRate ? '#15803d' : '#b91c1c'), borderWidth: 1, order: 2 },
+                            { label:'Meta', data:sorted.map(r=>r.targetRate), type:'line', borderColor:'#3b82f6', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 1 }
+                        ]
+                    },
+                    options:{
+                        responsive:true, maintainAspectRatio:false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales:{ y:{ beginAtZero:true, title: { display: true, text: 'Ritmo (T/h)' } } },
+                        plugins: { tooltip: { callbacks: { footer: (items) => { const r=items.find(i=>i.datasetIndex===0)?.raw||0; const m=items.find(i=>i.datasetIndex===1)?.raw||0; const diff=r-m; return `Desvio: ${diff>0?'+':''}${diff.toFixed(2)} T/h`; } } } }
+                    }
+                });
+            }
 
             const tb = document.querySelector('#individual-table tbody');
             tb.innerHTML = sorted.map(r => {
@@ -696,150 +905,107 @@
             let pList=[];
             sorted.forEach(r=>{
                 r.pauseReasons?.forEach(p=>{
-                     pList.push({ d:new Date(p.ts||r.timestamp), r:p.reason, dur:p.duration, l:(p.duration/3600)*r.targetRate });
+                    pList.push({ d:new Date(p.ts||r.timestamp), r:p.reason, dur:p.duration, l:(p.duration/3600)*r.targetRate });
                 });
             });
             tbP.innerHTML = pList.sort((a,b)=>b.d-a.d).map(p => {
-                 const d=p.dur;
-                 return `<tr class="border-b"><td class="text-xs">${p.d.toLocaleString('pt-BR')}</td><td>${p.r}</td><td class="font-mono">${Math.floor(d/3600)}:${Math.floor((d%3600)/60)}:${Math.floor(d%60)}</td><td class="text-red-600 font-bold">${p.l.toFixed(2)} T</td></tr>`;
+                const d=p.dur;
+                return `<tr class="border-b"><td class="text-xs">${p.d.toLocaleString('pt-BR')}</td><td>${p.r}</td><td class="font-mono">${Math.floor(d/3600)}:${Math.floor((d%3600)/60)}:${Math.floor(d%60)}</td><td class="text-red-600 font-bold">${p.l.toFixed(2)} T</td></tr>`;
             }).join('') || '<tr><td colspan="4" class="text-center py-4 text-slate-400">Sem pausas</td></tr>';
         }
 
         function renderShiftProductionTab(data) {
-            // Calculate PDCA
-            let plan=0, doVal=0, check=0, actText="Analisando...";
+            // Calculate stats (but no PDCA cards anymore)
             let shiftStats = { 'Turno A': 0, 'Turno B': 0, 'Turno C': 0 };
             let hourlyRate = {};
             let userStats = {};
 
             data.forEach(r => {
-                // Plan: based on target rate * hours active
-                const hoursActive = r.totalProcessingSeconds / 3600;
-                plan += r.targetRate * hoursActive;
-                doVal += r.toneladas;
-
-                // Shift stats
                 if (shiftStats[r.shift] !== undefined) shiftStats[r.shift] += r.toneladas;
-
-                // Hourly stats
                 const hour = new Date(r.timestamp).getHours();
                 if (!hourlyRate[hour]) hourlyRate[hour] = { sum:0, cnt:0 };
-                hourlyRate[hour].sum += r.finalRate;
-                hourlyRate[hour].cnt++;
-
-                // User stats
+                hourlyRate[hour].sum += r.finalRate; hourlyRate[hour].cnt++;
                 if (!userStats[r.userEmail]) userStats[r.userEmail] = 0;
                 userStats[r.userEmail] += r.toneladas;
             });
 
-            // Calculate Check %
-            check = plan > 0 ? ((doVal - plan) / plan) * 100 : 0;
-            
-            // Determine Act
-            if (check >= 0) actText = "Manter Estabilidade";
-            else if (check > -10) actText = "Ajuste Fino";
-            else actText = "Ação Corretiva";
+            if (window.ChartDataLabels) {
+                // 1. Shift Comparison
+                if (chartShiftComp) chartShiftComp.destroy();
+                chartShiftComp = new Chart(document.getElementById('shift-comparison-chart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(shiftStats),
+                        datasets: [{
+                            label: 'Produção (T)',
+                            data: Object.values(shiftStats),
+                            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'],
+                            borderRadius: 4
+                        }]
+                    },
+                    plugins: [window.ChartDataLabels],
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(0) } }, // Fixed color for visibility on white bg above bars
+                        scales: { y: { beginAtZero: true, grace: '10%' } }
+                    }
+                });
 
-            document.getElementById('pdca-plan').textContent = plan.toFixed(0) + " T";
-            document.getElementById('pdca-do').textContent = doVal.toFixed(0) + " T";
-            document.getElementById('pdca-check').textContent = (check > 0 ? "+" : "") + check.toFixed(1) + "%";
-            document.getElementById('pdca-act').textContent = actText;
+                // 2. Hourly Trend
+                if (chartHourlyTrend) chartHourlyTrend.destroy();
+                const hours = Object.keys(hourlyRate).sort((a,b) => a-b);
+                const rates = hours.map(h => hourlyRate[h].sum / hourlyRate[h].cnt);
+                
+                chartHourlyTrend = new Chart(document.getElementById('hourly-trend-chart'), {
+                    type: 'line',
+                    data: {
+                        labels: hours.map(h => `${h}h`),
+                        datasets: [{
+                            label: 'Média T/h',
+                            data: rates,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    plugins: [window.ChartDataLabels],
+                    options: { 
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { datalabels: { anchor: 'end', align: 'top', color: '#f59e0b', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } },
+                        scales: { y: { beginAtZero: true, grace: '10%' } }
+                    }
+                });
 
-            // Charts
-            // 1. Shift Comparison
-            if (chartShiftComp) chartShiftComp.destroy();
-            chartShiftComp = new Chart(document.getElementById('shift-comparison-chart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(shiftStats),
-                    datasets: [{
-                        label: 'Produção (T)',
-                        data: Object.values(shiftStats),
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'],
-                        borderRadius: 4
-                    }]
-                },
-                plugins: [window.ChartDataLabels],
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { datalabels: { anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold' } } },
-                    scales: { y: { beginAtZero: true, grace: '10%' } }
-                }
-            });
+                // 3. User Ranking
+                const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]);
+                
+                if (chartUserRank) chartUserRank.destroy();
+                chartUserRank = new Chart(document.getElementById('user-ranking-chart'), {
+                    type: 'bar', indexAxis: 'y',
+                    data: { labels: sortedUsers.map(u => u[0].split('@')[0]), datasets: [{ label: 'Total (T)', data: sortedUsers.map(u => u[1]), backgroundColor: '#6366f1', borderRadius: 4 }] },
+                    plugins: [window.ChartDataLabels],
+                    options: { 
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { datalabels: { anchor: 'end', align: 'end', color: '#6366f1', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(1) } },
+                        scales: { x: { beginAtZero: true, grace: '15%' } }
+                    }
+                });
 
-            // 2. Hourly Trend
-            if (chartHourlyTrend) chartHourlyTrend.destroy();
-            const hours = Object.keys(hourlyRate).sort((a,b) => a-b);
-            const rates = hours.map(h => hourlyRate[h].sum / hourlyRate[h].cnt);
-            
-            chartHourlyTrend = new Chart(document.getElementById('hourly-trend-chart'), {
-                type: 'line',
-                data: {
-                    labels: hours.map(h => `${h}h`),
-                    datasets: [{
-                        label: 'Média T/h',
-                        data: rates,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 3. User Ranking (Chart & Table)
-            const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]);
-            
-            if (chartUserRank) chartUserRank.destroy();
-            chartUserRank = new Chart(document.getElementById('user-ranking-chart'), {
-                type: 'bar',
-                indexAxis: 'y',
-                data: {
-                    labels: sortedUsers.map(u => u[0].split('@')[0]), // Shorten email
-                    datasets: [{
-                        label: 'Total (T)',
-                        data: sortedUsers.map(u => u[1]),
-                        backgroundColor: '#6366f1',
-                        borderRadius: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const userTable = document.getElementById('user-ranking-table').querySelector('tbody');
-            userTable.innerHTML = sortedUsers.map(u => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-2">${u[0]}</td>
-                    <td class="p-2 text-right font-bold">${u[1].toFixed(2)}</td>
-                </tr>
-            `).join('');
+                const userTable = document.getElementById('user-ranking-table').querySelector('tbody');
+                userTable.innerHTML = sortedUsers.map(u => `<tr class="border-b hover:bg-slate-50"><td class="p-2">${u[0]}</td><td class="p-2 text-right font-bold">${u[1].toFixed(2)}</td></tr>`).join('');
+            }
         }
 
-        // Filter Table Functions... (same as before)
-        function filterTable(inputId, type) {
-            const val = document.getElementById(inputId).value;
-            if(!val) return;
-            const target = new Date(val).toLocaleDateString('pt-BR');
-            const subset = (currentGlobalFilteredData||cachedData).filter(r => new Date(r.timestamp).toLocaleDateString('pt-BR') === target);
-            if(type==='perf') { renderTable(subset); document.getElementById('btn-table-clear-perf').classList.remove('hidden'); }
-            if(type==='pause') { renderPausesTable(subset); document.getElementById('btn-table-clear-pause').classList.remove('hidden'); }
-        }
-
-        function clearTable(inputId, btnId, type) {
-            document.getElementById(inputId).value = '';
-            document.getElementById(btnId).classList.add('hidden');
-            if(type==='perf') renderTable(currentGlobalFilteredData);
-            if(type==='pause') renderPausesTable(currentGlobalFilteredData);
-        }
-
-        // Event Bindings
-        function applyCultureToAll(c) { window.dispatchEvent(new CustomEvent('apply-culture', { detail: { culture: c } })); document.getElementById('culture-selection-modal').classList.add('hidden'); showNotification('success', `Cultura ${c} aplicada.`); }
-        const cList = document.getElementById('cultures-list');
-        if(cList) cList.addEventListener('click', async (e) => { if(e.target.tagName==='BUTTON'){ const span=e.target.parentElement.querySelector('span'); if(span && confirm('Excluir?')) try{ await updateDoc(doc(db,'silo_config','general'),{[span.textContent]:deleteField()}); }catch{} } });
-
+        // Event Handlers
         document.addEventListener('DOMContentLoaded', () => {
             renderCulturesList(); initShiftSelector();
+            
+            // Populando objeto els após DOM load
+            els.modalConfirm = document.getElementById('confirm-modal');
+            els.modalPause = document.getElementById('pause-modal');
+            els.modalTonnage = document.getElementById('tonnage-modal');
+
             const sel = document.getElementById('filter-silo');
             if(sel) SILO_NAMES.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
 
@@ -884,6 +1050,8 @@
                      const max=arr[0].duration;
                      arr.forEach(i=>{
                          const pct=(i.duration/max)*100;
+                         const d=`${Math.floor(i.duration/60)}m`;
+                         const s=Math.floor(i.duration%60);
                          const fullDur = formatDuration(i.duration);
                          l.innerHTML+=`<div class="p-3 bg-slate-50 rounded border mb-2"><div class="flex justify-between mb-1"><span class="font-bold text-sm">${i.r}</span><span class="text-xs font-mono">${fullDur}</span></div><div class="w-full h-2 bg-slate-200 rounded"><div class="h-full bg-amber-500 rounded" style="width:${pct}%"></div></div><div class="text-right text-[10px] text-slate-400 mt-1">${i.count} ocorrência(s)</div></div>`;
                      });
@@ -896,16 +1064,9 @@
             safeAddClick('confirm-no', ()=>document.getElementById('confirm-modal').classList.add('hidden'));
             safeAddClick('tonnage-cancel', ()=>{isSequenceRunning=false; document.getElementById('btn-sequencia').disabled=false; document.getElementById('tonnage-modal').classList.add('hidden');});
 
-            let selectedSilos=[], siloStates={}, isSequenceRunning=false, sequenceIndex=0, siloToEnd=null, pauseSiloTarget=null;
-            const els={modalConfirm:document.getElementById('confirm-modal'), modalPause:document.getElementById('pause-modal'), modalTonnage:document.getElementById('tonnage-modal')};
-
             window.addEventListener('apply-culture', e=>{ const c=e.detail.culture; SILO_NAMES.forEach(n=>{ siloStates[n].culture=c; const card=document.querySelector(`.silo-card[data-name="${n}"]`); card.querySelector('.cult-label').textContent=c; card.querySelector('.cult-label').classList.add('text-blue-600','font-bold'); if(siloStates[n].ton>0){siloStates[n].estTime=(siloStates[n].ton/siloCultures[c])*3600; updateCardUI(n);} }); });
             window.addEventListener('reset-all-silos', ()=>{ SILO_NAMES.forEach(n=>{ resetProc(n); siloStates[n].culture=null; const c=document.querySelector(`.silo-card[data-name="${n}"]`); if(c){c.querySelector('.cult-label').textContent='Nenhuma cultura'; c.querySelector('.cult-label').classList.remove('text-blue-600','font-bold'); c.classList.remove('selected'); c.querySelector('.seq-badge').classList.remove('opacity-100','scale-100');} }); selectedSilos=[]; updateSeqBadges(); });
 
-            SILO_NAMES.forEach(n=>{
-                 siloStates[n]={seconds:0,paused:0,running:false,processed:0,pauses:[],culture:null, currentPauseStart:null};
-            });
-            
             const grid = document.getElementById('silo-grid');
             grid.innerHTML = ''; 
             SILO_NAMES.forEach(name => {
@@ -937,73 +1098,18 @@
                     if(act==='reset') resetProc(name);
                 } else if(!e.target.matches('input')) toggleSelect(name, card);
             });
-            grid.addEventListener('input', e => { if(e.target.matches('.inp-ton')) { const name = e.target.closest('.silo-card').dataset.name; siloStates[name].ton = parseFloat(e.target.value)||0; updateCardUI(name); } });
+            grid.addEventListener('input', e => { 
+                if(e.target.matches('.inp-ton')) { 
+                    const name = e.target.closest('.silo-card').dataset.name; 
+                    siloStates[name].ton = parseFloat(e.target.value)||0; 
+                    updateCardUI(name); 
+                } 
+            });
 
             function toggleSelect(name, card) { const idx = selectedSilos.indexOf(name); if(idx>-1){ selectedSilos.splice(idx,1); card.classList.remove('selected'); card.querySelector('.seq-badge').classList.remove('opacity-100','scale-100'); } else { selectedSilos.push(name); card.classList.add('selected'); card.querySelector('.seq-badge').classList.add('opacity-100','scale-100'); } updateSeqBadges(); }
             function updateSeqBadges() { selectedSilos.forEach((n,i) => document.querySelector(`.silo-card[data-name="${n}"] .seq-badge`).textContent=i+1); document.getElementById('sequence-display-area').classList.toggle('hidden',!selectedSilos.length); if(selectedSilos.length) document.getElementById('global-sequence-display').textContent=`(${selectedSilos.join(', ')})`; }
-            function startProc(n){ 
-                const s=siloStates[n]; 
-                if(s.running) return; 
-                const c=document.querySelector(`.silo-card[data-name="${n}"]`); 
-                s.ton=parseFloat(c.querySelector('.inp-ton').value)||0; 
-                if(s.ton<=0||!s.culture) return showNotification('error','Defina dados'); 
-                
-                if(s.currentPauseStart) {
-                     const pauseDuration = (Date.now() - new Date(s.currentPauseStart).getTime()) / 1000;
-                     s.paused += pauseDuration;
-                     s.pauses.push({
-                         reason: s.pendingPauseReason || 'Retomada',
-                         duration: pauseDuration,
-                         ts: s.currentPauseStart
-                     });
-                     s.currentPauseStart = null;
-                     s.pendingPauseReason = null;
-                     c.querySelector('.disp-pause').classList.add('hidden');
-                }
-                
-                if (!s.startTime) s.startTime = Date.now();
-                
-                s.running=true; 
-                clearInterval(s.timer); 
-                s.estTime=(s.ton/siloCultures[s.culture])*3600; 
-                
-                s.timer=setInterval(()=>{
-                    const now = Date.now();
-                    s.seconds = (now - s.startTime) / 1000 - s.paused;
-                    s.processed=(siloCultures[s.culture]/3600)*s.seconds; 
-                    updateCardUI(n);
-                },1000); 
-                updateCardUI(n); 
-            }
-            
-            function pauseProc(n){ 
-                const s=siloStates[n]; if(!s.running)return; 
-                s.running=false; clearInterval(s.timer); 
-                pauseSiloTarget=n; 
-                s.currentPauseStart=new Date().toISOString(); 
-                const c=document.querySelector(`.silo-card[data-name="${n}"]`);
-                c.querySelector('.disp-pause').classList.remove('hidden');
-                els.modalPause.classList.remove('hidden'); 
-            }
-            
-            function resetProc(n){ 
-                const s=siloStates[n]; clearInterval(s.timer); 
-                Object.assign(s,{seconds:0,paused:0,running:false,processed:0,pauses:[], startTime:null, currentPauseStart:null}); 
-                document.querySelector(`.silo-card[data-name="${n}"] .inp-ton`).value=''; 
-                const c=document.querySelector(`.silo-card[data-name="${n}"]`);
-                c.querySelector('.disp-pause').classList.add('hidden');
-                updateCardUI(n); 
-            }
-            
-            function updateCardUI(n){ 
-                const s=siloStates[n]; const c=document.querySelector(`.silo-card[data-name="${n}"]`); if(!c)return; 
-                const f=v=>new Date(Math.max(0,v)*1000).toISOString().substr(11,8); 
-                c.querySelector('.disp-time').textContent=f(s.seconds); 
-                c.querySelector('.disp-rate').textContent=s.processed.toFixed(2)+' T'; 
-                const pct=s.estTime>0?Math.min(100,(s.seconds/s.estTime)*100):0; 
-                c.querySelector('.progress-bar').style.width=pct+'%'; 
-            }
 
+            // Button Logic
             safeAddClick('btn-sequencia', ()=>{ if(!selectedSilos.length) return showNotification('error','Selecione silos'); isSequenceRunning=true; sequenceIndex=0; document.getElementById('btn-sequencia').disabled=true; checkAndStartSeq(selectedSilos[0]); });
             
             safeAddClick('confirm-yes', ()=>{ 
@@ -1020,14 +1126,18 @@
                     });
                 }
                 
-                const pt=Math.max(1,s.seconds); 
+                const pt=Math.max(1,s.seconds);
+                const calculatedFinalRate = parseFloat(((s.ton / pt) * 3600).toFixed(2));
+                const currentTargetRate = siloCultures[s.culture] || 0;
+                const performanceDiff = parseFloat((calculatedFinalRate - currentTargetRate).toFixed(2));
+
                 if(db&&currentUser){ 
                     addDoc(collection(db,'silo_reports'),{
                         siloName:n,culture:s.culture,toneladas:s.ton,
                         totalProcessingSeconds:pt,totalPauseTime:s.paused,
-                        finalRate:parseFloat(((s.ton/pt)*3600).toFixed(2)),
-                        targetRate:siloCultures[s.culture],
-                        performanceVsTarget:parseFloat((finalRate-siloCultures[s.culture]).toFixed(2)),
+                        finalRate:calculatedFinalRate,
+                        targetRate:currentTargetRate,
+                        performanceVsTarget:performanceDiff,
                         pauseReasons:s.pauses,
                         shift:document.getElementById('current-shift').value,
                         userId:currentUser.uid,userEmail:currentUser.email,timestamp:new Date().toISOString()
@@ -1045,8 +1155,6 @@
             });
             
             safeAddClick('tonnage-confirm', ()=>{ const v=parseFloat(document.getElementById('tonnage-input').value); if(v>0){ const n=document.getElementById('tonnage-silo-name').textContent; siloStates[n].ton=v; document.querySelector(`.silo-card[data-name="${n}"] .inp-ton`).value=v; els.modalTonnage.classList.add('hidden'); startProc(n); } });
-            
-            function checkAndStartSeq(n){ const s=siloStates[n]; if(!s.culture){isSequenceRunning=false;document.getElementById('btn-sequencia').disabled=false;return showNotification('error','Sem cultura');} if(s.ton<=0){document.getElementById('tonnage-silo-name').textContent=n;document.getElementById('tonnage-input').value='';els.modalTonnage.classList.remove('hidden');} else startProc(n); }
         });
     </script>
 </body>
