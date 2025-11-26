@@ -25,7 +25,7 @@
 </head>
 <body class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
 
-    <div class="w-full max-w-5xl mx-auto">
+    <div class="w-full max-w-6xl mx-auto">
         
         <header class="text-center mb-12">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -34,7 +34,8 @@
             <p class="text-lg text-slate-500 mt-2">Selecione a interface desejada:</p>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Grid ajustado para 4 colunas em telas grandes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
 
             <!-- Card A -->
             <a href="operacional_planning_input.html" class="menu-card block p-6 sm:p-8 bg-white border border-slate-200 rounded-xl shadow-lg hover:shadow-2xl hover:bg-blue-50">
@@ -56,15 +57,26 @@
                 <p class="text-slate-500 text-sm mt-1">Visualização e análise de dados planejados.</p>
             </a>
 
-            <!-- Card C -->
-            <a href="index_interfaceCoi.html" class="menu-card block p-6 sm:p-8 bg-white border border-slate-200 rounded-xl shadow-lg hover:shadow-2xl hover:bg-yellow-50">
+            <!-- Card C: Controle de Silos (Operação) -->
+            <a href="controle.html" class="menu-card block p-6 sm:p-8 bg-white border border-slate-200 rounded-xl shadow-lg hover:shadow-2xl hover:bg-yellow-50">
                 <div class="flex items-center justify-between">
                     <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">C</div>
                     <!-- Ícone de Controle -->
                     <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                 </div>
                 <h3 class="text-xl font-bold mt-4 text-slate-800">Controle Silos</h3>
-                <p class="text-slate-500 text-sm mt-1">Operação em tempo real e monitoramento.</p>
+                <p class="text-slate-500 text-sm mt-1">Operação em tempo real e execução.</p>
+            </a>
+
+            <!-- Card D: Dashboard de Silos (Analytics) -->
+            <a href="dashboard.html" class="menu-card block p-6 sm:p-8 bg-white border border-slate-200 rounded-xl shadow-lg hover:shadow-2xl hover:bg-purple-50">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">D</div>
+                    <!-- Ícone de Analytics/Gráfico -->
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold mt-4 text-slate-800">Dashboard Silos</h3>
+                <p class="text-slate-500 text-sm mt-1">Relatórios de performance e KPIs.</p>
             </a>
 
         </div>
