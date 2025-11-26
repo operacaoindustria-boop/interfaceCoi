@@ -47,7 +47,7 @@
     <div id="status-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-xl text-sm font-bold z-50 transition-all duration-300 bg-slate-800 text-white translate-y-0 opacity-100"></div>
 
     <!-- ================= VIEW: CONTROLE ================= -->
-    <section id="view-control" class="max-w-[1600px] mx-auto animate-fade-in">
+    <section id="view-control" class="max-w-[1600px] mx-auto animate-fade-in pb-12">
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-slate-200 pb-6">
             <div>
                 <h1 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Operação</h1>
@@ -82,7 +82,103 @@
         </div>
 
         <div id="sequence-display-area" class="hidden mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg text-center text-blue-800 text-sm font-medium max-w-2xl mx-auto"></div>
-        <div id="silo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        
+        <!-- Grade de Silos (Tempo Real) -->
+        <div id="silo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"></div>
+
+        <!-- ================= NOVA ÁREA: LANÇAMENTO RETROATIVO ================= -->
+        <div class="mt-10 border-t-2 border-slate-200 pt-8">
+            <div class="flex items-center gap-2 mb-6">
+                <div class="bg-slate-800 text-white p-2 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Lançamento Manual / Retroativo</h3>
+                    <p class="text-sm text-slate-500">Utilize esta área para registrar descargas finalizadas que não foram apontadas em tempo real.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-300 shadow-sm p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+                    <!-- Linha 1: Dados Básicos -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Silo</label>
+                        <select id="manual-silo" class="w-full p-2 border rounded bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-700"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cultura</label>
+                        <select id="manual-culture" class="w-full p-2 border rounded bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-700"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Carga Total (Ton)</label>
+                        <input type="number" id="manual-ton" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-slate-800" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Turno</label>
+                        <select id="manual-shift" class="w-full p-2 border rounded bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-700">
+                            <option value="Turno A">Turno A</option>
+                            <option value="Turno B">Turno B</option>
+                            <option value="Turno C">Turno C</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-100 pt-5">
+                    <!-- Coluna Esquerda: Tempos de Processo -->
+                    <div>
+                        <h4 class="text-sm font-bold text-blue-700 mb-3 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Período da Descarga</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Início (Data/Hora)</label>
+                                <input type="datetime-local" id="manual-start-time" class="w-full p-2 border rounded text-sm text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Término (Data/Hora)</label>
+                                <input type="datetime-local" id="manual-end-time" class="w-full p-2 border rounded text-sm text-slate-700">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coluna Direita: Pausas (Múltiplas) -->
+                    <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                        <h4 class="text-sm font-bold text-amber-700 flex items-center gap-2 mb-3"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Registro de Paradas</h4>
+                        
+                        <!-- Inputs para nova pausa -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-2 items-end">
+                            <div class="sm:col-span-4">
+                                <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Início</label>
+                                <input type="datetime-local" id="manual-pause-start" class="w-full p-1.5 border rounded text-xs bg-white text-slate-700">
+                            </div>
+                            <div class="sm:col-span-4">
+                                <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Fim</label>
+                                <input type="datetime-local" id="manual-pause-end" class="w-full p-1.5 border rounded text-xs bg-white text-slate-700">
+                            </div>
+                            <div class="sm:col-span-4">
+                                <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Motivo</label>
+                                <input type="text" id="manual-pause-reason" class="w-full p-1.5 border rounded text-xs bg-white text-slate-700" placeholder="Ex: Manutenção">
+                            </div>
+                        </div>
+                        <button id="btn-add-manual-pause" class="w-full py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded text-xs font-bold mb-3 transition shadow-sm">+ Adicionar Pausa</button>
+
+                        <!-- Lista de pausas adicionadas -->
+                        <div id="manual-pauses-list" class="space-y-1 max-h-32 overflow-y-auto custom-scroll">
+                            <p class="text-xs text-amber-700/50 text-center italic" id="no-pauses-msg">Nenhuma pausa registrada</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkbox Toggle Pausa (Hidden but needed for logic flow if we were toggling, 
+                         but here we always show. Keeping ID ref if needed or just use direct logic) -->
+                     <input type="checkbox" id="has-manual-pause" class="hidden"> 
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="btn-save-manual" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg flex items-center gap-2 transition transform active:scale-95">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Registrar Descarga Retroativa
+                    </button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- Modais -->
@@ -109,6 +205,9 @@
         // Estado Global
         let selectedSilos = [], siloStates = {}, isSequenceRunning = false, sequenceIndex = 0, siloToEnd = null, pauseSiloTarget = null;
         let els = {};
+        
+        // Estado Lançamento Manual
+        let manualPausesList = [];
 
         // Inicializa estado
         SILO_NAMES.forEach(n => {
@@ -142,7 +241,7 @@
             if(sel) sel.value = (h>=6 && h<14) ? 'Turno A' : (h>=14 && h<22) ? 'Turno B' : 'Turno C';
         }
 
-        // Lógica Operacional
+        // Lógica Operacional (Tempo Real)
         function startProc(n){ 
             const s=siloStates[n]; 
             if(s.running) return; 
@@ -240,16 +339,51 @@
             showNotification('success', `Cultura '${cultureName}' aplicada aos silos.`);
         };
 
-        // Renderização de Listas
+        // Renderização de Listas (Corrigido para usar variáveis de escopo e limpar selects)
         function renderCulturesList() {
             const list = document.getElementById('culture-options-container');
-            if (!list) return;
-            list.innerHTML = '';
-            Object.entries(siloCultures).sort().forEach(([k, v]) => {
-                const btn = document.createElement('button'); btn.className = 'culture-option-btn w-full p-3 border rounded-lg text-left hover:bg-blue-50 mb-1'; btn.innerHTML = `<span class="font-bold text-slate-700 text-sm">${k}</span> <span class="float-right text-xs text-slate-400 mt-0.5">${v} T/h</span>`; 
-                btn.onclick = () => window.applyCultureToAll(k); 
-                list.appendChild(btn);
-            });
+            const manualSelect = document.getElementById('manual-culture');
+            
+            // Atualiza dropdown do modal de lote
+            if (list) {
+                list.innerHTML = '';
+                // Fallback para DEFAULT_CULTURES se siloCultures estiver vazio
+                const culturesToRender = (siloCultures && Object.keys(siloCultures).length > 0) ? siloCultures : DEFAULT_CULTURES;
+
+                Object.entries(culturesToRender).sort().forEach(([k, v]) => {
+                    const btn = document.createElement('button'); btn.className = 'culture-option-btn w-full p-3 border rounded-lg text-left hover:bg-blue-50 mb-1'; btn.innerHTML = `<span class="font-bold text-slate-700 text-sm">${k}</span> <span class="float-right text-xs text-slate-400 mt-0.5">${v} T/h</span>`; 
+                    btn.onclick = () => window.applyCultureToAll(k); 
+                    list.appendChild(btn);
+                });
+            }
+
+            // Atualiza dropdown da área manual (Lançamento Retroativo)
+            if (manualSelect) {
+                manualSelect.innerHTML = '<option value="">Selecione...</option>';
+                const culturesToRender = (siloCultures && Object.keys(siloCultures).length > 0) ? siloCultures : DEFAULT_CULTURES;
+
+                Object.keys(culturesToRender).sort().forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    manualSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Função Global para deletar cultura (usada em string onclick)
+        window.deleteCulture = async (cultureName) => {
+            if(confirm(`Deseja excluir a cultura ${cultureName}?`)) {
+                try {
+                    await updateDoc(doc(db, 'silo_config', 'general'), {
+                        [cultureName]: deleteField()
+                    });
+                    // A UI atualizará automaticamente via snapshot listener
+                } catch(e) {
+                    console.error(e);
+                    showNotification('error', 'Erro ao excluir cultura');
+                }
+            }
         }
 
         // Inicialização
@@ -265,8 +399,14 @@
                         document.getElementById('user-display').classList.remove('hidden');
                         if (!configUnsubscribe) {
                             onSnapshot(doc(db, 'silo_config', 'general'), (snap) => {
-                                if (snap.exists()) siloCultures = snap.data();
-                                else setDoc(doc(db, 'silo_config', 'general'), DEFAULT_CULTURES);
+                                if (snap.exists() && Object.keys(snap.data()).length > 0) {
+                                    siloCultures = snap.data();
+                                } else {
+                                    // Se não existir ou estiver vazio, usa defaults
+                                    siloCultures = DEFAULT_CULTURES;
+                                    // Opcional: Salvar defaults no banco se estiver vazio
+                                    if (!snap.exists()) setDoc(doc(db, 'silo_config', 'general'), DEFAULT_CULTURES);
+                                }
                                 renderCulturesList();
                             });
                         }
@@ -281,11 +421,13 @@
         initApp();
 
         document.addEventListener('DOMContentLoaded', () => {
+            renderCulturesList(); // Chama renderização inicial com defaults
             initShiftSelector();
             els.modalConfirm = document.getElementById('confirm-modal');
             els.modalPause = document.getElementById('pause-modal');
             els.modalTonnage = document.getElementById('tonnage-modal');
 
+            // Inicializa Grid de Silos
             const grid = document.getElementById('silo-grid');
             grid.innerHTML = ''; 
             SILO_NAMES.forEach(name => {
@@ -307,6 +449,24 @@
                  grid.appendChild(card);
             });
 
+            // Inicializa Dropdown Silos Manual
+            const manualSiloSelect = document.getElementById('manual-silo');
+            SILO_NAMES.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                manualSiloSelect.appendChild(option);
+            });
+            // Add "Selecione" option first as a placeholder if needed, or handle clearing logic by value.
+            // Better to have a clear default.
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "Selecione...";
+            defaultOption.selected = true;
+            manualSiloSelect.prepend(defaultOption);
+
+
+            // Listeners Gerais
             grid.addEventListener('click', e => {
                 const card = e.target.closest('.silo-card'); if(!card) return; const name = card.dataset.name;
                 const btn = e.target.closest('button');
@@ -372,6 +532,157 @@
             safeAddClick('confirm-no', ()=>document.getElementById('confirm-modal').classList.add('hidden'));
             safeAddClick('tonnage-cancel', ()=>{isSequenceRunning=false; document.getElementById('btn-sequencia').disabled=false; document.getElementById('tonnage-modal').classList.add('hidden');});
             safeAddClick('clear-all-btn', ()=>window.location.reload());
+
+            // =================================================================
+            // LÓGICA DO LANÇAMENTO MANUAL (RETROATIVO)
+            // =================================================================
+            
+            // Renderiza lista de pausas manuais
+            function renderManualPauses() {
+                const list = document.getElementById('manual-pauses-list');
+                if (!list) return;
+                list.innerHTML = '';
+                if (manualPausesList.length === 0) {
+                    list.innerHTML = '<p class="text-xs text-amber-700/50 text-center italic">Nenhuma pausa registrada</p>';
+                    return;
+                }
+                manualPausesList.forEach((p, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-white p-1.5 rounded border border-amber-100 text-xs';
+                    const d = `${new Date(p.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(p.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+                    div.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="font-bold text-amber-800">${p.reason}</span>
+                            <span class="text-[10px] text-gray-500">${d} (${formatDuration(p.duration)})</span>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 font-bold px-1" data-idx="${idx}">×</button>
+                    `;
+                    list.appendChild(div);
+                });
+                // Event delegation para remover
+                list.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idx = parseInt(e.target.dataset.idx);
+                        manualPausesList.splice(idx, 1);
+                        renderManualPauses();
+                    });
+                });
+            }
+
+            // Botão Adicionar Pausa
+            safeAddClick('btn-add-manual-pause', () => {
+                const pStartStr = document.getElementById('manual-pause-start').value;
+                const pEndStr = document.getElementById('manual-pause-end').value;
+                const pReason = document.getElementById('manual-pause-reason').value || "Pausa Manual";
+
+                if (!pStartStr || !pEndStr) return showNotification('error', 'Defina início e fim da pausa.');
+                
+                const pStart = new Date(pStartStr);
+                const pEnd = new Date(pEndStr);
+                
+                // Validações básicas
+                if (pEnd <= pStart) return showNotification('error', 'Fim da pausa deve ser após o início.');
+                
+                const duration = (pEnd - pStart) / 1000;
+                
+                manualPausesList.push({
+                    start: pStart,
+                    end: pEnd,
+                    reason: pReason,
+                    duration: duration,
+                    ts: pStart.toISOString() // Para compatibilidade com o formato do DB
+                });
+                
+                // Limpa inputs
+                document.getElementById('manual-pause-start').value = '';
+                document.getElementById('manual-pause-end').value = '';
+                document.getElementById('manual-pause-reason').value = '';
+                
+                renderManualPauses();
+            });
+
+            // Botão Salvar Manual
+            safeAddClick('btn-save-manual', async () => {
+                if(!currentUser) return showNotification('error', 'Usuário não autenticado.');
+
+                const silo = document.getElementById('manual-silo').value;
+                const culture = document.getElementById('manual-culture').value;
+                const ton = parseFloat(document.getElementById('manual-ton').value);
+                const shift = document.getElementById('manual-shift').value;
+                const startTimeStr = document.getElementById('manual-start-time').value;
+                const endTimeStr = document.getElementById('manual-end-time').value;
+
+                // Validações Básicas
+                if (!silo || !culture || !ton || !shift || !startTimeStr || !endTimeStr) {
+                    return showNotification('error', 'Preencha todos os campos obrigatórios.');
+                }
+
+                const start = new Date(startTimeStr);
+                const end = new Date(endTimeStr);
+
+                if (end <= start) {
+                    return showNotification('error', 'Data de término deve ser maior que início.');
+                }
+
+                // Cálculos de Tempo
+                const totalDurationSeconds = (end - start) / 1000;
+                let totalPauseSeconds = 0;
+                
+                // Soma todas as pausas da lista
+                manualPausesList.forEach(p => {
+                    totalPauseSeconds += p.duration;
+                });
+
+                const processingSeconds = Math.max(1, totalDurationSeconds - totalPauseSeconds); 
+                
+                // Cálculos Finais com VALIDAÇÃO DE META
+                const calculatedFinalRate = parseFloat(((ton / processingSeconds) * 3600).toFixed(2));
+                // Garante que a meta seja pega do siloCultures atual
+                const currentTargetRate = (siloCultures && siloCultures[culture]) ? siloCultures[culture] : 0;
+                const performanceDiff = parseFloat((calculatedFinalRate - currentTargetRate).toFixed(2));
+
+                // Envio ao Firestore
+                try {
+                    await addDoc(collection(db, 'silo_reports'), {
+                        siloName: silo,
+                        culture: culture,
+                        toneladas: ton,
+                        totalProcessingSeconds: processingSeconds,
+                        totalPauseTime: totalPauseSeconds,
+                        finalRate: calculatedFinalRate,
+                        targetRate: currentTargetRate,
+                        performanceVsTarget: performanceDiff,
+                        pauseReasons: manualPausesList, // Envia a lista completa
+                        shift: shift,
+                        userId: currentUser.uid,
+                        userEmail: currentUser.email,
+                        timestamp: end.toISOString(), 
+                        isManualEntry: true 
+                    });
+
+                    showNotification('success', 'Lançamento manual registrado com sucesso!');
+                    
+                    // Limpar formulário completo
+                    document.getElementById('manual-silo').value = ''; // Resetar Select
+                    document.getElementById('manual-culture').value = ''; // Resetar Select
+                    document.getElementById('manual-ton').value = '';
+                    document.getElementById('manual-shift').selectedIndex = 0; // Resetar para o primeiro
+                    document.getElementById('manual-start-time').value = '';
+                    document.getElementById('manual-end-time').value = '';
+                    
+                    // Limpar inputs de pausa
+                    document.getElementById('manual-pause-start').value = '';
+                    document.getElementById('manual-pause-end').value = '';
+                    document.getElementById('manual-pause-reason').value = '';
+                    
+                    manualPausesList = []; // Limpa lista de pausas
+                    renderManualPauses();
+
+                } catch (e) {
+                    console.error(e);
+                    showNotification('error', 'Erro ao salvar registro manual.');
+                }
+            });
         });
     </script>
 </body>

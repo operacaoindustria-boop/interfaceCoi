@@ -31,24 +31,7 @@
     <!-- Container Principal -->
     <div id="app-container" class="container mx-auto p-4 md:p-8">
 
-        <!-- TELA DE LOGIN -->
-        <div id="login-view">
-            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8 mt-10">
-                <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Acesso Restrito - Produtor</h2>
-                <div id="login-error" class="hidden text-red-500 text-sm mb-4 text-center"></div>
-                <form id="login-form">
-                    <div class="mb-4">
-                        <label for="email" class="block text-gray-600 mb-2">Email</label>
-                        <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    </div>
-                    <div class="mb-6">
-                        <label for="password" class="block text-gray-600 mb-2">Senha</label>
-                        <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">Entrar</button>
-                </form>
-            </div>
-        </div>
+
 
         <!-- APLICAÇÃO PRINCIPAL (Produtor & Consumidor) -->
         <div id="main-app-view" class="hidden">
@@ -131,12 +114,7 @@
         const planningDocRef = db.collection("planejamento_coi").doc("status_publico");
 
         // --- ELEMENTOS DA UI ---
-        const loginView = document.getElementById('login-view');
-        const mainAppView = document.getElementById('main-app-view');
-        const producerView = document.getElementById('producer-view');
-        const consumerView = document.getElementById('consumer-view');
-        const loginForm = document.getElementById('login-form');
-        const loginError = document.getElementById('login-error');
+
         const logoutButton = document.getElementById('logout-button');
         const planningForm = document.getElementById('planning-form');
         const feedbackMessage = document.getElementById('feedback-message');
@@ -155,13 +133,10 @@
         // --- LÓGICA DE AUTENTICAÇÃO (MÓDULO A) ---
         auth.onAuthStateChanged(user => {
             if (user) {
-                loginView.classList.add('hidden');
                 mainAppView.classList.remove('hidden');
                 producerView.classList.remove('hidden');
             } else {
-                loginView.classList.remove('hidden');
-                mainAppView.classList.remove('hidden');
-                producerView.classList.add('hidden');
+                window.location.href = 'index.html';
             }
         });
 

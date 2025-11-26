@@ -1295,21 +1295,24 @@
         let currentUser = null;
 
         auth.onAuthStateChanged((user) => {
-            currentUser = user;
-            const userEmailSpan = document.getElementById('user-email');
-            if (userEmailSpan) {
-                userEmailSpan.textContent = user ? user.email : 'Convidado';
-            }
-            const logoutButton = document.getElementById('logout-button');
-            if (logoutButton) {
-                logoutButton.style.display = user ? 'inline-block' : 'none';
+            if (user) {
+                currentUser = user;
+                const userEmailSpan = document.getElementById('user-email');
+                if (userEmailSpan) {
+                    userEmailSpan.textContent = user.email;
+                }
+                const logoutButton = document.getElementById('logout-button');
+                if (logoutButton) {
+                    logoutButton.style.display = 'inline-block';
+                }
+            } else {
+                window.location.href = 'index.html';
             }
         });
 
         function handleLogout() {
             auth.signOut().then(() => {
-                // Redirect to login page or planning page after logout
-                window.location.href = 'operacional_planning_input.html';
+                window.location.href = 'index.html';
             }).catch(e => console.error("Erro ao deslogar:", e));
         }
     </script>

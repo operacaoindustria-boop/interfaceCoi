@@ -361,19 +361,37 @@
         async function fetchDashboardData() {
             if(!db || !auth.currentUser) return;
             try {
-                const snap = await getDocs(query(collection(db, `silo_reports`)));
-                cachedData = snap.docs.map(d => d.data()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                currentGlobalFilteredData = cachedData;
-                applyFilters();
+                // Agora com onSnapshot para atualizações em tempo real
+                // Isso garante que novos dados inseridos no controle apareçam imediatamente
+                const q = query(collection(db, `silo_reports`));
+                
+                // Salva unsubscribe se quiser limpar depois, mas aqui é global
+                onSnapshot(q, (snap) => {
+                    // Mapeia e salva o ID junto com os dados
+                    cachedData = snap.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    currentGlobalFilteredData = cachedData;
+                    applyFilters();
+                });
             } catch(e) { console.error(e); showNotification('error','Erro dados'); }
         };
 
         function applyFilters() {
+            // 1. Obter Lista Negra de IDs do Session Storage
+            const hiddenIdsJson = sessionStorage.getItem('dashboard_hidden_ids');
+            const hiddenIds = hiddenIdsJson ? JSON.parse(hiddenIdsJson) : [];
+
             const start = document.getElementById('filter-start').value;
             const end = document.getElementById('filter-end').value;
             const shift = document.getElementById('filter-shift').value;
             const silo = document.getElementById('filter-silo').value;
+            
             let d = cachedData;
+            
+            // 2. Aplicar Filtro de "Reset" por ID
+            if (hiddenIds.length > 0) {
+                d = d.filter(r => !hiddenIds.includes(r.id));
+            }
+
             if(start) { const dt=parseLocalStart(start); d=d.filter(r=>new Date(r.timestamp)>=dt); }
             if(end) { const dt=parseLocalEnd(end); d=d.filter(r=>new Date(r.timestamp)<=dt); }
             if (shift && shift !== 'all') d = d.filter(r => r.shift === shift);
@@ -517,7 +535,31 @@
             
             safeAddClick('btn-clear-db', ()=>document.getElementById('clear-db-modal').classList.remove('hidden'));
             safeAddClick('cancel-clear-db', ()=>document.getElementById('clear-db-modal').classList.add('hidden'));
-            safeAddClick('confirm-clear-db', ()=>{document.getElementById('clear-db-modal').classList.add('hidden');cachedData=[];renderTable([]);showNotification('success','Limpo');});
+            
+            // HERE IS THE FIX:
+            safeAddClick('confirm-clear-db', () => {
+                document.getElementById('clear-db-modal').classList.add('hidden');
+                
+                // 1. Captura todos os IDs atualmente visíveis
+                const currentIds = cachedData.map(d => d.id);
+                
+                // 2. Salva no Session Storage (Lista Negra de IDs)
+                // Se já existirem IDs ocultos, mescla com os novos
+                const existingHidden = sessionStorage.getItem('dashboard_hidden_ids');
+                let newHiddenList = existingHidden ? JSON.parse(existingHidden) : [];
+                
+                // Adiciona apenas IDs novos para evitar duplicatas
+                currentIds.forEach(id => {
+                    if(!newHiddenList.includes(id)) newHiddenList.push(id);
+                });
+                
+                sessionStorage.setItem('dashboard_hidden_ids', JSON.stringify(newHiddenList));
+                
+                // 3. Atualiza a interface (applyFilters vai ler essa lista e filtrar)
+                applyFilters(); 
+                
+                showNotification('success', 'Visualização limpa localmente.');
+            });
             
             safeAddClick('btn-view-bottlenecks', ()=>{
                  const l=document.getElementById('bottleneck-list'); l.innerHTML='';

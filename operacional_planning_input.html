@@ -133,6 +133,7 @@
                 } else {
                     try {
                         await auth.signInWithEmailAndPassword(email, password);
+                        window.location.href = 'menu.html';
                     } catch (err) {
                         console.error("Erro de Autenticação:", err);
                         if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
@@ -796,37 +797,15 @@
                     return;
                 }
 
-                const appsScriptUrl = "https://script.google.com/a/macros/attosementes.com.br/s/AKfycbzZ6iOyti3qPTfSK-qOoOBhII7phkrRFQdUV91Iaz1mBk7cC-rc0pL2Nhira3dJzgY/exec";
-
-                try {
-                    const response = await fetch(appsScriptUrl, {
-                        method: 'POST',
-                        mode: 'cors', // Important for cross-origin requests
-                        headers: {
-                            'Content-Type': 'text/plain;charset=utf-8',
-                        },
-                        body: JSON.stringify(doneItems) // Send the array directly
-                    });
-
-                    if (response.ok) {
-                        // Even if the response is opaque/redirect, 'ok' suggests the request was accepted.
-                        alert(`Sucesso! ${doneItems.length} itens foram enviados para a planilha. A planilha pode levar um momento para atualizar.`);
-                        // Optionally, try to parse JSON but don't fail if it's not JSON
-                        try {
-                            const result = await response.json();
-                            console.log("Resposta do script:", result);
-                        } catch (e) {
-                            console.log("A resposta do script não era JSON. Isso é esperado em alguns casos.");
-                        }
-                    } else {
-                        const errorText = await response.text();
-                        console.error("Falha na requisição HTTP:", response.status, errorText);
-                        alert(`Falha ao contatar o servidor. Status: ${response.status}. Verifique o console para a resposta do servidor.`);
-                    }
-                } catch (error) {
-                    console.error("Erro ao enviar dados para a planilha:", error);
-                    alert("Ocorreu um erro ao enviar os dados. Verifique o console para mais detalhes e certifique-se que está conectado à internet.");
-                }
+                const headers = ['Data', 'Turno', 'Setor', 'Atividade', 'Prioridade'];
+                const csvContent = "data:text/csv;charset=utf-8," + headers.join(";") + "\n" + doneItems.map(e => e.join(";")).join("\n");
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", `planejamento_concluido_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
 
             const handleClearDoneColumn = async () => {
