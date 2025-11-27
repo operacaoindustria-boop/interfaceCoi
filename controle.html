@@ -167,7 +167,7 @@
                     </div>
                     
                     <!-- Checkbox Toggle Pausa (Hidden but needed for logic flow if we were toggling, 
-                         but here we always show. Keeping ID ref if needed or just use direct logic) -->
+                          but here we always show. Keeping ID ref if needed or just use direct logic) -->
                      <input type="checkbox" id="has-manual-pause" class="hidden"> 
                 </div>
 
@@ -657,6 +657,7 @@
                         userId: currentUser.uid,
                         userEmail: currentUser.email,
                         timestamp: end.toISOString(), 
+                        createdAt: new Date().toISOString(), // ADICIONADO: Garante que o dashboard veja este dado como "novo"
                         isManualEntry: true 
                     });
 

@@ -397,7 +397,14 @@
 
             // APLICA O FILTRO DE RESET GLOBAL
             if (globalResetTimestamp) {
-                d = d.filter(r => new Date(r.timestamp) > globalResetTimestamp);
+                // LÓGICA CORRIGIDA (Senior Dev Fix):
+                // Verifica primeiro se existe um campo 'createdAt' (Data de Inserção Real).
+                // Se o campo não existir, cai no fallback da data da operação 'timestamp' (comportamento antigo).
+                // Isso permite que dados retroativos (com timestamp antigo) apareçam se tiverem sido inseridos (createdAt) DEPOIS do reset.
+                d = d.filter(r => {
+                    const insertionTime = r.createdAt ? new Date(r.createdAt) : (r.insertedAt ? new Date(r.insertedAt) : new Date(r.timestamp));
+                    return insertionTime > globalResetTimestamp;
+                });
             }
 
             if(start) { const dt=parseLocalStart(start); d=d.filter(r=>new Date(r.timestamp)>=dt); }
@@ -556,6 +563,7 @@
                 
                 if (cachedData && cachedData.length > 0) {
                     // Busca a maior data entre os dados carregados, mesmo que seja futura
+                    // (para garantir que dados "do futuro" também sejam limpos se já existirem)
                     const dataMaxTs = Math.max(...cachedData.map(r => new Date(r.timestamp).getTime()));
                     if (dataMaxTs > maxTs) {
                         maxTs = dataMaxTs + 1000; // Adiciona margem de 1s
