@@ -149,7 +149,8 @@
                             <button id="btn-table-clear-perf" class="text-slate-400 hover:text-red-500 hidden"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         </div>
                     </div>
-                    <div class="table-container"><table id="silo-detail-table" class="data-table"><thead><tr><th>Data</th> <th>Silo</th> <th>Produto</th> <th>Usuário</th> <th>Duração</th> <th>Peso (T)</th> <th>Ritmo (T/h)</th></tr></thead><tbody><tr id="loading-row"><td colspan="7" class="text-center py-8 text-slate-400">Carregando dados...</td></tr></tbody></table></div>
+                    <!-- Adicionada coluna "Ações" -->
+                    <div class="table-container"><table id="silo-detail-table" class="data-table"><thead><tr><th>Data</th> <th>Silo</th> <th>Produto</th> <th>Usuário</th> <th>Duração</th> <th>Peso (T)</th> <th>Ritmo (T/h)</th> <th class="text-center">Ações</th></tr></thead><tbody><tr id="loading-row"><td colspan="8" class="text-center py-8 text-slate-400">Carregando dados...</td></tr></tbody></table></div>
                 </div>
             </div>
 
@@ -261,6 +262,9 @@
     <!-- Modais do Dashboard -->
     <div id="bottleneck-modal" class="modal hidden"><div class="modal-content max-w-2xl"><div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"><div><h3 class="text-xl font-bold text-slate-900">Ranking de Motivos</h3><p class="text-sm text-slate-500 mt-1">Ordenado por impacto na produção.</p></div><button id="close-bottleneck-modal" class="p-2 rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div><div id="bottleneck-list" class="space-y-3 max-h-[60vh] overflow-y-auto custom-scroll pr-2"></div></div></div>
     <div id="clear-db-modal" class="modal hidden"><div class="modal-content text-center border-t-4 border-orange-500"><div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4"><svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div><h3 class="text-xl font-bold mb-2 text-slate-900">Limpar Visualização Global?</h3><p class="mb-6 text-slate-600 text-sm">Isso ocultará todos os dados atuais para <strong>todos os usuários conectados</strong>. Os dados históricos continuarão no banco.</p><div class="flex justify-center gap-3"><button id="confirm-clear-db" class="btn-primary bg-orange-500 hover:bg-orange-600">Sim, Limpar Globalmente</button><button id="cancel-clear-db" class="btn-primary bg-slate-200 text-slate-700 hover:bg-slate-300">Cancelar</button></div></div></div>
+    
+    <!-- Novo Modal de Exclusão de Registro -->
+    <div id="delete-modal" class="modal hidden"><div class="modal-content text-center border-t-4 border-red-500"><div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"><svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></div><h3 class="text-xl font-bold mb-2 text-slate-900">Excluir Registro?</h3><p class="mb-6 text-slate-600 text-sm">Esta ação removerá este lançamento do histórico permanentemente.</p><div class="flex justify-center gap-3"><button id="confirm-delete-btn" class="btn-primary bg-red-600 hover:bg-red-700">Confirmar Exclusão</button><button id="cancel-delete-btn" class="btn-primary bg-slate-200 text-slate-700 hover:bg-slate-300">Cancelar</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -281,6 +285,9 @@
         
         // Variável global para o Timestamp de Reset
         let globalResetTimestamp = null;
+        
+        // Variável para armazenar ID do item a ser deletado
+        let deleteTargetId = null;
 
         const safeAddClick = (id, handler) => { const el = document.getElementById(id); if(el) el.addEventListener('click', handler); };
         
@@ -294,6 +301,12 @@
         function formatDuration(seconds) { const h = Math.floor(seconds/3600), m = Math.floor((seconds%3600)/60), s = Math.floor(seconds%60); return h>0?`${h}h ${m}m ${s}s`:m>0?`${m}m ${s}s`:`${s}s`; }
         function parseLocalStart(dateStr) { if (!dateStr) return null; const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 0, 0, 0, 0); }
         function parseLocalEnd(dateStr) { if (!dateStr) return null; const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 23, 59, 59, 999); }
+
+        // Global function for delete button in table rows
+        window.initDelete = (id) => {
+            deleteTargetId = id;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        };
 
         async function initApp() {
             try {
@@ -380,7 +393,8 @@
                 const q = query(collection(db, `silo_reports`));
                 
                 onSnapshot(q, (snap) => {
-                    cachedData = snap.docs.map(d => d.data()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    // MODIFICADO: Agora mapeamos incluindo o ID do documento para permitir exclusão
+                    cachedData = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                     currentGlobalFilteredData = cachedData;
                     applyFilters(); // Atualiza a tela sempre que um novo dado chegar
                 });
@@ -397,10 +411,7 @@
 
             // APLICA O FILTRO DE RESET GLOBAL
             if (globalResetTimestamp) {
-                // LÓGICA CORRIGIDA (Senior Dev Fix):
-                // Verifica primeiro se existe um campo 'createdAt' (Data de Inserção Real).
-                // Se o campo não existir, cai no fallback da data da operação 'timestamp' (comportamento antigo).
-                // Isso permite que dados retroativos (com timestamp antigo) apareçam se tiverem sido inseridos (createdAt) DEPOIS do reset.
+                // Lógica Inteligente para manter dados retroativos novos visíveis
                 d = d.filter(r => {
                     const insertionTime = r.createdAt ? new Date(r.createdAt) : (r.insertedAt ? new Date(r.insertedAt) : new Date(r.timestamp));
                     return insertionTime > globalResetTimestamp;
@@ -418,8 +429,7 @@
             if (currentDashboardTab === 'shift-production') renderShiftProductionTab(d);
         }
 
-        // Chart and Table Render functions (omitted for brevity but included in structure logic same as before)
-        // ... [The renderPerformanceTab, renderPausesTab, etc., logic goes here identical to previous]
+        // Chart and Table Render functions
         
         function renderPerformanceTab(data) {
             let tot=0, hrs=0; data.forEach(r=>{ tot+=r.toneladas||0; hrs+=(r.totalProcessingSeconds||0)/3600; });
@@ -442,11 +452,21 @@
 
         function renderTable(data) {
             const tb = document.querySelector('#silo-detail-table tbody'); tb.innerHTML = '';
-            if(!data.length) { tb.innerHTML='<tr><td colspan="7" class="text-center py-4 text-slate-400">Sem dados</td></tr>'; return; }
+            if(!data.length) { tb.innerHTML='<tr><td colspan="8" class="text-center py-4 text-slate-400">Sem dados</td></tr>'; return; }
             tb.innerHTML = data.map(r => {
                 const d=new Date(r.timestamp); const s=r.totalProcessingSeconds;
                 const dur = `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${Math.floor(s%60)}s`;
-                return `<tr class="hover:bg-slate-50 border-b"><td class="text-xs text-slate-500">${d.toLocaleString('pt-BR')}</td><td>${r.siloName}</td><td>${r.culture}</td><td>${r.userEmail}</td><td class="font-mono text-xs">${dur}</td><td>${r.toneladas.toFixed(2)}</td><td class="font-bold ${r.finalRate>=r.targetRate?'text-green-600':'text-red-600'}">${r.finalRate.toFixed(2)}</td></tr>`;
+                // ADICIONADO: Botão de exclusão na coluna de ações
+                return `<tr class="hover:bg-slate-50 border-b">
+                    <td class="text-xs text-slate-500">${d.toLocaleString('pt-BR')}</td>
+                    <td>${r.siloName}</td>
+                    <td>${r.culture}</td>
+                    <td>${r.userEmail}</td>
+                    <td class="font-mono text-xs">${dur}</td>
+                    <td>${r.toneladas.toFixed(2)}</td>
+                    <td class="font-bold ${r.finalRate>=r.targetRate?'text-green-600':'text-red-600'}">${r.finalRate.toFixed(2)}</td>
+                    <td class="text-center"><button onclick="initDelete('${r.id}')" class="text-slate-400 hover:text-red-600 transition p-1" title="Excluir Registro"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td>
+                </tr>`;
             }).join('');
         }
 
@@ -517,7 +537,7 @@
                 chartHourlyTrend = new Chart(document.getElementById('hourly-trend-chart'), { type: 'line', data: { labels: hours.map(h => `${h}h`), datasets: [{ label: 'Média T/h', data: rates, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#f59e0b', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { y: { beginAtZero: true } } } });
                 const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]);
                 if (chartUserRank) chartUserRank.destroy();
-                chartUserRank = new Chart(document.getElementById('user-ranking-chart'), { type: 'bar', indexAxis: 'y', data: { labels: sortedUsers.map(u => u[0].split('@')[0]), datasets: [{ label: 'Total (T)', data: sortedUsers.map(u => u[1]), backgroundColor: '#6366f1', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'end', color: '#6366f1', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(1) } }, scales: { x: { beginAtZero: true } } } });
+                chartUserRank = new Chart(document.getElementById('user-ranking-chart'), { type: 'bar', indexAxis: 'y', data: { labels: sortedUsers.map(u => u[0].split('@')[0]), datasets: [{ label: 'Total (T)', data: sortedUsers.map(u => u[1]), backgroundColor: '#6366f1', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'end', color: '#6366f1', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { x: { beginAtZero: true } } } });
                 const userTable = document.getElementById('user-ranking-table').querySelector('tbody');
                 userTable.innerHTML = sortedUsers.map(u => `<tr class="border-b hover:bg-slate-50"><td class="p-2">${u[0]}</td><td class="p-2 text-right font-bold">${u[1].toFixed(2)}</td></tr>`).join('');
             }
@@ -556,9 +576,6 @@
                 document.getElementById('clear-db-modal').classList.add('hidden');
                 
                 // Lógica de Reset Inteligente Global:
-                // 1. Calcula localmente o timestamp de corte (como fizemos antes)
-                // 2. Salva esse timestamp no servidor para que TODOS os clientes usem
-                
                 let maxTs = new Date().getTime(); // Agora
                 
                 if (cachedData && cachedData.length > 0) {
@@ -581,6 +598,25 @@
                     console.error("Erro ao enviar reset:", e);
                     showNotification('error', 'Erro ao sincronizar limpeza.');
                 }
+            });
+            
+            // --- LÓGICA DE EXCLUSÃO DE REGISTRO ---
+            safeAddClick('confirm-delete-btn', async () => {
+                if(deleteTargetId) {
+                    try {
+                        await deleteDoc(doc(db, "silo_reports", deleteTargetId));
+                        showNotification('success', 'Registro excluído com sucesso.');
+                        document.getElementById('delete-modal').classList.add('hidden');
+                        // A atualização da tabela ocorrerá automaticamente via onSnapshot
+                    } catch (e) {
+                        console.error("Erro ao excluir:", e);
+                        showNotification('error', 'Falha ao excluir registro.');
+                    }
+                }
+            });
+            safeAddClick('cancel-delete-btn', () => {
+                document.getElementById('delete-modal').classList.add('hidden');
+                deleteTargetId = null;
             });
             
             safeAddClick('btn-view-bottlenecks', ()=>{

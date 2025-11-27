@@ -94,7 +94,7 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-bold text-slate-800">Lançamento Manual / Retroativo</h3>
-                    <p class="text-sm text-slate-500">Utilize esta área para registrar descargas finalizadas que não foram apontadas em tempo real.</p>
+                    <p class="text-sm text-slate-500">Digite as datas e horários no formato <strong>DD/MM/AAAA HH:MM</strong>.</p>
                 </div>
             </div>
 
@@ -129,12 +129,12 @@
                         <h4 class="text-sm font-bold text-blue-700 mb-3 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Período da Descarga</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Início (Data/Hora)</label>
-                                <input type="datetime-local" id="manual-start-time" class="w-full p-2 border rounded text-sm text-slate-700">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Início</label>
+                                <input type="text" id="manual-start-time" class="date-mask w-full p-2 border rounded text-sm text-slate-700 font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="DD/MM/AAAA HH:MM" maxlength="16">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Término (Data/Hora)</label>
-                                <input type="datetime-local" id="manual-end-time" class="w-full p-2 border rounded text-sm text-slate-700">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Término</label>
+                                <input type="text" id="manual-end-time" class="date-mask w-full p-2 border rounded text-sm text-slate-700 font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="DD/MM/AAAA HH:MM" maxlength="16">
                             </div>
                         </div>
                     </div>
@@ -147,11 +147,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-2 items-end">
                             <div class="sm:col-span-4">
                                 <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Início</label>
-                                <input type="datetime-local" id="manual-pause-start" class="w-full p-1.5 border rounded text-xs bg-white text-slate-700">
+                                <input type="text" id="manual-pause-start" class="date-mask w-full p-1.5 border rounded text-xs bg-white text-slate-700 font-mono focus:ring-2 focus:ring-amber-500 outline-none" placeholder="DD/MM/AAAA HH:MM" maxlength="16">
                             </div>
                             <div class="sm:col-span-4">
                                 <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Fim</label>
-                                <input type="datetime-local" id="manual-pause-end" class="w-full p-1.5 border rounded text-xs bg-white text-slate-700">
+                                <input type="text" id="manual-pause-end" class="date-mask w-full p-1.5 border rounded text-xs bg-white text-slate-700 font-mono focus:ring-2 focus:ring-amber-500 outline-none" placeholder="DD/MM/AAAA HH:MM" maxlength="16">
                             </div>
                             <div class="sm:col-span-4">
                                 <label class="block text-[10px] font-bold text-amber-700/60 uppercase mb-1">Motivo</label>
@@ -166,8 +166,7 @@
                         </div>
                     </div>
                     
-                    <!-- Checkbox Toggle Pausa (Hidden but needed for logic flow if we were toggling, 
-                          but here we always show. Keeping ID ref if needed or just use direct logic) -->
+                    <!-- Checkbox Toggle Pausa (Hidden) -->
                      <input type="checkbox" id="has-manual-pause" class="hidden"> 
                 </div>
 
@@ -239,6 +238,45 @@
             const h = new Date().getHours();
             const sel = document.getElementById('current-shift');
             if(sel) sel.value = (h>=6 && h<14) ? 'Turno A' : (h>=14 && h<22) ? 'Turno B' : 'Turno C';
+        }
+
+        // --- MÁSCARA DE DATA/HORA ---
+        function maskDateTime(event) {
+            let val = event.target.value.replace(/\D/g, ''); // Remove tudo que não é número
+            
+            // Aplica a máscara DD/MM/AAAA HH:MM
+            if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
+            if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5);
+            if (val.length > 10) val = val.substring(0, 10) + ' ' + val.substring(10);
+            if (val.length > 13) val = val.substring(0, 13) + ':' + val.substring(13);
+            
+            // Limita ao tamanho máximo
+            if (val.length > 16) val = val.substring(0, 16);
+            
+            event.target.value = val;
+        }
+
+        // --- PARSER DE DATA BRASILEIRA ---
+        function parsePtBrDate(str) {
+            // Espera formato DD/MM/AAAA HH:MM (exatamente 16 chars)
+            if(!str || str.length !== 16) return null;
+            
+            const [datePart, timePart] = str.split(' ');
+            if (!datePart || !timePart) return null;
+
+            const [day, month, year] = datePart.split('/');
+            const [hour, minute] = timePart.split(':');
+
+            // Verifica se todos os componentes existem
+            if (!day || !month || !year || !hour || !minute) return null;
+
+            // Cria data (Mês no JS é 0-11)
+            const date = new Date(year, month - 1, day, hour, minute);
+            
+            // Verifica se é uma data válida
+            if (isNaN(date.getTime())) return null;
+            
+            return date;
         }
 
         // Lógica Operacional (Tempo Real)
@@ -427,6 +465,11 @@
             els.modalPause = document.getElementById('pause-modal');
             els.modalTonnage = document.getElementById('tonnage-modal');
 
+            // --- ATIVAR MÁSCARA NOS INPUTS DE DATA ---
+            document.querySelectorAll('.date-mask').forEach(input => {
+                input.addEventListener('input', maskDateTime);
+            });
+
             // Inicializa Grid de Silos
             const grid = document.getElementById('silo-grid');
             grid.innerHTML = ''; 
@@ -575,10 +618,11 @@
                 const pEndStr = document.getElementById('manual-pause-end').value;
                 const pReason = document.getElementById('manual-pause-reason').value || "Pausa Manual";
 
-                if (!pStartStr || !pEndStr) return showNotification('error', 'Defina início e fim da pausa.');
-                
-                const pStart = new Date(pStartStr);
-                const pEnd = new Date(pEndStr);
+                // Parse Datas Customizadas
+                const pStart = parsePtBrDate(pStartStr);
+                const pEnd = parsePtBrDate(pEndStr);
+
+                if (!pStart || !pEnd) return showNotification('error', 'Use o formato DD/MM/AAAA HH:MM');
                 
                 // Validações básicas
                 if (pEnd <= pStart) return showNotification('error', 'Fim da pausa deve ser após o início.');
@@ -609,6 +653,7 @@
                 const culture = document.getElementById('manual-culture').value;
                 const ton = parseFloat(document.getElementById('manual-ton').value);
                 const shift = document.getElementById('manual-shift').value;
+                
                 const startTimeStr = document.getElementById('manual-start-time').value;
                 const endTimeStr = document.getElementById('manual-end-time').value;
 
@@ -617,8 +662,10 @@
                     return showNotification('error', 'Preencha todos os campos obrigatórios.');
                 }
 
-                const start = new Date(startTimeStr);
-                const end = new Date(endTimeStr);
+                const start = parsePtBrDate(startTimeStr);
+                const end = parsePtBrDate(endTimeStr);
+
+                if (!start || !end) return showNotification('error', 'Datas inválidas (DD/MM/AAAA HH:MM).');
 
                 if (end <= start) {
                     return showNotification('error', 'Data de término deve ser maior que início.');
