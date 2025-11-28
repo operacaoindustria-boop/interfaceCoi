@@ -17,7 +17,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         
-        .dash-card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .dash-card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
         .section-title { font-size: 1.125rem; font-weight: 600; color: #334155; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
         
         /* TABELAS COM SCROLL */
@@ -56,7 +56,7 @@
     <div id="status-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-xl text-sm font-bold z-50 transition-all duration-300 bg-slate-800 text-white translate-y-0 opacity-100"></div>
 
     <!-- ================= VIEW: DASHBOARD ================= -->
-    <section id="view-dashboard" class="max-w-[1600px] mx-auto animate-fade-in">
+    <section id="view-dashboard" class="max-w-[1600px] mx-auto animate-fade-in pb-10">
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-200 pb-6">
             <div>
                 <h1 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Gestão & Analytics</h1>
@@ -89,6 +89,7 @@
         <!-- Navegação de Abas -->
         <div id="dashboard-tabs" class="flex border-b border-slate-200 mb-6 overflow-x-auto whitespace-nowrap gap-2">
             <button class="tab-button active" data-tab="performance">Performance Global</button>
+            <button class="tab-button" data-tab="comparative">Análise Comparativa</button> <!-- NEW TAB -->
             <button class="tab-button" data-tab="pauses">Gestão de Paradas</button>
             <button class="tab-button" data-tab="individual">Detalhe por Silo</button>
             <button class="tab-button" data-tab="shift-production">Produção por Turno</button>
@@ -137,15 +138,38 @@
         <div id="dashboard-content-container">
             <!-- TAB 1: PERFORMANCE GLOBAL -->
             <div id="tab-performance-content" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="dash-card border-l-4 border-blue-500"><p class="text-xs font-bold text-slate-500 uppercase">Ritmo Médio (Global)</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-performance">0.00</span> <span class="text-sm font-normal text-slate-500">T/h</span></h3></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="dash-card border-l-4 border-blue-500"><p class="text-xs font-bold text-slate-500 uppercase">Ritmo Médio</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-performance">0.00</span> <span class="text-sm font-normal text-slate-500">T/h</span></h3></div>
                     <div class="dash-card border-l-4 border-indigo-500"><p class="text-xs font-bold text-slate-500 uppercase">Volume Total</p><h3 class="text-3xl font-bold text-slate-900 mt-1"><span id="kpi-toneladas">0.00</span> <span class="text-sm font-normal text-slate-500">T</span></h3></div>
                     <div class="dash-card border-l-4 border-teal-500"><p class="text-xs font-bold text-slate-500 uppercase">Descargas</p><h3 id="kpi-count" class="text-3xl font-bold text-slate-900 mt-1">0</h3></div>
+                    <div class="dash-card border-l-4 border-green-500"><p class="text-xs font-bold text-slate-500 uppercase">Aderência à Meta</p><h3 id="kpi-adherence" class="text-3xl font-bold text-green-600 mt-1">0%</h3></div>
                 </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="dash-card lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-slate-700">Volume Diário e Tendência</h3>
+                            <span class="text-xs text-slate-400 font-medium">Curva S (Acumulado) vs Diário</span>
+                        </div>
+                        <div class="h-72"><canvas id="volume-day-chart"></canvas></div>
+                    </div>
+                    <div class="dash-card">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 text-center">Eficiência Média (Gauge)</h3>
+                        <div class="h-64 flex justify-center items-center relative">
+                            <canvas id="efficiency-gauge-chart"></canvas>
+                            <div class="absolute inset-0 flex items-center justify-center pt-20 flex-col">
+                                <span id="gauge-value" class="text-3xl font-bold text-slate-800">0%</span>
+                                <span class="text-xs text-slate-400 uppercase">Eficiência</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Volume Diário</h3><div class="h-64"><canvas id="volume-day-chart"></canvas></div></div>
-                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Ritmo por Produto</h3><div class="h-64"><canvas id="rate-product-chart"></canvas></div></div>
+                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Ritmo Médio por Produto</h3><div class="h-64"><canvas id="rate-product-chart"></canvas></div></div>
+                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Dispersão de Performance (Ritmo vs Meta)</h3><div class="h-64"><canvas id="scatter-performance-chart"></canvas></div></div>
                 </div>
+
                 <div class="dash-card">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="section-title mb-0 text-sm font-bold text-slate-700">Histórico de Operações</h3>
@@ -154,8 +178,22 @@
                             <button id="btn-table-clear-perf" class="text-slate-400 hover:text-red-500 hidden"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         </div>
                     </div>
-                    <!-- Adicionada coluna "Ações" -->
                     <div class="table-container"><table id="silo-detail-table" class="data-table"><thead><tr><th>Data</th> <th>Silo</th> <th>Produto</th> <th>Usuário</th> <th>Duração</th> <th>Peso (T)</th> <th>Ritmo (T/h)</th> <th class="text-center">Ações</th></tr></thead><tbody><tr id="loading-row"><td colspan="8" class="text-center py-8 text-slate-400">Carregando dados...</td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- TAB NOVA: ANÁLISE COMPARATIVA -->
+            <div id="tab-comparative-content" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="dash-card">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4">Comparativo de Silos (Radar)</h3>
+                        <p class="text-xs text-slate-500 mb-2">Compara os top 5 silos em Volume, Ritmo e Consistência (1/Desvio Padrão).</p>
+                        <div class="h-80"><canvas id="radar-silo-chart"></canvas></div>
+                    </div>
+                    <div class="dash-card">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4">Distribuição de Volume por Produto</h3>
+                        <div class="h-80"><canvas id="product-pie-chart"></canvas></div>
+                    </div>
                 </div>
             </div>
 
@@ -173,7 +211,14 @@
                         <p class="text-xs text-blue-600 mt-2 font-medium flex items-center gap-1">Clique para ver ranking <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Motivos de Parada</h3><div class="h-64 flex justify-center"><canvas id="pause-reasons-chart"></canvas></div></div><div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Impacto no Tempo (Min)</h3><div class="h-64"><canvas id="pause-duration-chart"></canvas></div></div></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="dash-card">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4">Pareto de Paradas (80/20)</h3>
+                        <p class="text-xs text-slate-500 mb-2">Linha acumulada indica onde focar esforços.</p>
+                        <div class="h-64"><canvas id="pareto-chart"></canvas></div>
+                    </div>
+                    <div class="dash-card"><h3 class="text-sm font-bold text-slate-700 mb-4">Motivos de Parada (Distribuição)</h3><div class="h-64 flex justify-center"><canvas id="pause-reasons-chart"></canvas></div></div>
+                </div>
                 <div class="dash-card">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="section-title mb-0 text-sm font-bold text-slate-700">Detalhamento de Paradas</h3>
@@ -281,6 +326,7 @@
         const SILO_NAMES = Array.from({length: 16}, (_, i) => `Silo Pulmão ${String(i + 1).padStart(2, '0')}`);
 
         let app, db, auth, chartVolume, chartRate, chartPauseReason, chartPauseDuration, chartComparison, chartShiftComp, chartHourlyTrend, chartUserRank;
+        let chartGauge, chartPareto, chartRadar, chartPie, chartScatter; // Adicionado chartScatter
         let cachedData = [], currentGlobalFilteredData = [], currentUser = null;
         let currentDashboardTab = 'performance';
         let siloCultures = { ...DEFAULT_CULTURES };
@@ -412,7 +458,7 @@
         window.switchDashboardTab = (tabId) => {
             currentDashboardTab = tabId;
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
-            ['performance', 'pauses', 'individual', 'shift-production', 'config'].forEach(t => {
+            ['performance', 'comparative', 'pauses', 'individual', 'shift-production', 'config'].forEach(t => {
                 const el = document.getElementById(`tab-${t}-content`);
                 if (el) el.classList.toggle('hidden', t !== tabId);
             });
@@ -466,7 +512,9 @@
             if (shift && shift !== 'all') d = d.filter(r => r.shift === shift);
             if (currentDashboardTab === 'individual' && silo && silo !== 'all') d = d.filter(r => r.siloName === silo);
             currentGlobalFilteredData = d;
+            
             if (currentDashboardTab === 'performance') renderPerformanceTab(d);
+            if (currentDashboardTab === 'comparative') renderComparativeTab(d);
             if (currentDashboardTab === 'pauses') renderPausesTab(d);
             if (currentDashboardTab === 'individual') renderIndividualTab(d);
             if (currentDashboardTab === 'shift-production') renderShiftProductionTab(d);
@@ -475,22 +523,278 @@
         // Chart and Table Render functions
         
         function renderPerformanceTab(data) {
-            let tot=0, hrs=0; data.forEach(r=>{ tot+=r.toneladas||0; hrs+=(r.totalProcessingSeconds||0)/3600; });
-            document.getElementById('kpi-toneladas').textContent = tot.toFixed(2);
-            document.getElementById('kpi-performance').textContent = (hrs>0 ? tot/hrs : 0).toFixed(2);
-            document.getElementById('kpi-count').textContent = data.length;
+            let tot=0, hrs=0, targetSum=0; 
             const days={}, prods={};
+            const sortedByDate = [...data].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+            let accumulatedVol = 0;
+            const accumulatedData = [];
+
             data.forEach(r=>{ 
+                tot+=r.toneladas||0; 
+                hrs+=(r.totalProcessingSeconds||0)/3600; 
+                
+                // Get current target for calculation
+                const t = (siloCultures && siloCultures[r.culture]) ? siloCultures[r.culture] : r.targetRate;
+                targetSum += t;
+
                 const d=new Date(r.timestamp).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); days[d]=(days[d]||0)+r.toneladas;
                 const p=r.culture||'Outros'; if(!prods[p]) prods[p]={s:0,c:0}; prods[p].s+=r.finalRate; prods[p].c++;
             });
+
+            // Calculate Accumulated for Curve
+            sortedByDate.forEach(r => {
+                accumulatedVol += r.toneladas;
+                accumulatedData.push(accumulatedVol);
+            });
+
+            const avgRate = hrs > 0 ? tot/hrs : 0;
+            const adherence = targetSum > 0 ? (data.reduce((acc, r) => acc + r.finalRate, 0) / targetSum) * 100 : 0; // Simplified adherence
+
+            document.getElementById('kpi-toneladas').textContent = tot.toFixed(2);
+            document.getElementById('kpi-performance').textContent = avgRate.toFixed(2);
+            document.getElementById('kpi-count').textContent = data.length;
+            document.getElementById('kpi-adherence').textContent = (adherence > 100 ? 100 : adherence).toFixed(1) + '%';
+            document.getElementById('kpi-adherence').className = `text-3xl font-bold mt-1 ${adherence >= 90 ? 'text-green-600' : (adherence >= 70 ? 'text-yellow-600' : 'text-red-600')}`;
+
+            // Gauge Chart Logic
+            const gaugeVal = Math.min(adherence, 100);
+            document.getElementById('gauge-value').textContent = gaugeVal.toFixed(1) + '%';
+            
+            const ctxGauge = document.getElementById('efficiency-gauge-chart');
+            if (ctxGauge) {
+                if (chartGauge) chartGauge.destroy();
+                chartGauge = new Chart(ctxGauge, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Eficiência', 'Restante'],
+                        datasets: [{
+                            data: [gaugeVal, 100 - gaugeVal],
+                            backgroundColor: [
+                                gaugeVal >= 90 ? '#22c55e' : (gaugeVal >= 70 ? '#eab308' : '#ef4444'),
+                                '#e2e8f0'
+                            ],
+                            borderWidth: 0,
+                            circumference: 180,
+                            rotation: 270
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: { tooltip: { enabled: false }, datalabels: { display: false } }
+                    }
+                });
+            }
+
             if(window.ChartDataLabels) {
-                if(chartVolume) chartVolume.destroy();
-                chartVolume = new Chart(document.getElementById('volume-day-chart'), { type: 'line', data: { labels: Object.keys(days).reverse(), datasets: [{ label: 'Vol (T)', data: Object.values(days).reverse(), borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { y: { beginAtZero: true } } } });
-                if(chartRate) chartRate.destroy();
-                chartRate = new Chart(document.getElementById('rate-product-chart'), { type: 'bar', data: { labels: Object.keys(prods), datasets: [{ label: 'Média (T/h)', data: Object.keys(prods).map(k=>prods[k].s/prods[k].c), backgroundColor: '#0f172a', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', formatter: (v)=>v.toFixed(2) } }, scales: { y: { beginAtZero: true } } } });
+                const ctxVol = document.getElementById('volume-day-chart');
+                if(ctxVol) {
+                    if(chartVolume) chartVolume.destroy();
+                    chartVolume = new Chart(ctxVol, { 
+                        type: 'bar', 
+                        data: { 
+                            labels: Object.keys(days).reverse(), 
+                            datasets: [
+                                { 
+                                    type: 'line',
+                                    label: 'Acumulado (T)', 
+                                    data: Object.values(days).reverse().map((sum => value => sum += value)(0)), 
+                                    borderColor: '#f59e0b', 
+                                    borderWidth: 2,
+                                    tension: 0.4, 
+                                    yAxisID: 'y1'
+                                },
+                                { 
+                                    label: 'Volume Diário (T)', 
+                                    data: Object.values(days).reverse(), 
+                                    backgroundColor: 'rgba(59, 130, 246, 0.5)', 
+                                    borderRadius: 4,
+                                    yAxisID: 'y'
+                                }
+                            ] 
+                        }, 
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { datalabels: { display: false } }, 
+                            scales: { 
+                                y: { beginAtZero: true, title: {display: true, text: 'Diário'} },
+                                y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: 'Acumulado'} } 
+                            } 
+                        } 
+                    });
+                }
+
+                const ctxRate = document.getElementById('rate-product-chart');
+                if(ctxRate) {
+                    if(chartRate) chartRate.destroy();
+                    chartRate = new Chart(ctxRate, { type: 'bar', data: { labels: Object.keys(prods), datasets: [{ label: 'Média (T/h)', data: Object.keys(prods).map(k=>prods[k].s/prods[k].c), backgroundColor: '#0f172a', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', formatter: (v)=>v.toFixed(2) } }, scales: { y: { beginAtZero: true } } } });
+                }
+                
+                // Scatter Chart Implementation
+                const ctxScatter = document.getElementById('scatter-performance-chart');
+                if (ctxScatter) {
+                    if(chartScatter) chartScatter.destroy();
+                    
+                    const scatterData = data.map(r => ({
+                        x: (siloCultures && siloCultures[r.culture]) ? siloCultures[r.culture] : r.targetRate, 
+                        y: r.finalRate
+                    }));
+
+                    chartScatter = new Chart(ctxScatter, {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: 'Meta vs Real',
+                                data: scatterData,
+                                backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                borderWidth: 1,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Meta: ${context.parsed.x}, Real: ${context.parsed.y}`;
+                                        }
+                                    }
+                                },
+                                datalabels: { display: false } // Too cluttered usually
+                            },
+                            scales: {
+                                x: {
+                                    type: 'linear',
+                                    position: 'bottom',
+                                    title: { display: true, text: 'Meta (T/h)' }
+                                },
+                                y: {
+                                    title: { display: true, text: 'Realizado (T/h)' }
+                                }
+                            }
+                        }
+                    });
+                }
             }
             renderTable(data);
+        }
+
+        function renderComparativeTab(data) {
+            // Prepare Data for Radar (Top 5 Silos by Volume)
+            const siloStats = {};
+            data.forEach(r => {
+                if(!siloStats[r.siloName]) siloStats[r.siloName] = { vol:0, rates:[], count:0 };
+                siloStats[r.siloName].vol += r.toneladas;
+                siloStats[r.siloName].rates.push(r.finalRate);
+                siloStats[r.siloName].count++;
+            });
+
+            // Sort top 5
+            const topSilos = Object.entries(siloStats)
+                .sort((a,b) => b[1].vol - a[1].vol)
+                .slice(0, 5);
+
+            const radarLabels = topSilos.map(s => s[0].replace('Silo Pulmão ', 'SP'));
+            const dataVol = topSilos.map(s => s[1].vol);
+            const dataAvgRate = topSilos.map(s => s[1].rates.reduce((a,b)=>a+b,0)/s[1].count);
+            // Consistency (inverse variance - simplified for visuals)
+            const dataConsistency = topSilos.map(s => {
+                const avg = s[1].rates.reduce((a,b)=>a+b,0)/s[1].count;
+                const variance = s[1].rates.reduce((a,b)=>a+Math.pow(b-avg,2),0)/s[1].count;
+                return 1000 / (Math.sqrt(variance) + 1); // Mock consistency score
+            });
+
+            const ctxRadar = document.getElementById('radar-silo-chart');
+            if (ctxRadar) {
+                if(chartRadar) chartRadar.destroy();
+                chartRadar = new Chart(ctxRadar, {
+                    type: 'radar',
+                    data: {
+                        labels: radarLabels,
+                        datasets: [
+                            { label: 'Volume (T)', data: dataVol, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+                            { label: 'Ritmo Médio', data: dataAvgRate, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            // Product Pie
+            const prodStats = {};
+            data.forEach(r => { prodStats[r.culture] = (prodStats[r.culture]||0) + r.toneladas; });
+            
+            const ctxPie = document.getElementById('product-pie-chart');
+            if(ctxPie) {
+                if(chartPie) chartPie.destroy();
+                chartPie = new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(prodStats),
+                        datasets: [{
+                            data: Object.values(prodStats),
+                            backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#ef4444']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        function renderParetoChart(reasons) {
+            const ctxPareto = document.getElementById('pareto-chart');
+            if (!ctxPareto) return;
+
+            // Process Pareto Data
+            const sortedReasons = Object.entries(reasons)
+                .sort((a, b) => b[1] - a[1]);
+            
+            const totalDuration = sortedReasons.reduce((sum, item) => sum + item[1], 0);
+            let accumulatedPct = 0;
+            const labels = sortedReasons.map(i => i[0]);
+            const values = sortedReasons.map(i => i[1]/60); // mins
+            const paretos = sortedReasons.map(i => {
+                accumulatedPct += i[1];
+                return (accumulatedPct / totalDuration) * 100;
+            });
+
+            if (chartPareto) chartPareto.destroy();
+            chartPareto = new Chart(ctxPareto, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Acumulado (%)',
+                            data: paretos,
+                            type: 'line',
+                            borderColor: '#ef4444',
+                            yAxisID: 'y1',
+                            tooltip: { callbacks: { label: (c) => c.raw.toFixed(1) + '%' } }
+                        },
+                        {
+                            label: 'Duração (min)',
+                            data: values,
+                            backgroundColor: '#cbd5e1',
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true },
+                        y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
         }
 
         function renderTable(data) {
@@ -530,13 +834,22 @@
             let maxR='Nenhum', maxDuration = 0;
             for (const [k,v] of Object.entries(reasons)) { if(v > maxDuration){ maxDuration=v; maxR=k; } }
             document.getElementById('kpi-pause-reason').innerHTML=`${maxR}`;
-            if (window.ChartDataLabels) {
+            
+            const ctxPause = document.getElementById('pause-reasons-chart');
+            if (window.ChartDataLabels && ctxPause) {
                 if(chartPauseReason) chartPauseReason.destroy();
-                chartPauseReason=new Chart(document.getElementById('pause-reasons-chart'),{type:'doughnut',data:{labels:Object.keys(reasons),datasets:[{data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:['#f59e0b','#ef4444','#64748b','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false}});
+                chartPauseReason=new Chart(ctxPause,{type:'doughnut',data:{labels:Object.keys(reasons),datasets:[{data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:['#f59e0b','#ef4444','#64748b','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false}});
+            }
+            
+            const ctxDur = document.getElementById('pause-duration-chart');
+            if(window.ChartDataLabels && ctxDur) {
                 if(chartPauseDuration) chartPauseDuration.destroy();
-                chartPauseDuration=new Chart(document.getElementById('pause-duration-chart'),{ type:'bar', data:{labels:Object.keys(reasons),datasets:[{label:'Minutos',data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:'#f59e0b'}]}, plugins: [window.ChartDataLabels], options:{ responsive:true, maintainAspectRatio:false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', formatter: (v)=>v } }, scales: { y: { beginAtZero: true } } } });
+                chartPauseDuration=new Chart(ctxDur,{ type:'bar', data:{labels:Object.keys(reasons),datasets:[{label:'Minutos',data:Object.values(reasons).map(v=>(v/60).toFixed(2)),backgroundColor:'#f59e0b'}]}, plugins: [window.ChartDataLabels], options:{ responsive:true, maintainAspectRatio:false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', formatter: (v)=>v } }, scales: { y: { beginAtZero: true } } } });
             }
             currentPauseReasonsData = {}; Object.entries(reasons).forEach(([k, v]) => { currentPauseReasonsData[k] = { count: reasonsCount[k] || 1, duration: v }; });
+            
+            // Render new Pareto
+            renderParetoChart(reasons);
             renderPausesTable(list);
         }
 
@@ -557,7 +870,9 @@
             document.getElementById('ind-vol').textContent=tot.toFixed(2)+' T';
             document.getElementById('ind-rate').textContent=(hrs>0?tot/hrs:0).toFixed(2)+' T/h';
             const sorted = [...data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-            if (window.ChartDataLabels) {
+            
+            const ctxComp = document.getElementById('performance-comparison-chart');
+            if (window.ChartDataLabels && ctxComp) {
                 if(chartComparison) chartComparison.destroy();
                 
                 // --- LÓGICA DE META ATUALIZADA ---
@@ -565,7 +880,7 @@
                 // Usamos siloCultures[r.culture] se disponível, senão fallback para r.targetRate
                 const getTarget = (r) => (siloCultures && siloCultures[r.culture]) ? siloCultures[r.culture] : r.targetRate;
 
-                chartComparison = new Chart(document.getElementById('performance-comparison-chart'), { 
+                chartComparison = new Chart(ctxComp, { 
                     type:'bar', 
                     data: { 
                         labels: sorted.map(r => { const d = new Date(r.timestamp); return [d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), r.siloName, r.culture]; }), 
@@ -612,14 +927,25 @@
             let shiftStats = { 'Turno A': 0, 'Turno B': 0, 'Turno C': 0 }, hourlyRate = {}, userStats = {};
             data.forEach(r => { if (shiftStats[r.shift] !== undefined) shiftStats[r.shift] += r.toneladas; const hour = new Date(r.timestamp).getHours(); if (!hourlyRate[hour]) hourlyRate[hour] = { sum:0, cnt:0 }; hourlyRate[hour].sum += r.finalRate; hourlyRate[hour].cnt++; if (!userStats[r.userEmail]) userStats[r.userEmail] = 0; userStats[r.userEmail] += r.toneladas; });
             if (window.ChartDataLabels) {
-                if (chartShiftComp) chartShiftComp.destroy();
-                chartShiftComp = new Chart(document.getElementById('shift-comparison-chart'), { type: 'bar', data: { labels: Object.keys(shiftStats), datasets: [{ label: 'Produção (T)', data: Object.values(shiftStats), backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'], borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(0) } }, scales: { y: { beginAtZero: true } } } });
-                if (chartHourlyTrend) chartHourlyTrend.destroy();
-                const hours = Object.keys(hourlyRate).sort((a,b) => a-b); const rates = hours.map(h => hourlyRate[h].sum / hourlyRate[h].cnt);
-                chartHourlyTrend = new Chart(document.getElementById('hourly-trend-chart'), { type: 'line', data: { labels: hours.map(h => `${h}h`), datasets: [{ label: 'Média T/h', data: rates, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#f59e0b', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { y: { beginAtZero: true } } } });
+                const ctxShift = document.getElementById('shift-comparison-chart');
+                if (ctxShift) {
+                    if (chartShiftComp) chartShiftComp.destroy();
+                    chartShiftComp = new Chart(ctxShift, { type: 'bar', data: { labels: Object.keys(shiftStats), datasets: [{ label: 'Produção (T)', data: Object.values(shiftStats), backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981'], borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#334155', font: { weight: 'bold' }, formatter: (v)=>v.toFixed(0) } }, scales: { y: { beginAtZero: true } } } });
+                }
+                
+                const ctxTrend = document.getElementById('hourly-trend-chart');
+                if (ctxTrend) {
+                    if (chartHourlyTrend) chartHourlyTrend.destroy();
+                    const hours = Object.keys(hourlyRate).sort((a,b) => a-b); const rates = hours.map(h => hourlyRate[h].sum / hourlyRate[h].cnt);
+                    chartHourlyTrend = new Chart(ctxTrend, { type: 'line', data: { labels: hours.map(h => `${h}h`), datasets: [{ label: 'Média T/h', data: rates, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'top', color: '#f59e0b', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { y: { beginAtZero: true } } } });
+                }
                 const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]);
-                if (chartUserRank) chartUserRank.destroy();
-                chartUserRank = new Chart(document.getElementById('user-ranking-chart'), { type: 'bar', indexAxis: 'y', data: { labels: sortedUsers.map(u => u[0].split('@')[0]), datasets: [{ label: 'Total (T)', data: sortedUsers.map(u => u[1]), backgroundColor: '#6366f1', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'end', color: '#6366f1', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { x: { beginAtZero: true } } } });
+                
+                const ctxRank = document.getElementById('user-ranking-chart');
+                if (ctxRank) {
+                    if (chartUserRank) chartUserRank.destroy();
+                    chartUserRank = new Chart(ctxRank, { type: 'bar', indexAxis: 'y', data: { labels: sortedUsers.map(u => u[0].split('@')[0]), datasets: [{ label: 'Total (T)', data: sortedUsers.map(u => u[1]), backgroundColor: '#6366f1', borderRadius: 4 }] }, plugins: [window.ChartDataLabels], options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { anchor: 'end', align: 'end', color: '#6366f1', font: { weight: 'bold', size: 10 }, formatter: (v)=>v.toFixed(1) } }, scales: { x: { beginAtZero: true } } } });
+                }
                 const userTable = document.getElementById('user-ranking-table').querySelector('tbody');
                 userTable.innerHTML = sortedUsers.map(u => `<tr class="border-b hover:bg-slate-50"><td class="p-2">${u[0]}</td><td class="p-2 text-right font-bold">${u[1].toFixed(2)}</td></tr>`).join('');
             }
