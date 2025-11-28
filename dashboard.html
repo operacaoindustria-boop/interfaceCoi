@@ -40,7 +40,12 @@
         .tab-button { padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.875rem; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; }
         .tab-button:hover { color: #334155; background: #f1f5f9; border-radius: 0.5rem 0.5rem 0 0; }
         .tab-button.active { color: #2563eb; border-bottom-color: #2563eb; }
+        
+        /* Culture Item Styles */
         .culture-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; }
+        .culture-input-group { display: flex; align-items: center; gap: 0.5rem; }
+        .culture-input { width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.875rem; text-align: center; }
+        .culture-input:focus { outline: none; border-color: #2563eb; ring: 2px solid #bfdbfe; }
         
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -353,14 +358,52 @@
             }
         }
 
+        // NOVO: Função para salvar/atualizar a meta de uma cultura existente
+        window.saveCultureRate = async (cultureName) => {
+            const inputId = `input-rate-${cultureName.replace(/\s+/g, '-')}`;
+            const input = document.getElementById(inputId);
+            if(!input) return;
+            
+            const newRate = parseFloat(input.value);
+            if(isNaN(newRate) || newRate <= 0) return showNotification('error', 'Valor inválido');
+
+            try {
+                await updateDoc(doc(db, 'silo_config', 'general'), {
+                    [cultureName]: newRate
+                });
+                showNotification('success', `${cultureName}: Meta atualizada para ${newRate} T/h`);
+                // A atualização visual ocorre automaticamente via onSnapshot -> renderCulturesList
+            } catch(e) {
+                console.error(e);
+                showNotification('error', 'Erro ao atualizar meta');
+            }
+        };
+
         function renderCulturesList() {
             const list = document.getElementById('cultures-list');
             const select = document.getElementById('filter-silo');
             if (select && select.options.length === 1) SILO_NAMES.forEach(n => { const opt=document.createElement('option'); opt.value=n; opt.textContent=n; select.appendChild(opt); });
             if (!list) return;
             list.innerHTML = '';
+            
             Object.entries(siloCultures).sort().forEach(([k, v]) => {
-                const div = document.createElement('div'); div.className = 'culture-item'; div.innerHTML = `<div><span class="font-bold block text-sm">${k}</span><span class="text-xs text-slate-500">${v} T/h</span></div><button class="text-red-500 hover:text-red-700 text-sm px-2" onclick="deleteCulture('${k}')">✕</button>`; list.appendChild(div);
+                const div = document.createElement('div'); 
+                div.className = 'culture-item'; 
+                // Alterado: Agora exibe um input para edição direta
+                const safeId = k.replace(/\s+/g, '-');
+                div.innerHTML = `
+                    <div><span class="font-bold block text-sm text-slate-700">${k}</span></div>
+                    <div class="culture-input-group">
+                        <input type="number" id="input-rate-${safeId}" value="${v}" class="culture-input" placeholder="T/h">
+                        <button class="text-blue-600 hover:text-blue-800 p-1" onclick="saveCultureRate('${k}')" title="Salvar Meta">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </button>
+                        <button class="text-red-400 hover:text-red-600 p-1 ml-1" onclick="deleteCulture('${k}')" title="Excluir Cultura">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                `; 
+                list.appendChild(div);
             });
         }
 
@@ -516,7 +559,46 @@
             const sorted = [...data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
             if (window.ChartDataLabels) {
                 if(chartComparison) chartComparison.destroy();
-                chartComparison = new Chart(document.getElementById('performance-comparison-chart'), { type:'bar', data: { labels: sorted.map(r => { const d = new Date(r.timestamp); return [d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), r.siloName, r.culture]; }), datasets: [ { label:'Real', data:sorted.map(r=>r.finalRate), backgroundColor: sorted.map(r=>r.finalRate>=r.targetRate?'rgba(22, 163, 74, 0.7)':'rgba(220, 38, 38, 0.7)'), borderColor: sorted.map(r => r.finalRate >= r.targetRate ? '#15803d' : '#b91c1c'), borderWidth: 1, order: 2 }, { label:'Meta', data:sorted.map(r=>r.targetRate), type:'line', borderColor:'#3b82f6', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 1 } ] }, options:{ responsive:true, maintainAspectRatio:false, interaction: { mode: 'index', intersect: false }, scales:{ y:{ beginAtZero:true } } } });
+                
+                // --- LÓGICA DE META ATUALIZADA ---
+                // Para exibir o gráfico com a meta ATUAL (editada), e não a histórica
+                // Usamos siloCultures[r.culture] se disponível, senão fallback para r.targetRate
+                const getTarget = (r) => (siloCultures && siloCultures[r.culture]) ? siloCultures[r.culture] : r.targetRate;
+
+                chartComparison = new Chart(document.getElementById('performance-comparison-chart'), { 
+                    type:'bar', 
+                    data: { 
+                        labels: sorted.map(r => { const d = new Date(r.timestamp); return [d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), r.siloName, r.culture]; }), 
+                        datasets: [ 
+                            { 
+                                label:'Real', 
+                                data:sorted.map(r=>r.finalRate), 
+                                // Cor dinâmica baseada na meta ATUAL
+                                backgroundColor: sorted.map(r => r.finalRate >= getTarget(r) ? 'rgba(22, 163, 74, 0.7)' : 'rgba(220, 38, 38, 0.7)'), 
+                                borderColor: sorted.map(r => r.finalRate >= getTarget(r) ? '#15803d' : '#b91c1c'), 
+                                borderWidth: 1, 
+                                order: 2 
+                            }, 
+                            { 
+                                label:'Meta', 
+                                // Linha de meta baseada na meta ATUAL
+                                data:sorted.map(r => getTarget(r)), 
+                                type:'line', 
+                                borderColor:'#3b82f6', 
+                                borderWidth: 2, 
+                                borderDash: [5,5], 
+                                pointRadius: 0, 
+                                order: 1 
+                            } 
+                        ] 
+                    }, 
+                    options:{ 
+                        responsive:true, 
+                        maintainAspectRatio:false, 
+                        interaction: { mode: 'index', intersect: false }, 
+                        scales:{ y:{ beginAtZero:true } } 
+                    } 
+                });
             }
             const tb = document.querySelector('#individual-table tbody');
             tb.innerHTML = sorted.map(r => { const s=r.totalProcessingSeconds; return `<tr class="border-b hover:bg-slate-50"><td class="text-xs">${new Date(r.timestamp).toLocaleDateString('pt-BR')}</td><td>${r.culture}</td><td>${r.shift}</td><td class="font-mono">${Math.floor(s/3600)}:${Math.floor((s%3600)/60)}:${Math.floor(s%60)}</td><td>${r.toneladas.toFixed(2)}</td><td class="font-bold">${r.finalRate.toFixed(2)}</td></tr>`; }).join('') || '<tr><td colspan="6" class="text-center py-4">Sem dados</td></tr>';
