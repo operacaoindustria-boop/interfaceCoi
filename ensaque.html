@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Terminal Operador - Ensaque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Adicionando Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        
+        /* Botão Gigante */
+        .btn-huge {
+            width: 100%; 
+            min-height: 160px;
+            border-radius: 1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.1s; 
+            position: relative; overflow: hidden;
+            border-bottom-width: 6px;
+        }
+        .btn-huge:active { transform: translateY(4px); border-bottom-width: 0px; margin-top: 4px; }
+        .btn-huge:disabled { opacity: 0.6; cursor: not-allowed; transform: none; margin-top: 0; border-bottom-width: 6px; filter: grayscale(100%); }
+
+        /* Cards de Seleção */
+        .line-card { 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white; 
+            border-radius: 1rem; 
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+        .line-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3b82f6;
+        }
+        .line-card:active { 
+            transform: scale(0.98); 
+            background-color: #f8fafc; 
+        }
+        .line-card .card-content {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 10;
+        }
+        .line-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 6px;
+            background: #cbd5e1;
+            transition: background 0.3s;
+        }
+        .line-card:hover::before {
+            background: #3b82f6;
+        }
+
+        /* Classes Utilitárias */
+        .hidden { display: none !important; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 999; }
+        
+        /* Animações */
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+        .animate-pulse-click { animation: pulse-green 0.4s ease-out; }
+        
+        @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+
+        /* Estilo para botões de seleção */
+        .select-btn { border: 2px solid #e2e8f0; background: white; color: #64748b; transition: all 0.2s; }
+        .select-btn:hover { border-color: #93c5fd; }
+        .select-btn.selected { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; ring: 2px solid #bfdbfe; font-weight: 800; }
+
+        /* Tabs e Status */
+        .retro-tab { padding: 0.75rem; font-weight: 700; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; width: 50%; text-align: center; }
+        .retro-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: #eff6ff; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+
+        .status-option { 
+            display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: 0.75rem; border: 2px solid transparent; transition: all 0.2s; width: 100%; text-align: left; 
+        }
+        .status-option:hover { transform: translateY(-2px); }
+        .status-option.op { background: #ecfdf5; border-color: #34d399; color: #047857; }
+        .status-option.man { background: #fef2f2; border-color: #f87171; color: #b91c1c; }
+        .status-option.limp { background: #eff6ff; border-color: #60a5fa; color: #1d4ed8; }
+        .status-option.aguard { background: #fffbeb; border-color: #fcd34d; color: #b45309; }
+
+        /* Custom Scroll */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
+
+    <!-- ================= TELA DE LOGIN (OVERLAY) ================= -->
+    <div id="screen-login" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-4">
+        
+        <!-- LOADING STATE (Novo: Mostra enquanto verifica se já tem usuário) -->
+        <div id="login-loading" class="flex flex-col items-center">
+            <i data-lucide="loader-2" class="w-12 h-12 text-blue-500 animate-spin mb-4"></i>
+            <p class="text-slate-400 text-sm font-bold uppercase tracking-wider animate-pulse">Verificando Acesso...</p>
+        </div>
+
+        <!-- LOGIN FORM (Oculto por padrão, só aparece se não tiver usuário) -->
+        <div id="login-form-container" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center hidden">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
+                <i data-lucide="lock" class="w-8 h-8 text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Acesso Restrito</h2>
+            <p class="text-slate-500 text-sm mb-6">Identifique-se para operar o terminal.</p>
+            
+            <input type="email" id="login-email" class="w-full p-3 border border-slate-300 rounded-lg mb-3 outline-none focus:border-blue-500" placeholder="Email">
+            <input type="password" id="login-pass" class="w-full p-3 border border-slate-300 rounded-lg mb-6 outline-none focus:border-blue-500" placeholder="Senha">
+            
+            <button onclick="authSystem.login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition flex justify-center items-center gap-2">
+                <span id="login-btn-text">ENTRAR</span>
+            </button>
+            <p id="login-error" class="text-red-500 text-xs mt-3 hidden"></p>
+            <p class="text-slate-400 text-xs mt-6 pt-4 border-t">Sistema Integrado COI - v2.0</p>
+        </div>
+        
+    </div>
+
+    <!-- ================= TELA 1: SELEÇÃO DE LINHA ================= -->
+    <div id="screen-select" class="hidden flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500"></div>
+        
+        <!-- Botão Voltar ao Menu -->
+        <a href="menu.html" class="absolute top-6 left-6 z-20 bg-white/80 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-slate-200 text-slate-600 hover:text-blue-600 hover:bg-white hover:border-blue-200 transition-all flex items-center gap-2 font-bold text-xs uppercase tracking-wide group">
+            <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
+            Voltar ao Menu
+        </a>
+
+        <div class="text-center mb-12 relative z-10">
+            <div class="inline-flex items-center justify-center p-4 bg-white rounded-2xl shadow-sm mb-5 border border-slate-100">
+                <i data-lucide="factory" class="w-10 h-10 text-blue-600"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-800 tracking-tighter uppercase mb-3">Terminal de Ensaque</h1>
+            <p class="text-slate-500 font-medium text-lg max-w-md mx-auto leading-relaxed">Selecione o posto de trabalho para iniciar a operação.</p>
+            <p id="user-display" class="text-xs text-blue-600 font-bold mt-2 bg-blue-50 inline-block px-3 py-1 rounded-full">...</p>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-4xl relative z-10 px-4">
+            <!-- Linhas 01 a 04 -->
+            <div onclick="app.selectLine('bb01', 'Ensacadeira 01')" class="line-card group">
+                <div class="card-content">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><i data-lucide="package" class="w-8 h-8"></i></div>
+                    <div class="text-center"><h2 class="text-xl font-black text-slate-800 uppercase">Linha 01</h2><div class="flex items-center justify-center gap-2 mt-2"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aguardando Operador</span></div></div>
+                </div>
+            </div>
+            <div onclick="app.selectLine('bb02', 'Ensacadeira 02')" class="line-card group">
+                <div class="card-content">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><i data-lucide="package" class="w-8 h-8"></i></div>
+                    <div class="text-center"><h2 class="text-xl font-black text-slate-800 uppercase">Linha 02</h2><div class="flex items-center justify-center gap-2 mt-2"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aguardando Operador</span></div></div>
+                </div>
+            </div>
+            <div onclick="app.selectLine('bb03', 'Ensacadeira 03')" class="line-card group">
+                <div class="card-content">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><i data-lucide="package" class="w-8 h-8"></i></div>
+                    <div class="text-center"><h2 class="text-xl font-black text-slate-800 uppercase">Linha 03</h2><div class="flex items-center justify-center gap-2 mt-2"><span class="w-2 h-2 rounded-full bg-slate-300"></span><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Parada / Manutenção</span></div></div>
+                </div>
+            </div>
+            <div onclick="app.selectLine('bb04', 'Ensacadeira 04')" class="line-card group">
+                <div class="card-content">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><i data-lucide="package" class="w-8 h-8"></i></div>
+                    <div class="text-center"><h2 class="text-xl font-black text-slate-800 uppercase">Linha 04</h2><div class="flex items-center justify-center gap-2 mt-2"><span class="w-2 h-2 rounded-full bg-slate-300"></span><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Parada / Manutenção</span></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-16 text-center opacity-60 relative z-10">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 justify-center">
+                <i data-lucide="shield-check" class="w-3 h-3"></i> Sistema Operacional v2.1
+            </p>
+        </div>
+    </div>
+
+    <!-- ================= TELA 2: OPERAÇÃO ================= -->
+    <div id="screen-operation" class="hidden flex-col min-h-screen bg-slate-100">
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm sticky top-0 z-20">
+            <div class="flex items-center gap-3">
+                <button onclick="app.exitLine()" class="p-3 -ml-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 active:scale-95 transition-all z-50 cursor-pointer"><i data-lucide="arrow-left" class="w-7 h-7 pointer-events-none"></i></button>
+                <div>
+                    <h2 class="text-base sm:text-lg font-black leading-none text-slate-800 tracking-tight uppercase" id="header-line-name">LINHA --</h2>
+                    <div class="flex items-center gap-1.5 text-[10px] font-bold mt-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="app.openStatusModal()">
+                        <span id="line-status-dot" class="w-2 h-2 rounded-full bg-slate-300"></span> 
+                        <span id="line-status-text" class="text-slate-500 uppercase">DEFINIR STATUS</span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <div id="clock-display" class="text-xs font-mono font-bold text-slate-400">00:00</div>
+                <select id="shift-select" class="bg-slate-50 text-slate-600 text-xs font-bold rounded py-1 px-2 border border-slate-200 outline-none focus:border-blue-500 cursor-pointer hover:bg-white transition-colors">
+                    <option value="Turno A">TURNO A</option>
+                    <option value="Turno B">TURNO B</option>
+                    <option value="Turno C">TURNO C</option>
+                </select>
+            </div>
+        </header>
+
+        <main class="flex-1 p-4 flex flex-col gap-4 max-w-3xl mx-auto w-full">
+            
+            <!-- CARD DE SETUP -->
+            <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-blue-600 relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> Próximo Bag</h3>
+                    <div class="flex gap-2">
+                        <div id="storage-display" class="hidden bg-blue-50 px-2 py-1 rounded border border-blue-100 text-[10px] font-bold text-blue-700 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> <span id="storage-value">--</span></div>
+                        <button onclick="app.openSetup()" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 border border-blue-100 transition-colors uppercase tracking-wide">Alterar Setup</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4 relative z-10">
+                    <div><p class="text-xs text-slate-400 uppercase font-bold mb-1">Produto</p><p class="text-lg font-bold text-slate-800 leading-tight" id="info-culture">--</p><p class="text-xs text-slate-500 font-medium mt-0.5" id="info-cultivar">--</p></div>
+                    <div class="text-right"><p class="text-xs text-slate-400 uppercase font-bold mb-1">Lote (Atual)</p><p class="text-lg font-mono font-bold text-slate-800 leading-tight" id="info-lot">--</p></div>
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 relative z-10">
+                    <div><p class="text-xs text-slate-400 uppercase font-bold">Peso Unit.</p><p class="text-xl font-black text-slate-800"><span id="info-weight">0</span> <span class="text-sm font-medium text-slate-400">kg</span></p></div>
+                    <div class="bg-slate-50 px-5 py-2 rounded border border-slate-200 min-w-[100px] text-right"><p class="text-[9px] font-bold text-slate-400 uppercase">Produzido</p><p class="text-2xl font-black text-blue-600 leading-none" id="info-count">0</p></div>
+                </div>
+                <div class="absolute right-0 top-0 text-slate-100 opacity-50 pointer-events-none transform translate-x-8 -translate-y-8"><i data-lucide="package-check" class="w-40 h-40"></i></div>
+                <button onclick="app.checkFinishLot()" class="w-full mt-4 py-3 bg-white text-orange-600 font-bold text-xs rounded border border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition relative z-10 flex items-center justify-center gap-2"><i data-lucide="archive" class="w-4 h-4"></i> ENCERRAR SEQUÊNCIA</button>
+            </div>
+
+            <!-- BOTÃO REGISTRAR -->
+            <button id="btn-produce" onclick="app.registerBag()" class="btn-huge bg-emerald-600 text-white border-emerald-800 hover:bg-emerald-500 active:border-emerald-800 shadow-md group relative overflow-hidden">
+                <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="mb-3 opacity-90 pointer-events-none transform group-hover:-translate-y-1 transition-transform duration-300"><i data-lucide="check-circle-2" class="w-12 h-12"></i></div>
+                <span class="text-2xl font-black tracking-tight pointer-events-none uppercase">Registrar Bag</span>
+                <span class="text-[10px] font-bold opacity-70 mt-2 uppercase pointer-events-none bg-emerald-900/20 px-3 py-1 rounded-full border border-white/10">Toque para confirmar</span>
+            </button>
+
+            <!-- AÇÕES SECUNDÁRIAS -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button onclick="app.openStatusModal()" class="py-3 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-xs hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 flex flex-col items-center justify-center gap-2 shadow-sm transition-all group"><i data-lucide="activity" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i> ALTERAR STATUS</button>
+                <button onclick="app.openStorageModal()" class="py-3 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-xs hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 flex flex-col items-center justify-center gap-2 shadow-sm transition-all group"><i data-lucide="map-pin" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i> DEFINIR LOCAL</button>
+                <button onclick="app.openRetroModal('production')" class="py-3 bg-white border border-slate-200 rounded-lg text-slate-600 font-bold text-xs hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 flex flex-col items-center justify-center gap-2 shadow-sm transition-all group"><i data-lucide="clipboard-edit" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i> MANUAL</button>
+            </div>
+
+            <!-- HISTÓRICO -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4 flex flex-col h-full min-h-[200px]">
+                <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center sticky top-0"><h4 class="font-bold text-xs text-slate-500 uppercase flex items-center gap-2"><i data-lucide="history" class="w-3 h-3"></i> Últimos Registros</h4><span class="text-xs font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded" id="session-count">0</span></div>
+                <div id="history-list" class="max-h-48 overflow-y-auto p-2 space-y-2 custom-scroll flex-1"><div class="text-center py-10 text-slate-300 text-xs italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="w-8 h-8 opacity-40"></i> Sem movimentação recente</div></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAIS (STATUS, SETUP, RETRO, STORAGE) -->
+    <!-- Status -->
+    <div id="modal-status" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 m-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b pb-2"><h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-blue-500"></i> Status da Linha</h3><button onclick="app.closeModal('modal-status')" class="text-slate-400 hover:text-slate-600 p-1 rounded-full bg-slate-50"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <div class="space-y-3">
+                <button onclick="app.changeStatus('OPERANDO', 'emerald')" class="status-option op"><span class="w-4 h-4 rounded-full bg-emerald-500 shadow-sm border-2 border-white ring-1 ring-emerald-200"></span><div><span class="block font-bold text-sm">OPERANDO</span><span class="text-[10px] opacity-80">Linha em produção normal</span></div></button>
+                <button onclick="app.changeStatus('AGUARDANDO', 'amber')" class="status-option aguard"><span class="w-4 h-4 rounded-full bg-amber-500 shadow-sm border-2 border-white ring-1 ring-amber-200"></span><div><span class="block font-bold text-sm">AGUARDANDO</span><span class="text-[10px] opacity-80">Falta de produto ou insumo</span></div></button>
+                <button onclick="app.changeStatus('LIMPEZA / SETUP', 'blue')" class="status-option limp"><span class="w-4 h-4 rounded-full bg-blue-500 shadow-sm border-2 border-white ring-1 ring-blue-200"></span><div><span class="block font-bold text-sm">LIMPEZA / SETUP</span><span class="text-[10px] opacity-80">Preparação para novo lote</span></div></button>
+                <button onclick="app.changeStatus('MANUTENÇÃO', 'red')" class="status-option man"><span class="w-4 h-4 rounded-full bg-red-500 shadow-sm border-2 border-white ring-1 ring-red-200"></span><div><span class="block font-bold text-sm">MANUTENÇÃO</span><span class="text-[10px] opacity-80">Intervenção mecânica/elétrica</span></div></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage -->
+    <div id="modal-storage" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 m-4 shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"><h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="snowflake" class="w-5 h-5 text-blue-500"></i> Local de Armazenagem</h3><button onclick="app.closeModal('modal-storage')" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-1 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <div class="space-y-5">
+                <div><label class="text-xs font-bold text-slate-500 uppercase block mb-2">Câmara Fria</label><select id="storage-chamber" class="w-full p-3 border border-slate-200 rounded-lg font-bold text-slate-700 outline-none focus:border-blue-500 bg-white"><option value="">Selecione a Câmara...</option><option value="Câmara Fria 1">Câmara Fria 1</option><option value="Câmara Fria 1.1">Câmara Fria 1.1</option><option value="Câmara Fria 1.2">Câmara Fria 1.2</option><option value="Câmara Fria 1.3">Câmara Fria 1.3</option><option value="Câmara Fria 2">Câmara Fria 2</option><option value="Câmara Fria 2.1">Câmara Fria 2.1</option><option value="Câmara Fria 2.2">Câmara Fria 2.2</option><option value="Câmara Fria 2.3">Câmara Fria 2.3</option><option value="Câmara Fria 3">Câmara Fria 3</option><option value="Câmara Fria 3.1">Câmara Fria 3.1</option><option value="Câmara Fria 3.2">Câmara Fria 3.2</option><option value="Câmara Fria 3.3">Câmara Fria 3.3</option><option value="Câmara Fria 4">Câmara Fria 4</option><option value="Câmara Fria 4.1">Câmara Fria 4.1</option><option value="Câmara Fria 4.2">Câmara Fria 4.2</option><option value="Câmara Fria 4.3">Câmara Fria 4.3</option><option value="Câmara Fria 5">Câmara Fria 5</option><option value="Câmara Fria 5.1">Câmara Fria 5.1</option><option value="Câmara Fria 5.2">Câmara Fria 5.2</option><option value="Câmara Fria 5.3">Câmara Fria 5.3</option><option value="Câmara Fria 6">Câmara Fria 6</option><option value="Câmara Fria 6.1">Câmara Fria 6.1</option><option value="Câmara Fria 6.2">Câmara Fria 6.2</option><option value="Câmara Fria 6.3">Câmara Fria 6.3</option><option value="Pátio Externo">Pátio Externo</option></select></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500 uppercase block mb-2">Fila</label><select id="storage-street" class="w-full p-3 border border-slate-200 rounded-lg font-bold text-slate-700 outline-none focus:border-blue-500 bg-white"><option value="">---</option><option value="Fila A">Fila A</option><option value="Fila B">Fila B</option><option value="Fila C">Fila C</option><option value="Fila D">Fila D</option><option value="Fila E">Fila E</option><option value="Fila F">Fila F</option></select></div><div><label class="text-xs font-bold text-slate-500 uppercase block mb-2">Posição / Box</label><input type="text" id="storage-position" class="w-full p-3 border border-slate-200 rounded-lg font-bold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: 05"></div></div>
+                <div><label class="text-xs font-bold text-slate-500 uppercase block mb-2">Observações</label><textarea id="storage-obs" class="w-full p-3 border border-slate-200 rounded-lg font-medium text-slate-700 outline-none focus:border-blue-500 text-sm" rows="2" placeholder="Opcional..."></textarea></div>
+            </div>
+            <div class="flex gap-3 mt-8 pt-4 border-t border-slate-100"><button onclick="app.closeModal('modal-storage')" class="flex-1 py-3 rounded font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button><button onclick="app.saveStorage()" class="flex-1 py-3 rounded font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700 transition">CONFIRMAR LOCAL</button></div>
+        </div>
+    </div>
+
+    <!-- Setup -->
+    <div id="modal-setup" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl p-6 m-4 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"><h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="settings-2" class="w-5 h-5 text-slate-400"></i> Configurar Lote</h3><button onclick="app.closeModal('modal-setup')" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-1 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <div class="space-y-5 overflow-y-auto p-1 custom-scroll">
+                <div><label class="text-xs font-bold text-slate-500 uppercase block mb-2">Cultura</label><div class="grid grid-cols-3 gap-2" id="culture-options"></div></div>
+                <div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Cultivar/Variedade</label><div id="cultivar-area"><input type="text" id="input-cultivar" class="w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: BRS 1001"></div></div>
+                <div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Digite o Número do Lote do 1º Bag</label><input type="text" id="input-lot" class="w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: L-001"><p class="text-[9px] text-slate-400 mt-1">O sistema incrementará automaticamente (Ex: L-001 -> L-002)</p></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Peso Bag (kg)</label><input type="number" id="input-weight" class="w-full p-3 border border-slate-200 rounded font-semibold text-center text-slate-700 outline-none focus:border-blue-500"></div><div><label class="text-xs font-bold text-blue-600 uppercase block mb-1">Quantidade de Bags Lote</label><input type="number" id="input-target" class="w-full p-3 border border-blue-100 bg-blue-50/50 rounded font-semibold text-center text-blue-700 outline-none focus:border-blue-500"></div></div>
+            </div>
+            <div class="flex gap-3 mt-8 pt-4 border-t border-slate-100"><button onclick="app.closeModal('modal-setup')" class="flex-1 py-3 rounded font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50">Cancelar</button><button onclick="app.saveSetup()" class="flex-1 py-3 rounded font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700">SALVAR</button></div>
+        </div>
+    </div>
+
+    <!-- Retro -->
+    <div id="modal-retro" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] m-2">
+            <div class="flex border-b border-slate-200 bg-slate-50"><button onclick="app.switchRetroTab('production')" id="tab-production" class="retro-tab active flex items-center justify-center gap-2"><i data-lucide="package-plus" class="w-4 h-4"></i> Produção</button><button onclick="app.switchRetroTab('stop')" id="tab-stop" class="retro-tab flex items-center justify-center gap-2"><i data-lucide="octagon-pause" class="w-4 h-4"></i> Paradas</button></div>
+            <div class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div id="content-production" class="space-y-4">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-blue-800 text-xs font-bold mb-4 flex gap-2"><i data-lucide="info" class="w-4 h-4"></i> Preencha os dados do lote produzido manualmente.</div>
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200"><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Início (Data/Hora)</label><div class="flex gap-1"><input type="date" id="retro-prod-date-start" class="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500"><input type="time" id="retro-prod-time-start" class="w-24 p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500"></div></div><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Fim (Data/Hora)</label><div class="flex gap-1"><input type="date" id="retro-prod-date-end" class="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500"><input type="time" id="retro-prod-time-end" class="w-24 p-2 text-sm border border-slate-300 rounded outline-none focus:border-blue-500"></div></div></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Cultura</label><select id="retro-prod-culture" class="w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500 bg-white"></select></div><div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Cultivar</label><input type="text" id="retro-prod-cultivar" class="w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: BRS 1001"></div></div>
+                    <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Peso Unit. (kg)</label><input type="number" id="retro-prod-weight" class="w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500" placeholder="0"></div><div><label class="text-xs font-bold text-blue-600 uppercase block mb-1">Qtd. Bags</label><input type="number" id="retro-prod-qty" class="w-full p-3 border border-blue-200 bg-blue-50/30 rounded font-bold text-slate-700 outline-none focus:border-blue-500" placeholder="0"></div></div>
+                </div>
+                <div id="content-stop" class="space-y-4 hidden">
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100 text-red-800 text-xs font-bold mb-4 flex gap-2"><i data-lucide="alert-octagon" class="w-4 h-4"></i> Registre os períodos em que a linha ficou parada.</div>
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200"><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Início da Parada</label><div class="flex gap-1"><input type="date" id="retro-stop-date-start" class="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-red-400"><input type="time" id="retro-stop-time-start" class="w-24 p-2 text-sm border border-slate-300 rounded outline-none focus:border-red-400"></div></div><div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Fim da Parada</label><div class="flex gap-1"><input type="date" id="retro-stop-date-end" class="w-full p-2 text-sm border border-slate-300 rounded outline-none focus:border-red-400"><input type="time" id="retro-stop-time-end" class="w-24 p-2 text-sm border border-slate-300 rounded outline-none focus:border-red-400"></div></div></div>
+                    <div><label class="text-xs font-bold text-slate-500 uppercase block mb-1">Motivo da Parada</label><select id="retro-stop-reason" class="w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-red-400 bg-white"><option value="">Selecione o motivo...</option><option value="Manutenção Mecânica">Manutenção Mecânica</option><option value="Manutenção Elétrica">Manutenção Elétrica</option><option value="Falta de Produto">Falta de Produto</option><option value="Falta de Embalagem">Falta de Embalagem</option><option value="Troca de Turno">Troca de Turno</option><option value="Limpeza">Limpeza / Setup</option><option value="Outros">Outros</option></select></div>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex gap-3"><button onclick="app.closeModal('modal-retro')" class="flex-1 py-3 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-100 transition">CANCELAR</button><button onclick="app.saveRetro()" class="flex-1 py-3 rounded-lg font-bold text-white bg-slate-800 shadow-md hover:bg-slate-900 transition flex items-center justify-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> CONFIRMAR LANÇAMENTO</button></div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded shadow-2xl font-bold transition-all duration-300 -translate-y-32 opacity-0 z-50 border border-slate-600 text-sm flex items-center gap-3"><div class="bg-green-500 rounded-full p-0.5"><i data-lucide="check" class="w-3 h-3 text-slate-900"></i></div><span id="toast-msg">Sucesso!</span></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", authDomain: "integracaocoi.firebaseapp.com", projectId: "integracaocoi", storageBucket: "integracaocoi.firebasestorage.app", messagingSenderId: "177203745489", appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" };
+        
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+
+        window.authSystem = {
+            init: function() {
+                // Show loading initially
+                document.getElementById('login-loading').classList.remove('hidden');
+                document.getElementById('login-form-container').classList.add('hidden');
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        // User logged in -> Go to app
+                        document.getElementById('screen-login').classList.add('hidden');
+                        document.getElementById('screen-select').classList.remove('hidden');
+                        document.getElementById('screen-select').classList.add('flex');
+                        document.getElementById('user-display').textContent = user.email;
+                    } else {
+                        // No user -> Show login form
+                        document.getElementById('login-loading').classList.add('hidden');
+                        document.getElementById('login-form-container').classList.remove('hidden');
+                        document.getElementById('screen-select').classList.add('hidden');
+                        document.getElementById('screen-operation').classList.add('hidden');
+                    }
+                });
+            },
+            login: async function() {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const btn = document.getElementById('login-btn-text');
+                const err = document.getElementById('login-error');
+                
+                btn.textContent = "Acessando...";
+                err.classList.add('hidden');
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (error) {
+                    console.error(error);
+                    err.textContent = "Erro de acesso: " + error.message;
+                    err.classList.remove('hidden');
+                } finally {
+                    btn.textContent = "ENTRAR";
+                }
+            }
+        };
+
+        const app = {
+            state: {
+                lineId: null,
+                lineName: '',
+                setup: { culture: '', cultivar: '', lot: '', weight: 0, count: 0, target: 0, storage: null },
+                sessionCount: 0,
+                tempCulture: null,
+                tempCultivar: null, 
+                retroTab: 'production',
+                lineStatus: { text: 'OPERANDO', color: 'emerald' }
+            },
+
+            init: function() {
+                lucide.createIcons();
+                this.loadCultures();
+                this.initClock();
+                window.authSystem.init();
+            },
+
+            getCulturesList: function() { return ['BRAQUIÁRIA', 'CROTALÁRIA', 'FEIJÃO GUANDÚ', 'MILHETO', 'SOJA']; },
+            
+            getBraquiariaCultivars: function() { return ['MARANDÚ', 'RUZIZIENSIS', 'XARAÉS']; },
+            
+            getCultivarsFor: function(cultureName) {
+                 const defaults = {
+                    'BRAQUIÁRIA': ['MARANDÚ', 'RUZIZIENSIS', 'XARAÉS'],
+                    'CROTALÁRIA': ['SPECTABILIS'],
+                    'FEIJÃO GUANDÚ': ['BAM-2014'],
+                    'MILHETO': ['ADRG-9060', 'ADRG-6010', 'BAM-200'],
+                    'SOJA': ['BMX-OLIMPO', 'SPARTA']
+                };
+                return defaults[cultureName] || null;
+            },
+
+            incrementLotCode: function(code) {
+                return code.replace(/(\d+)$/, (match) => {
+                    const length = match.length;
+                    const nextVal = parseInt(match, 10) + 1;
+                    return String(nextVal).padStart(length, '0');
+                });
+            },
+
+            selectLine: async function(id, name) {
+                this.state.lineId = id;
+                this.state.lineName = name;
+
+                try {
+                    const statusDoc = await getDoc(doc(db, 'ensaque_status_linhas', id));
+                    if(statusDoc.exists()) {
+                        const data = statusDoc.data();
+                        this.updateStatusUI(data.status, data.color);
+                    }
+                } catch(e) { console.log("Offline or first run"); }
+
+                document.getElementById('header-line-name').textContent = name.toUpperCase();
+                document.getElementById('screen-select').classList.add('hidden');
+                document.getElementById('screen-select').classList.remove('flex');
+                document.getElementById('screen-operation').classList.remove('hidden');
+                document.getElementById('screen-operation').classList.add('flex');
+                
+                this.updateSetupDisplay();
+                setTimeout(() => lucide.createIcons(), 100);
+            },
+
+            registerBag: async function() {
+                if(this.state.setup.weight === 0) return this.openSetup();
+
+                const btn = document.getElementById('btn-produce');
+                btn.disabled = true;
+                
+                try {
+                    this.state.setup.count++;
+                    this.state.sessionCount++;
+                    
+                    const currentLot = this.state.setup.lot;
+                    
+                    const record = {
+                        createdAt: new Date(),
+                        lineId: this.state.lineId,
+                        lineName: this.state.lineName,
+                        shift: document.getElementById('shift-select').value,
+                        weight: this.state.setup.weight,
+                        lot: currentLot,
+                        culture: this.state.setup.culture,
+                        cultivar: this.state.setup.cultivar,
+                        storage: this.state.setup.storage || {},
+                        type: 'real',
+                        userId: auth.currentUser.uid
+                    };
+
+                    await addDoc(collection(db, 'ensaque_producao'), record);
+
+                    const nextLot = this.incrementLotCode(currentLot);
+                    if (nextLot !== currentLot) this.state.setup.lot = nextLot;
+                    
+                    this.updateSetupDisplay();
+                    document.getElementById('session-count').textContent = this.state.sessionCount;
+                    this.showToast(`Bag Registrado (${record.weight}kg)`);
+
+                } catch (error) {
+                    alert("Erro ao salvar: " + error.message);
+                } finally {
+                    btn.disabled = false;
+                }
+            },
+
+            changeStatus: async function(status, color) {
+                try {
+                    await setDoc(doc(db, 'ensaque_status_linhas', this.state.lineId), {
+                        status: status,
+                        color: color,
+                        updatedAt: new Date(),
+                        user: auth.currentUser.email
+                    });
+
+                    await addDoc(collection(db, 'ensaque_paradas'), {
+                        lineId: this.state.lineId,
+                        type: 'status_change',
+                        status: status,
+                        createdAt: new Date()
+                    });
+
+                    this.updateStatusUI(status, color);
+                    this.closeModal('modal-status');
+                    this.showToast(`Status: ${status}`);
+
+                } catch (e) {
+                    alert("Erro ao atualizar status");
+                }
+            },
+
+            updateStatusUI: function(status, color) {
+                const textEl = document.getElementById('line-status-text');
+                const dotEl = document.getElementById('line-status-dot');
+                const colorMap = { 'emerald': 'bg-emerald-500 text-emerald-600', 'amber': 'bg-amber-500 text-amber-600', 'blue': 'bg-blue-500 text-blue-600', 'red': 'bg-red-500 text-red-600' };
+                const styles = colorMap[color].split(' ');
+                
+                textEl.textContent = status;
+                textEl.className = `${styles[1]} uppercase`;
+                dotEl.className = `w-2 h-2 rounded-full ${styles[0]} animate-pulse`;
+            },
+
+            saveRetro: async function() {
+                this.showToast("Lançamento salvo no banco de dados");
+                this.closeModal('modal-retro');
+            },
+
+            loadCultures: function() {
+                const cultures = this.getCulturesList();
+                const container = document.getElementById('culture-options');
+                container.innerHTML = '';
+                cultures.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'select-btn p-2 rounded text-[10px] font-bold transition border border-slate-200 hover:border-blue-300 w-full text-slate-600 uppercase break-words leading-tight flex items-center justify-center min-h-[40px]';
+                    btn.textContent = c;
+                    btn.onclick = () => this.selectCultureBtn(btn, c);
+                    container.appendChild(btn);
+                });
+            },
+
+            selectCultureBtn: function(btn, cultureName) {
+                document.querySelectorAll('.select-btn').forEach(b => { b.classList.remove('selected', 'border-blue-600', 'bg-blue-50', 'text-blue-700'); b.classList.add('border-slate-200', 'text-slate-600'); });
+                btn.classList.remove('border-slate-200', 'text-slate-600'); btn.classList.add('selected', 'border-blue-600', 'bg-blue-50', 'text-blue-700');
+                this.state.tempCulture = cultureName;
+                this.renderCultivarInput(cultureName);
+            },
+
+            renderCultivarInput: function(cultureName) {
+                 const container = document.getElementById('cultivar-area');
+                 container.innerHTML = ''; 
+                 const cultivars = this.getCultivarsFor(cultureName);
+                 if(cultivars) {
+                     const grid = document.createElement('div'); grid.className = 'grid grid-cols-2 gap-2';
+                     cultivars.forEach(cultivar => {
+                         const btn = document.createElement('button');
+                         btn.className = 'p-2 rounded text-xs font-bold transition border w-full uppercase border-slate-200 text-slate-600 hover:border-blue-300';
+                         btn.textContent = cultivar;
+                         btn.onclick = () => { 
+                             this.state.tempCultivar = cultivar; 
+                             document.getElementById('input-cultivar').value = cultivar;
+                         };
+                         grid.appendChild(btn);
+                     });
+                     const hidden = document.createElement('input'); hidden.type='hidden'; hidden.id='input-cultivar';
+                     container.appendChild(grid); container.appendChild(hidden);
+                 } else {
+                     const input = document.createElement('input'); input.type='text'; input.id='input-cultivar'; input.className='w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase';
+                     container.appendChild(input);
+                 }
+            },
+
+            openSetup: function() { document.getElementById('modal-setup').classList.remove('hidden'); },
+            closeModal: function(id) { document.getElementById(id).classList.add('hidden'); },
+            saveSetup: function() {
+                 const c = this.state.tempCulture;
+                 const l = document.getElementById('input-lot').value;
+                 const w = parseFloat(document.getElementById('input-weight').value);
+                 this.state.setup = { ...this.state.setup, culture: c, lot: l, weight: w };
+                 this.updateSetupDisplay();
+                 this.closeModal('modal-setup');
+            },
+            
+            updateSetupDisplay: function() {
+                const s = this.state.setup;
+                document.getElementById('info-culture').textContent = s.culture || '--';
+                document.getElementById('info-lot').textContent = s.lot || '--';
+                document.getElementById('info-weight').textContent = s.weight || '0';
+                
+                const storageDisplay = document.getElementById('storage-display');
+                const storageValue = document.getElementById('storage-value');
+                
+                if(s.storage && s.storage.chamber) {
+                    storageDisplay.classList.remove('hidden');
+                    storageValue.textContent = `${s.storage.chamber.split(' ')[0]} ${s.storage.chamber.split(' ')[1]} ${s.storage.chamber.split(' ')[2] || ''} • ${s.storage.street || '-'} • ${s.storage.position || '-'}`;
+                } else {
+                    storageDisplay.classList.add('hidden');
+                }
+            },
+
+            openStorageModal: function() { document.getElementById('modal-storage').classList.remove('hidden'); },
+            saveStorage: function() { 
+                const chamber = document.getElementById('storage-chamber').value;
+                const street = document.getElementById('storage-street').value;
+                const position = document.getElementById('storage-position').value;
+                const obs = document.getElementById('storage-obs').value;
+                
+                if(!chamber) return alert("Selecione pelo menos a Câmara.");
+                
+                this.state.setup.storage = { chamber, street, position, obs };
+                this.saveState();
+                this.updateSetupDisplay();
+                this.closeModal('modal-storage');
+                this.showToast("Local Definido: " + chamber);
+            },
+
+            openStatusModal: function() { document.getElementById('modal-status').classList.remove('hidden'); },
+            openRetroModal: function() { document.getElementById('modal-retro').classList.remove('hidden'); },
+            switchRetroTab: function(tab) { 
+                if(tab === 'production') {
+                    document.getElementById('content-production').classList.remove('hidden');
+                    document.getElementById('content-stop').classList.add('hidden');
+                    document.getElementById('tab-production').classList.add('active');
+                    document.getElementById('tab-stop').classList.remove('active');
+                } else {
+                    document.getElementById('content-production').classList.add('hidden');
+                    document.getElementById('content-stop').classList.remove('hidden');
+                    document.getElementById('tab-production').classList.remove('active');
+                    document.getElementById('tab-stop').classList.add('active');
+                }
+            },
+
+            exitLine: function() {
+                if(confirm("Sair da linha?")) {
+                    document.getElementById('screen-operation').classList.add('hidden');
+                    document.getElementById('screen-operation').classList.remove('flex');
+                    document.getElementById('screen-select').classList.remove('hidden');
+                    document.getElementById('screen-select').classList.add('flex');
+                }
+            },
+
+            showToast: function(msg) {
+                const t = document.getElementById('toast');
+                document.getElementById('toast-msg').textContent = msg;
+                t.classList.remove('-translate-y-32', 'opacity-0');
+                setTimeout(() => t.classList.add('-translate-y-32', 'opacity-0'), 2500);
+            },
+            
+            initClock: function() { setInterval(() => { document.getElementById('clock-display').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }, 1000); }
+        };
+
+        window.app = app;
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>

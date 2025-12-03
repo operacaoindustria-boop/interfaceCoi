@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gerencial - Ensaque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; }
+        .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #94a3b8; border-radius: 0.5rem; transition: all 0.2s; font-weight: 600; font-size: 0.875rem; cursor: pointer; }
+        .sidebar-link:hover { background: #1e293b; color: white; }
+        .sidebar-link.active { background: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .card { background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .nav-tab { padding: 0.75rem 1.5rem; color: #64748b; font-weight: 600; font-size: 0.875rem; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
+        .nav-tab:hover { color: #334155; }
+        .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-online { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-offline { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .status-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- TELA DE LOGIN (Obrigatória para ler o Firestore) -->
+    <div id="screen-login" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
+                <i data-lucide="shield" class="w-8 h-8 text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Gestão Industrial</h2>
+            <p class="text-slate-500 text-sm mb-6">Faça login para visualizar o Dashboard.</p>
+            
+            <input type="email" id="login-email" class="w-full p-3 border border-slate-300 rounded-lg mb-3 outline-none focus:border-blue-500" placeholder="Email">
+            <input type="password" id="login-pass" class="w-full p-3 border border-slate-300 rounded-lg mb-6 outline-none focus:border-blue-500" placeholder="Senha">
+            
+            <button onclick="authSystem.login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition flex justify-center items-center gap-2">
+                <span id="login-btn-text">ACESSAR DASHBOARD</span>
+            </button>
+            <p id="login-error" class="text-red-500 text-xs mt-3 hidden"></p>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 flex-shrink-0 flex flex-col h-full border-r border-slate-800">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="layout-dashboard" class="text-blue-500"></i> MES Industrial
+            </h1>
+            <p class="text-xs text-slate-500 mt-1">Gestão de Ensaque v2.0</p>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <a href="menu.html" class="sidebar-link mb-4 text-blue-400 hover:bg-slate-800 hover:text-white border border-transparent hover:border-slate-700">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i> Voltar ao Menu
+            </a>
+
+            <div onclick="navigation.goTo('dashboard')" class="sidebar-link active" id="nav-dashboard">
+                <i data-lucide="bar-chart-2" class="w-5 h-5"></i> Dashboard
+            </div>
+            <a href="ensaque.html" class="sidebar-link">
+                <i data-lucide="monitor" class="w-5 h-5"></i> Terminal Operador
+            </a>
+            <div onclick="navigation.goTo('traceability')" class="sidebar-link" id="nav-traceability">
+                <i data-lucide="snowflake" class="w-5 h-5"></i> Rastreabilidade
+            </div>
+            <div onclick="navigation.goTo('reports')" class="sidebar-link" id="nav-reports">
+                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Relatórios
+            </div>
+            
+            <div class="pt-4 mt-4 border-t border-slate-800">
+                <p class="px-2 text-xs font-bold text-slate-500 uppercase mb-2">Configurações</p>
+                <div onclick="navigation.goTo('settings')" class="sidebar-link" id="nav-settings">
+                    <i data-lucide="sprout" class="w-5 h-5"></i> Gestão de Culturas
+                </div>
+                <div onclick="navigation.goTo('shift-settings')" class="sidebar-link" id="nav-shift-settings">
+                    <i data-lucide="clock" class="w-5 h-5"></i> Parâmetros de Turno
+                </div>
+                <div onclick="navigation.goTo('data-center')" class="sidebar-link" id="nav-data-center">
+                    <i data-lucide="database" class="w-5 h-5"></i> Central de Dados
+                </div>
+                <div onclick="navigation.goTo('users')" class="sidebar-link" id="nav-users">
+                    <i data-lucide="users" class="w-5 h-5"></i> Usuários
+                </div>
+                <div onclick="navigation.goTo('reset-zone')" class="sidebar-link text-red-400 hover:bg-red-900 hover:text-white" id="nav-reset-zone">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i> Zona de Reset Global
+                </div>
+            </div>
+        </nav>
+
+        <div class="p-4 bg-slate-800 border-t border-slate-700/50">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-slate-700">OP</div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-white truncate" id="user-email-display">Usuário</p>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <p class="text-[10px] text-slate-400 font-medium truncate">Conectado</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        
+        <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0">
+            <div class="flex items-center gap-4">
+                <div class="flex gap-6" id="dashboard-tabs">
+                    <button onclick="dashboard.switchTab('global')" class="nav-tab active" id="tab-global">Visão Global</button>
+                    <button onclick="dashboard.switchTab('bb01')" class="nav-tab" id="tab-bb01">Ensacadeira 01</button>
+                    <button onclick="dashboard.switchTab('bb02')" class="nav-tab" id="tab-bb02">Ensacadeira 02</button>
+                    <button onclick="dashboard.switchTab('bb03')" class="nav-tab" id="tab-bb03">Ensacadeira 03</button>
+                    <button onclick="dashboard.switchTab('bb04')" class="nav-tab" id="tab-bb04">Ensacadeira 04</button>
+                </div>
+                <div id="page-header-title" class="hidden font-bold text-slate-700 text-lg flex items-center gap-2"></div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-400 uppercase">Atualizado: <span id="last-update">--:--</span></span>
+            </div>
+        </header>
+
+        <!-- VIEW: DASHBOARD (Com Dados Reais) -->
+        <main id="view-dashboard" class="flex-1 overflow-y-auto p-6 fade-in">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800" id="page-title">Visão Global de Produção</h2>
+                    <p class="text-slate-500 text-sm mt-1" id="page-subtitle">Dados em tempo real do Firestore.</p>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="card border-l-4 border-l-blue-500">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Produzido</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-bags">0</h3><p class="text-sm font-semibold text-blue-600 mt-1">BigBags (Hoje)</p></div>
+                        <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="package" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+                <div class="card border-l-4 border-l-emerald-500">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Volume (Ton)</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-ton">0.0</h3><p class="text-sm font-semibold text-emerald-600 mt-1">Toneladas</p></div>
+                        <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600"><i data-lucide="weight" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+                <div class="card border-l-4 border-l-indigo-500">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Eficiência</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-efficiency">--</h3><p class="text-xs text-slate-400 mt-1">Meta Diária</p></div>
+                        <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600"><i data-lucide="activity" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+                <div class="card border-l-4 border-l-amber-500">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Linhas Ativas</p><h3 class="text-xl font-bold text-slate-800 mt-2 flex items-center gap-2" id="kpi-active-lines">--</h3><p class="text-xs text-slate-400 mt-1">Monitoramento Real</p></div>
+                        <div class="p-2 bg-amber-50 rounded-lg text-amber-600"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Feed Table -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800">Últimos Registros (Live Feed)</h3>
+                    <div class="flex items-center gap-2 text-xs text-emerald-600 font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado ao Banco
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr><th class="px-6 py-3">Horário</th><th class="px-6 py-3">Linha</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Lote</th><th class="px-6 py-3 text-right">Peso</th></tr>
+                        </thead>
+                        <tbody id="live-feed-body">
+                            <tr><td colspan="5" class="text-center py-4 text-slate-400">Aguardando registros...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- OUTRAS VIEWS (Mantidas do código anterior, apenas escondidas inicialmente) -->
+        <main id="view-traceability" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Rastreabilidade (Integração em breve)</div></main>
+        <main id="view-reports" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Relatórios (Integração em breve)</div></main>
+        <main id="view-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Culturas (Local)</div></main>
+        <main id="view-shift-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Parâmetros de Turno (Local)</div></main>
+        <main id="view-data-center" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Central de Dados (Local)</div></main>
+        <main id="view-users" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Usuários (Local)</div></main>
+        <main id="view-reset-zone" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Zona de Reset</div></main>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO DO FIREBASE ---
+        // SUBSTITUA PELAS SUAS CHAVES REAIS DO PROJETO INTEGRACAOCOI
+        const firebaseConfig = { 
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", 
+            authDomain: "integracaocoi.firebaseapp.com", 
+            projectId: "integracaocoi", 
+            storageBucket: "integracaocoi.firebasestorage.app", 
+            messagingSenderId: "177203745489", 
+            appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" 
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- SISTEMA DE AUTENTICAÇÃO ---
+        window.authSystem = {
+            init: function() {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        document.getElementById('screen-login').classList.add('hidden');
+                        document.getElementById('user-email-display').textContent = user.email;
+                        dashboard.startListeners(); // Inicia leitura do banco apenas após login
+                    } else {
+                        document.getElementById('screen-login').classList.remove('hidden');
+                    }
+                });
+            },
+            login: async function() {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                const btn = document.getElementById('login-btn-text');
+                const err = document.getElementById('login-error');
+                
+                btn.textContent = "Verificando...";
+                err.classList.add('hidden');
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (error) {
+                    err.textContent = "Acesso negado. Verifique suas credenciais.";
+                    err.classList.remove('hidden');
+                } finally {
+                    btn.textContent = "ACESSAR DASHBOARD";
+                }
+            }
+        };
+
+        // --- CONTROLLER DO DASHBOARD (REALTIME) ---
+        const dashboard = {
+            currentTab: 'global',
+            unsubscribes: [], // Para limpar listeners ao sair
+
+            init: function() {
+                lucide.createIcons();
+                this.startClock();
+                window.authSystem.init();
+                
+                // Navegação
+                window.navigation = {
+                    goTo: (viewId) => {
+                        document.querySelectorAll('main').forEach(el => el.classList.add('hidden'));
+                        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                        document.getElementById('view-' + viewId).classList.remove('hidden');
+                        
+                        const navId = 'nav-' + viewId;
+                        if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
+                        
+                        // Controle de abas no topo
+                        const tabs = document.getElementById('dashboard-tabs');
+                        const title = document.getElementById('page-header-title');
+                        
+                        if(viewId === 'dashboard') {
+                            tabs.classList.remove('hidden');
+                            title.classList.add('hidden');
+                        } else {
+                            tabs.classList.add('hidden');
+                            title.classList.remove('hidden');
+                            // Definir título baseado no ID se necessário
+                        }
+                        lucide.createIcons();
+                    }
+                };
+            },
+
+            switchTab: function(tabId) {
+                this.currentTab = tabId;
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.getElementById('tab-' + tabId).classList.add('active');
+                
+                // Atualiza título e subtítulo
+                const titles = {
+                    'global': 'Visão Global de Produção',
+                    'bb01': 'Ensacadeira 01 - Detalhes',
+                    'bb02': 'Ensacadeira 02 - Detalhes',
+                    'bb03': 'Ensacadeira 03 - Detalhes',
+                    'bb04': 'Ensacadeira 04 - Detalhes'
+                };
+                document.getElementById('page-title').textContent = titles[tabId];
+                
+                // Recarrega filtros (na prática, o onSnapshot já filtra, aqui só atualizaria a view se tivéssemos dados separados em memória)
+                this.refreshKPIs(); 
+            },
+
+            startListeners: function() {
+                // 1. Listener da Produção (Últimos 50 registros)
+                const q = query(collection(db, "ensaque_producao"), orderBy("createdAt", "desc"), limit(50));
+                
+                const unsubProd = onSnapshot(q, (snapshot) => {
+                    const tableBody = document.getElementById('live-feed-body');
+                    tableBody.innerHTML = "";
+                    
+                    let totalBagsToday = 0;
+                    let totalWeightToday = 0;
+
+                    // Data de hoje para filtro simples (Idealmente filtrar na query)
+                    const todayStr = new Date().toDateString();
+
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const date = data.createdAt.toDate();
+                        const timeStr = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                        
+                        // Somar KPIs (apenas do dia)
+                        if (date.toDateString() === todayStr) {
+                            totalBagsToday++;
+                            totalWeightToday += (data.weight || 0);
+                        }
+
+                        // Preencher Tabela
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 font-mono font-bold">${timeStr}</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">${data.lineName || data.lineId}</td>
+                                <td class="px-6 py-4">${data.culture} <span class="text-xs text-slate-400 ml-1">${data.cultivar}</span></td>
+                                <td class="px-6 py-4"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold border border-slate-200">${data.lot}</span></td>
+                                <td class="px-6 py-4 text-right font-bold text-blue-600">${data.weight} kg</td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+
+                    // Atualizar KPIs na tela
+                    document.getElementById('kpi-total-bags').textContent = totalBagsToday;
+                    document.getElementById('kpi-total-ton').textContent = (totalWeightToday / 1000).toFixed(2); // Toneladas
+                    
+                }, (error) => {
+                    console.error("Erro ao ler produção:", error);
+                });
+
+                // 2. Listener de Status das Linhas
+                const unsubStatus = onSnapshot(collection(db, "ensaque_status_linhas"), (snapshot) => {
+                    let activeCount = 0;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.status === 'OPERANDO') activeCount++;
+                    });
+                    document.getElementById('kpi-active-lines').innerHTML = `<span class="w-3 h-3 rounded-full bg-green-500"></span> ${activeCount} Online`;
+                });
+
+                this.unsubscribes.push(unsubProd, unsubStatus);
+            },
+
+            refreshKPIs: function() {
+                // Lógica para recalcular KPIs baseado na aba selecionada (Global vs Linha Específica)
+                // Implementação futura: filtrar o array de dados recebido do snapshot
+            },
+
+            startClock: function() {
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('last-update').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                }, 1000);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => dashboard.init());
+    </script>
+</body>
+</html>
