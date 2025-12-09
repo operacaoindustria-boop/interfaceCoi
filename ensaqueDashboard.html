@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Gerencial - Ensaque</title>
+    <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; }
         .sidebar-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #94a3b8; border-radius: 0.5rem; transition: all 0.2s; font-weight: 600; font-size: 0.875rem; cursor: pointer; }
@@ -17,365 +19,878 @@
         .nav-tab { padding: 0.75rem 1.5rem; color: #64748b; font-weight: 600; font-size: 0.875rem; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
         .nav-tab:hover { color: #334155; }
         .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .status-online { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .status-offline { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .status-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hidden { display: none !important; }
+        
+        /* Utilitários de Status e Layout */
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-online { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-shipped { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 999; }
+        .sub-tab-btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; }
+        .sub-tab-btn.active { background-color: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .sub-tab-btn.inactive { color: #64748b; hover:bg-slate-50; }
+        .btn-icon { padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { transform: scale(1.1); }
+        .editable-kpi:hover { background-color: #f8fafc; cursor: pointer; border-color: #94a3b8; }
+        
+        /* Esconde barra de rolagem mas permite scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex h-screen overflow-hidden bg-slate-50">
 
-    <!-- TELA DE LOGIN (Obrigatória para ler o Firestore) -->
+    <!-- TELA DE LOGIN -->
     <div id="screen-login" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div class="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
-                <i data-lucide="shield" class="w-8 h-8 text-blue-600"></i>
-            </div>
+        <div id="login-loading" class="flex flex-col items-center">
+            <i data-lucide="loader-2" class="w-12 h-12 text-blue-500 animate-spin mb-4"></i>
+            <p class="text-slate-400 text-sm font-bold uppercase tracking-wider animate-pulse">Conectando ao Sistema...</p>
+        </div>
+        <div id="login-form-container" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center hidden">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4"><i data-lucide="shield" class="w-8 h-8 text-blue-600"></i></div>
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Gestão Industrial</h2>
             <p class="text-slate-500 text-sm mb-6">Faça login para visualizar o Dashboard.</p>
-            
             <input type="email" id="login-email" class="w-full p-3 border border-slate-300 rounded-lg mb-3 outline-none focus:border-blue-500" placeholder="Email">
             <input type="password" id="login-pass" class="w-full p-3 border border-slate-300 rounded-lg mb-6 outline-none focus:border-blue-500" placeholder="Senha">
-            
-            <button onclick="authSystem.login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition flex justify-center items-center gap-2">
-                <span id="login-btn-text">ACESSAR DASHBOARD</span>
-            </button>
+            <button onclick="authSystem.login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition flex justify-center items-center gap-2"><span id="login-btn-text">ACESSAR DASHBOARD</span></button>
             <p id="login-error" class="text-red-500 text-xs mt-3 hidden"></p>
         </div>
     </div>
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 flex-shrink-0 flex flex-col h-full border-r border-slate-800">
-        <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                <i data-lucide="layout-dashboard" class="text-blue-500"></i> MES Industrial
-            </h1>
-            <p class="text-xs text-slate-500 mt-1">Gestão de Ensaque v2.0</p>
-        </div>
-        
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <a href="menu.html" class="sidebar-link mb-4 text-blue-400 hover:bg-slate-800 hover:text-white border border-transparent hover:border-slate-700">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i> Voltar ao Menu
-            </a>
+    <!-- OVERLAY MOBILE -->
+    <div id="mobile-overlay" onclick="dashboard.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden glass transition-opacity duration-300"></div>
 
-            <div onclick="navigation.goTo('dashboard')" class="sidebar-link active" id="nav-dashboard">
-                <i data-lucide="bar-chart-2" class="w-5 h-5"></i> Dashboard
+    <!-- SIDEBAR -->
+    <aside id="app-sidebar" class="hidden md:flex w-64 bg-slate-900 flex-shrink-0 flex-col h-full border-r border-slate-800 overflow-hidden fixed md:static z-50 transition-all duration-300 shadow-2xl md:shadow-none h-screen">
+        <div class="p-6 border-b border-slate-800 shrink-0 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="layout-dashboard" class="text-blue-500"></i> MES Industrial</h1>
+                <p class="text-xs text-slate-500 mt-1">Gestão de Ensaque v2.0</p>
             </div>
-            <a href="ensaque.html" class="sidebar-link">
-                <i data-lucide="monitor" class="w-5 h-5"></i> Terminal Operador
-            </a>
-            <div onclick="navigation.goTo('traceability')" class="sidebar-link" id="nav-traceability">
-                <i data-lucide="snowflake" class="w-5 h-5"></i> Rastreabilidade
-            </div>
-            <div onclick="navigation.goTo('reports')" class="sidebar-link" id="nav-reports">
-                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Relatórios
-            </div>
-            
+            <button onclick="dashboard.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto custom-scroll">
+            <a href="menu.html" class="sidebar-link mb-4 text-blue-400 hover:bg-slate-800 hover:text-white border border-transparent hover:border-slate-700"><i data-lucide="arrow-left" class="w-5 h-5"></i> Voltar ao Menu</a>
+            <div onclick="dashNav.goTo('dashboard')" class="sidebar-link active" id="nav-dashboard"><i data-lucide="bar-chart-2" class="w-5 h-5"></i> Dashboard</div>
+            <a href="ensaque.html" class="sidebar-link"><i data-lucide="monitor" class="w-5 h-5"></i> Terminal Operador</a>
+            <div onclick="dashNav.goTo('traceability')" class="sidebar-link" id="nav-traceability"><i data-lucide="snowflake" class="w-5 h-5"></i> Rastreabilidade</div>
+            <div onclick="dashNav.goTo('stops')" class="sidebar-link" id="nav-stops"><i data-lucide="timer-off" class="w-5 h-5"></i> Gestão de Paradas</div>
+            <div onclick="dashNav.goTo('reports')" class="sidebar-link" id="nav-reports"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Relatórios</div>
             <div class="pt-4 mt-4 border-t border-slate-800">
                 <p class="px-2 text-xs font-bold text-slate-500 uppercase mb-2">Configurações</p>
-                <div onclick="navigation.goTo('settings')" class="sidebar-link" id="nav-settings">
-                    <i data-lucide="sprout" class="w-5 h-5"></i> Gestão de Culturas
-                </div>
-                <div onclick="navigation.goTo('shift-settings')" class="sidebar-link" id="nav-shift-settings">
-                    <i data-lucide="clock" class="w-5 h-5"></i> Parâmetros de Turno
-                </div>
-                <div onclick="navigation.goTo('data-center')" class="sidebar-link" id="nav-data-center">
-                    <i data-lucide="database" class="w-5 h-5"></i> Central de Dados
-                </div>
-                <div onclick="navigation.goTo('users')" class="sidebar-link" id="nav-users">
-                    <i data-lucide="users" class="w-5 h-5"></i> Usuários
-                </div>
-                <div onclick="navigation.goTo('reset-zone')" class="sidebar-link text-red-400 hover:bg-red-900 hover:text-white" id="nav-reset-zone">
-                    <i data-lucide="alert-triangle" class="w-5 h-5"></i> Zona de Reset Global
-                </div>
+                <div onclick="dashNav.goTo('settings')" class="sidebar-link" id="nav-settings"><i data-lucide="sprout" class="w-5 h-5"></i> Gestão de Culturas</div>
+                <div onclick="dashNav.goTo('shift-settings')" class="sidebar-link" id="nav-shift-settings"><i data-lucide="clock" class="w-5 h-5"></i> Parâmetros de Turno</div>
+                <div onclick="dashNav.goTo('data-center')" class="sidebar-link" id="nav-data-center"><i data-lucide="database" class="w-5 h-5"></i> Central de Dados</div>
+                <div onclick="dashNav.goTo('users')" class="sidebar-link" id="nav-users"><i data-lucide="users" class="w-5 h-5"></i> Usuários</div>
+                <div onclick="dashNav.goTo('reset-zone')" class="sidebar-link text-red-400 hover:bg-red-900 hover:text-white" id="nav-reset-zone"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Zona de Reset Global</div>
             </div>
         </nav>
-
-        <div class="p-4 bg-slate-800 border-t border-slate-700/50">
+        <div class="p-4 bg-slate-800 border-t border-slate-700/50 shrink-0">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-slate-700">OP</div>
-                <div class="overflow-hidden">
-                    <p class="text-sm font-bold text-white truncate" id="user-email-display">Usuário</p>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <p class="text-[10px] text-slate-400 font-medium truncate">Conectado</p>
-                    </div>
-                </div>
+                <div class="overflow-hidden"><p class="text-sm font-bold text-white truncate" id="user-email-display">Usuário</p><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-slate-400 font-medium truncate">Conectado</p></div></div>
             </div>
+            <button onclick="authSystem.logout()" class="w-full bg-slate-700 hover:bg-red-900/40 text-slate-300 hover:text-red-400 py-1.5 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-600/50"><i data-lucide="log-out" class="w-3 h-3"></i> Sair</button>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <div class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-50 w-full relative">
         
-        <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 z-20 relative shadow-sm">
             <div class="flex items-center gap-4">
-                <div class="flex gap-6" id="dashboard-tabs">
-                    <button onclick="dashboard.switchTab('global')" class="nav-tab active" id="tab-global">Visão Global</button>
-                    <button onclick="dashboard.switchTab('bb01')" class="nav-tab" id="tab-bb01">Ensacadeira 01</button>
-                    <button onclick="dashboard.switchTab('bb02')" class="nav-tab" id="tab-bb02">Ensacadeira 02</button>
-                    <button onclick="dashboard.switchTab('bb03')" class="nav-tab" id="tab-bb03">Ensacadeira 03</button>
-                    <button onclick="dashboard.switchTab('bb04')" class="nav-tab" id="tab-bb04">Ensacadeira 04</button>
+                <button onclick="dashboard.toggleSidebar()" class="md:hidden text-slate-600 hover:text-blue-600 p-2 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200" aria-label="Abrir Menu">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+                <div class="flex gap-6 overflow-x-auto no-scrollbar" id="dashboard-tabs">
+                    <button onclick="dashboard.switchTab('global')" class="nav-tab active whitespace-nowrap" id="tab-global">Visão Global</button>
+                    <button onclick="dashboard.switchTab('bb01')" class="nav-tab whitespace-nowrap" id="tab-bb01">Ensacadeira 01</button>
+                    <button onclick="dashboard.switchTab('bb02')" class="nav-tab whitespace-nowrap" id="tab-bb02">Ensacadeira 02</button>
+                    <button onclick="dashboard.switchTab('bb03')" class="nav-tab whitespace-nowrap" id="tab-bb03">Ensacadeira 03</button>
+                    <button onclick="dashboard.switchTab('bb04')" class="nav-tab whitespace-nowrap" id="tab-bb04">Ensacadeira 04</button>
                 </div>
                 <div id="page-header-title" class="hidden font-bold text-slate-700 text-lg flex items-center gap-2"></div>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="text-xs font-bold text-slate-400 uppercase">Atualizado: <span id="last-update">--:--</span></span>
-            </div>
+            <div class="flex items-center gap-3"><span class="hidden md:inline text-xs font-bold text-slate-400 uppercase">Atualizado: <span id="last-update">--:--</span></span><button class="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><i data-lucide="bell" class="w-5 h-5"></i></button></div>
         </header>
 
-        <!-- VIEW: DASHBOARD (Com Dados Reais) -->
+        <!-- VIEW 1: DASHBOARD -->
         <main id="view-dashboard" class="flex-1 overflow-y-auto p-6 fade-in">
-            <div class="flex justify-between items-end mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-800" id="page-title">Visão Global de Produção</h2>
-                    <p class="text-slate-500 text-sm mt-1" id="page-subtitle">Dados em tempo real do Firestore.</p>
-                </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]"><h2 class="text-xl font-bold text-slate-800" id="page-title">Visão Global de Produção</h2><p class="text-slate-500 text-sm mt-1" id="page-subtitle">Acompanhamento consolidado de lotes fechados.</p></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label><input type="date" id="filter-date" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm"></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Turno</label><select id="filter-shift" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm min-w-[120px] bg-white"><option value="all">Todos</option><option value="Turno A">Turno A</option><option value="Turno B">Turno B</option><option value="Turno C">Turno C</option></select></div>
+                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ensacadeira</label><select id="filter-line" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm min-w-[140px] bg-white"><option value="global">Todas as Linhas</option><option value="bb01">Ensacadeira 01</option><option value="bb02">Ensacadeira 02</option><option value="bb03">Ensacadeira 03</option><option value="bb04">Ensacadeira 04</option></select></div>
+                <button onclick="dashboard.resetFilters()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Limpar Filtros"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
             </div>
 
             <!-- KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div class="card border-l-4 border-l-blue-500">
-                    <div class="flex justify-between items-start">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Produzido</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-bags">0</h3><p class="text-sm font-semibold text-blue-600 mt-1">BigBags (Hoje)</p></div>
-                        <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="package" class="w-6 h-6"></i></div>
-                    </div>
-                </div>
-                <div class="card border-l-4 border-l-emerald-500">
-                    <div class="flex justify-between items-start">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Volume (Ton)</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-ton">0.0</h3><p class="text-sm font-semibold text-emerald-600 mt-1">Toneladas</p></div>
-                        <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600"><i data-lucide="weight" class="w-6 h-6"></i></div>
-                    </div>
-                </div>
-                <div class="card border-l-4 border-l-indigo-500">
-                    <div class="flex justify-between items-start">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Eficiência</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-efficiency">--</h3><p class="text-xs text-slate-400 mt-1">Meta Diária</p></div>
-                        <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600"><i data-lucide="activity" class="w-6 h-6"></i></div>
-                    </div>
-                </div>
-                <div class="card border-l-4 border-l-amber-500">
-                    <div class="flex justify-between items-start">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Linhas Ativas</p><h3 class="text-xl font-bold text-slate-800 mt-2 flex items-center gap-2" id="kpi-active-lines">--</h3><p class="text-xs text-slate-400 mt-1">Monitoramento Real</p></div>
-                        <div class="p-2 bg-amber-50 rounded-lg text-amber-600"><i data-lucide="zap" class="w-6 h-6"></i></div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                 <div class="card border-l-4 border-l-blue-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Total Bags (Filtro)</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-total-bags">--</h3></div>
+                 <div class="card border-l-4 border-l-emerald-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Total Toneladas</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-total-ton">--</h3></div>
+                 <div class="card border-l-4 border-l-indigo-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Lotes Fechados</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-closed-lots">--</h3></div>
+                 <div class="card border-l-4 border-l-amber-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Status (Linha)</p><div id="kpi-line-status" class="text-sm font-semibold text-slate-700 space-y-1 mt-1"><span class="text-xs text-slate-400 italic">Carregando...</span></div></div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="card lg:col-span-2 flex flex-col"><h3 class="font-bold text-slate-800 mb-4">Tendência de Produção (Bags/h)</h3><div class="h-64 w-full flex-1"><canvas id="productionChart"></canvas></div></div>
+                <div class="flex flex-col gap-6">
+                    <div class="card relative flex flex-col items-center justify-center"><h3 class="font-bold text-slate-800 mb-4 self-start w-full border-b pb-2 text-sm">Aderência à Meta</h3><div class="h-32 w-32 relative"><canvas id="adherenceChart"></canvas><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-xl font-bold text-slate-700" id="adherence-text">0%</span></div></div><p class="text-[10px] text-slate-400 mt-2">Realizado vs. Meta Prevista</p></div>
+                    <div class="card relative flex flex-col"><h3 class="font-bold text-slate-800 mb-4 border-b pb-2 text-sm">Volume Diário e Tendência</h3><div class="h-48 w-full"><canvas id="sCurveChart"></canvas></div></div>
+                    <div class="card relative flex flex-col"><h3 class="font-bold text-slate-800 mb-4 border-b pb-2 text-sm">Ritmo Médio (Bags/h)</h3><div class="h-48 w-full"><canvas id="avgRateChart"></canvas></div></div>
                 </div>
             </div>
 
-            <!-- Live Feed Table -->
-            <div class="card">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-800">Últimos Registros (Live Feed)</h3>
-                    <div class="flex items-center gap-2 text-xs text-emerald-600 font-bold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado ao Banco
-                    </div>
+            <div class="card mt-6">
+                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-800">Histórico de Lotes Fechados</h3><div class="flex items-center gap-2 text-xs text-emerald-600 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado ao Banco</div></div>
+                <div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Data/Hora</th><th class="px-6 py-3">Turno</th><th class="px-6 py-3">Linha</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Lote</th><th class="px-6 py-3 text-right">Peso Total</th><th class="px-6 py-3 text-center">Detalhes</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="lots-table-body"><tr><td colspan="8" class="text-center py-8 text-slate-400">Aguardando dados...</td></tr></tbody></table></div>
+            </div>
+        </main>
+
+        <!-- VIEW 2: RASTREABILIDADE (Mantido) -->
+        <main id="view-traceability" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+             <div class="flex justify-between items-end mb-6"><div><h2 class="text-2xl font-bold text-slate-800">Rastreabilidade e Estoque</h2><p class="text-slate-500 text-sm mt-1">Gestão de armazenamento e expedição.</p></div><div class="flex gap-2"><button class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50"><i data-lucide="filter" class="w-4 h-4"></i> Filtros</button><div class="flex bg-white p-1 rounded-lg border border-slate-200"><button onclick="traceabilityController.switchSubTab('stock')" id="btn-tab-stock" class="sub-tab-btn active">Em Estoque</button><button onclick="traceabilityController.switchSubTab('shipped')" id="btn-tab-shipped" class="sub-tab-btn inactive">Expedidos</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6"><div class="card border-l-4 border-l-cyan-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Bags Armazenados</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-storage-bags">0</h3><p class="text-xs text-cyan-600 font-bold mt-1">Estoque Atual</p></div><div class="card border-l-4 border-l-blue-600 p-4 editable-kpi" onclick="traceabilityController.updateEnv('temp')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Temp. Média</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-temp">--</span>°C</h3></div><div class="card border-l-4 border-l-indigo-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('humid')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Umidade</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-humid">--</span>%</h3></div><div class="card border-l-4 border-l-amber-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('expiry')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Próx. Venc.</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-xl font-bold text-slate-800 mt-2" id="env-expiry">--/--</h3></div></div><div id="tab-content-stock" class="card"><h3 class="font-bold text-slate-800 mb-4">Estoque Atual (Lotes em Câmara)</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Entrada</th><th class="px-6 py-3 text-center">Dias</th><th class="px-6 py-3">Localização Real</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="traceability-table-body"><tr><td colspan="7" class="text-center py-8 text-slate-400">Carregando estoque...</td></tr></tbody></table></div></div><div id="tab-content-shipped" class="card hidden"><h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="truck" class="w-5 h-5 text-blue-600"></i> Histórico de Expedição</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Expedição</th><th class="px-6 py-3">Detalhes</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="shipped-table-body"></tbody></table></div></div>
+        </main>
+
+        <!-- VIEW 3: GESTÃO DE PARADAS (ATUALIZADA COM FILTROS DE DATA/TURNO) -->
+        <main id="view-stops" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Gestão de Paradas</h2>
+                    <p class="text-slate-500 text-sm mt-1" id="stops-subtitle">Visão Global de Paradas</p>
                 </div>
+                <div class="flex bg-white p-1 rounded-lg border border-slate-200 overflow-x-auto max-w-full">
+                    <button onclick="stopsController.switchTab('global')" id="btn-stop-global" class="sub-tab-btn active whitespace-nowrap">Global</button>
+                    <button onclick="stopsController.switchTab('bb01')" id="btn-stop-bb01" class="sub-tab-btn inactive whitespace-nowrap">Ens 01</button>
+                    <button onclick="stopsController.switchTab('bb02')" id="btn-stop-bb02" class="sub-tab-btn inactive whitespace-nowrap">Ens 02</button>
+                    <button onclick="stopsController.switchTab('bb03')" id="btn-stop-bb03" class="sub-tab-btn inactive whitespace-nowrap">Ens 03</button>
+                    <button onclick="stopsController.switchTab('bb04')" id="btn-stop-bb04" class="sub-tab-btn inactive whitespace-nowrap">Ens 04</button>
+                </div>
+                
+                <!-- NOVOS FILTROS DE PARADAS (DATA + TURNO) -->
+                <div class="flex gap-2 items-center">
+                    <div class="relative">
+                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                             <i data-lucide="calendar" class="w-4 h-4"></i>
+                         </div>
+                         <input type="date" id="stops-filter-date" onchange="stopsController.updateFilters()" class="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600 font-medium">
+                    </div>
+                    <select id="stops-filter-shift" onchange="stopsController.updateFilters()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600 font-bold min-w-[120px]">
+                        <option value="all">Todos Turnos</option>
+                        <option value="Turno A">Turno A</option>
+                        <option value="Turno B">Turno B</option>
+                        <option value="Turno C">Turno C</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="card border-l-4 border-l-red-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Tempo Parado</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-stops-time">0h 0m</h3></div>
+                <div class="card border-l-4 border-l-orange-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Principal Motivo</p><h3 class="text-xl font-bold text-slate-800 truncate" id="kpi-stops-reason">--</h3></div>
+                <div class="card border-l-4 border-l-amber-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Ocorrências</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-stops-count">0</h3></div>
+                <div class="card border-l-4 border-l-blue-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">MTTR (Médio)</p><h3 class="text-2xl font-bold text-slate-800" id="kpi-stops-mttr">0 min</h3></div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="card"><h3 class="font-bold text-slate-800 mb-4">Pareto de Motivos (Minutos)</h3><div class="h-64 w-full"><canvas id="stopsParetoChart"></canvas></div></div>
+                <div class="card"><h3 class="font-bold text-slate-800 mb-4" id="chart-title-lines">Distribuição</h3><div class="h-64 w-full"><canvas id="stopsLineChart"></canvas></div></div>
+            </div>
+            
+            <div class="card">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-400"></i> Registro Detalhado</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-slate-600">
                         <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                            <tr><th class="px-6 py-3">Horário</th><th class="px-6 py-3">Linha</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Lote</th><th class="px-6 py-3 text-right">Peso</th></tr>
+                            <tr><th class="px-6 py-3">Data</th><th class="px-6 py-3">Início</th><th class="px-6 py-3">Fim</th><th class="px-6 py-3 text-center">Duração</th><th class="px-6 py-3">Linha</th><th class="px-6 py-3">Motivo</th><th class="px-6 py-3 text-center">Ações</th></tr>
                         </thead>
-                        <tbody id="live-feed-body">
-                            <tr><td colspan="5" class="text-center py-4 text-slate-400">Aguardando registros...</td></tr>
-                        </tbody>
+                        <tbody id="stops-table-body"><tr><td colspan="7" class="text-center py-8 text-slate-400">Carregando dados...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </main>
 
-        <!-- OUTRAS VIEWS (Mantidas do código anterior, apenas escondidas inicialmente) -->
-        <main id="view-traceability" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Rastreabilidade (Integração em breve)</div></main>
-        <main id="view-reports" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Relatórios (Integração em breve)</div></main>
-        <main id="view-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Culturas (Local)</div></main>
-        <main id="view-shift-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Parâmetros de Turno (Local)</div></main>
-        <main id="view-data-center" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Central de Dados (Local)</div></main>
-        <main id="view-users" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Usuários (Local)</div></main>
+        <!-- Demais Views (Mantidas) -->
+        <main id="view-reports" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Relatórios</div></main>
+        <main id="view-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Culturas</div></main>
+        <main id="view-shift-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Parâmetros de Turno</div></main>
+        <main id="view-data-center" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Central de Dados</div></main>
+        <main id="view-users" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Usuários</div></main>
         <main id="view-reset-zone" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Zona de Reset</div></main>
+
+        <!-- MODAIS -->
+        <div id="modal-delete-confirm" class="modal-backdrop hidden"><div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center"><div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4"><i data-lucide="trash-2" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-slate-800 mb-2">Excluir Registro?</h3><p class="text-sm text-slate-500 mb-6">O registro será ocultado deste painel.</p><div class="flex gap-3"><button onclick="window.cancelDelete()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button><button onclick="window.confirmDelete()" id="btn-confirm-delete" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">Sim, Remover</button></div></div></div>
+        <div id="modal-ship-confirm" class="modal-backdrop hidden"><div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center"><div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4"><i data-lucide="truck" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-slate-800 mb-2">Confirmar Expedição?</h3><p class="text-sm text-slate-500 mb-6">Este lote será movido para o histórico de expedidos.</p><div class="flex gap-3"><button onclick="traceabilityController.closeShipModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button><button onclick="traceabilityController.executeShip()" id="btn-confirm-ship" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2">Confirmar</button></div></div></div>
+        <div id="modal-trace-delete-confirm" class="modal-backdrop hidden"><div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center"><div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4"><i data-lucide="trash-2" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-slate-800 mb-2">Excluir do Estoque?</h3><p class="text-sm text-slate-500 mb-6">Remover permanentemente da visualização.</p><div class="flex gap-3"><button onclick="traceabilityController.closeTraceDeleteModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button><button onclick="traceabilityController.executeTraceDelete()" id="btn-confirm-trace-delete" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">Excluir</button></div></div></div>
+
+        <!-- NOVO MODAL DE EXCLUSÃO DE PARADA -->
+        <div id="modal-stop-delete-confirm" class="modal-backdrop hidden">
+            <div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Excluir Parada?</h3>
+                <p class="text-sm text-slate-500 mb-6">Esta ação removerá o registro permanentemente.</p>
+                <div class="flex gap-3">
+                    <button onclick="stopsController.closeDeleteModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button>
+                    <button onclick="stopsController.executeDeleteStop()" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">Sim, Remover</button>
+                </div>
+            </div>
+        </div>
 
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, updateDoc, deleteDoc, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO FIREBASE ---
-        // SUBSTITUA PELAS SUAS CHAVES REAIS DO PROJETO INTEGRACAOCOI
-        const firebaseConfig = { 
-            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", 
-            authDomain: "integracaocoi.firebaseapp.com", 
-            projectId: "integracaocoi", 
-            storageBucket: "integracaocoi.firebasestorage.app", 
-            messagingSenderId: "177203745489", 
-            appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" 
-        };
-        
+        // --- MOCK CONTROLLERS ---
+        const settings = { init: function() { console.log("Settings module loaded"); } };
+        const shiftSettings = { init: function() { console.log("Shift Settings module loaded"); } };
+        const dataCenter = { init: function() { console.log("Data Center module loaded"); } };
+        const usersController = { init: function() { console.log("Users Controller module loaded"); } };
+        const resetZone = { init: function() { console.log("Reset Zone module loaded"); } };
+
+        const firebaseConfig = { apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", authDomain: "integracaocoi.firebaseapp.com", projectId: "integracaocoi", storageBucket: "integracaocoi.firebasestorage.app", messagingSenderId: "177203745489", appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- SISTEMA DE AUTENTICAÇÃO ---
-        window.authSystem = {
+        // --- CONTROLLERS REAIS ---
+
+        const authSystem = {
             init: function() {
+                document.getElementById('login-loading').classList.remove('hidden');
+                document.getElementById('login-form-container').classList.add('hidden');
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         document.getElementById('screen-login').classList.add('hidden');
                         document.getElementById('user-email-display').textContent = user.email;
-                        dashboard.startListeners(); // Inicia leitura do banco apenas após login
+                        dashboard.startListeners();
+                        traceabilityController.loadEnv();
+                        stopsController.init();
+                        dashboard.handleResize();
                     } else {
-                        document.getElementById('screen-login').classList.remove('hidden');
+                        document.getElementById('login-loading').classList.add('hidden');
+                        document.getElementById('login-form-container').classList.remove('hidden');
                     }
                 });
             },
             login: async function() {
                 const email = document.getElementById('login-email').value;
                 const pass = document.getElementById('login-pass').value;
-                const btn = document.getElementById('login-btn-text');
-                const err = document.getElementById('login-error');
-                
-                btn.textContent = "Verificando...";
-                err.classList.add('hidden');
+                try { await signInWithEmailAndPassword(auth, email, pass); } 
+                catch (error) { alert("Erro de login: " + error.message); }
+            },
+            logout: async function() { if(confirm("Sair do sistema?")) await signOut(auth); }
+        };
 
+        const traceabilityController = {
+            envData: { temp: '--', humid: '--', expiry: '--' }, currentSubTab: 'stock', lotToShip: null, traceLotToDelete: null,
+            init: function() { this.render(); },
+            switchSubTab: function(tab) {
+                this.currentSubTab = tab;
+                const btnStock = document.getElementById('btn-tab-stock'); const btnShipped = document.getElementById('btn-tab-shipped');
+                const contentStock = document.getElementById('tab-content-stock'); const contentShipped = document.getElementById('tab-content-shipped');
+                if (tab === 'stock') { btnStock.classList.add('active'); btnStock.classList.remove('inactive'); btnShipped.classList.remove('active'); btnShipped.classList.add('inactive'); contentStock.classList.remove('hidden'); contentShipped.classList.add('hidden'); } 
+                else { btnShipped.classList.add('active'); btnShipped.classList.remove('inactive'); btnStock.classList.remove('active'); btnStock.classList.add('inactive'); contentShipped.classList.remove('hidden'); contentStock.classList.add('hidden'); }
+                this.render();
+            },
+            loadEnv: async function() { try { const docRef = doc(db, "ensaque_config", "environment"); const docSnap = await getDoc(docRef); if (docSnap.exists()) { this.envData = docSnap.data(); this.updateEnvUI(); } } catch (e) {} },
+            updateEnv: async function(type) { let newVal; if (type === 'temp') newVal = prompt("Nova Temperatura (°C):", this.envData.temp); else if (type === 'humid') newVal = prompt("Nova Umidade (%):", this.envData.humid); else if (type === 'expiry') newVal = prompt("Próximo Vencimento Crítico:", this.envData.expiry); if (newVal) { this.envData[type] = newVal; this.updateEnvUI(); try { await setDoc(doc(db, "ensaque_config", "environment"), this.envData); } catch(e) {} } },
+            updateEnvUI: function() { document.getElementById('env-temp').textContent = this.envData.temp; document.getElementById('env-humid').textContent = this.envData.humid; document.getElementById('env-expiry').textContent = this.envData.expiry; },
+            render: function() {
+                const tbodyStock = document.getElementById('traceability-table-body'); const tbodyShipped = document.getElementById('shipped-table-body');
+                if (!tbodyStock || !tbodyShipped) return;
+                tbodyStock.innerHTML = ""; tbodyShipped.innerHTML = "";
+                const inventory = dashboard.cachedData.filter(item => !item.hidden && item.status !== 'shipped');
+                let totalStorageBags = 0;
+                if (inventory.length === 0) tbodyStock.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 italic">Nenhum lote em estoque.</td></tr>';
+                else { inventory.forEach(item => {
+                        const summary = item.summary || {}; const storage = summary.storage || {}; totalStorageBags += (Number(summary.totalBags) || 0);
+                        const chamber = storage.chamber || "N/D"; const locationStr = `${chamber.replace('Câmara Fria', 'Câm').replace('Pátio Externo', 'Pátio')} • ${storage.street || '-'} • ${storage.position || '-'}`;
+                        const entryDate = item.closedAt ? item.closedAt.toDate() : new Date(); const now = new Date(); const diffDays = Math.ceil(Math.abs(now - entryDate) / (1000 * 60 * 60 * 24)); 
+                        tbodyStock.innerHTML += `<tr class="bg-white border-b hover:bg-slate-50 transition"><td class="px-6 py-4 font-bold text-slate-800">${summary.last_lot || '-'}</td><td class="px-6 py-4"><div class="font-bold text-slate-700">${summary.culture || '-'}</div><div class="text-xs text-slate-500">${summary.cultivar || '-'}</div></td><td class="px-6 py-4 text-xs font-mono text-slate-500">${entryDate.toLocaleDateString()}</td><td class="px-6 py-4 text-center font-bold text-slate-600">${diffDays} dias</td><td class="px-6 py-4 font-medium text-blue-700 text-xs">${locationStr}</td><td class="px-6 py-4 text-center"><span class="status-badge status-online">Estoque</span></td><td class="px-6 py-4 text-center flex justify-center gap-2"><button onclick="traceabilityController.markShipped('${item.id}')" class="btn-icon hover:bg-blue-100 text-blue-600" title="Expedir"><i data-lucide="truck" class="w-4 h-4"></i></button><button onclick="traceabilityController.deleteLot('${item.id}')" class="btn-icon hover:bg-red-100 text-red-600" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
+                    }); }
+                document.getElementById('kpi-storage-bags').textContent = totalStorageBags;
+                const shipped = dashboard.cachedData.filter(item => !item.hidden && item.status === 'shipped');
+                if (shipped.length === 0) tbodyShipped.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 italic">Nenhum lote expedido recentemente.</td></tr>';
+                else { shipped.forEach(item => { const summary = item.summary || {}; const shippedDate = item.shippedAt ? item.shippedAt.toDate().toLocaleDateString() : 'N/A'; tbodyShipped.innerHTML += `<tr class="bg-white border-b hover:bg-slate-50 transition"><td class="px-6 py-4 font-bold text-slate-800">${summary.last_lot || '-'}</td><td class="px-6 py-4"><div class="font-bold text-slate-700">${summary.culture || '-'}</div><div class="text-xs text-slate-500">${summary.cultivar || '-'}</div></td><td class="px-6 py-4 text-xs font-mono text-slate-500">${shippedDate}</td><td class="px-6 py-4 text-xs text-slate-500">${summary.totalBags} Bags</td><td class="px-6 py-4 text-center"><span class="status-badge status-shipped">Enviado</span></td><td class="px-6 py-4 text-center"><button onclick="traceabilityController.deleteLot('${item.id}')" class="btn-icon hover:bg-red-100 text-red-600" title="Remover do Histórico"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); }
+                lucide.createIcons();
+            },
+            markShipped: function(id) { this.lotToShip = id; document.getElementById('modal-ship-confirm').classList.remove('hidden'); },
+            closeShipModal: function() { document.getElementById('modal-ship-confirm').classList.add('hidden'); this.lotToShip = null; },
+            executeShip: async function() { if(!this.lotToShip) return; const btn = document.getElementById('btn-confirm-ship'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToShip), { status: 'shipped', shippedAt: new Date() }); this.closeShipModal(); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = "Confirmar"; } },
+            deleteLot: function(id) { this.traceLotToDelete = id; document.getElementById('modal-trace-delete-confirm').classList.remove('hidden'); },
+            closeTraceDeleteModal: function() { document.getElementById('modal-trace-delete-confirm').classList.add('hidden'); this.traceLotToDelete = null; },
+            executeTraceDelete: async function() { if(!this.traceLotToDelete) return; const btn = document.getElementById('btn-confirm-trace-delete'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.traceLotToDelete), { hidden: true }); this.closeTraceDeleteModal(); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = "Excluir"; } }
+        };
+
+        const stopsController = {
+            cachedStops: [], 
+            currentTab: 'global', 
+            filters: { date: '', shift: 'all' }, // Unified filter state
+            paretoChart: null, 
+            lineChart: null,
+            unsubscribe: null,
+            stopToDelete: null,
+
+            init: function() {
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('stops-filter-date').value = today;
+                this.filters.date = today;
+                this.updateFilters();
+            },
+            
+            parseDate: function(value) {
+                if (!value) return null;
+                if (value.toDate) return value.toDate(); 
+                if (value instanceof Date) return value;
+                if (typeof value === 'string') {
+                    let d = new Date(value);
+                    if (!isNaN(d.getTime())) return d;
+                    const parts = value.match(/(\d{2})\/(\d{2})\/(\d{4})\s*(\d{2})?:?(\d{2})?/);
+                    if (parts) {
+                        return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0);
+                    }
+                }
+                return null;
+            },
+
+            updateFilters: function() {
+                this.filters.date = document.getElementById('stops-filter-date').value;
+                this.filters.shift = document.getElementById('stops-filter-shift').value;
+                
+                // Re-subscribe if date changes or initial load
+                this.subscribeStops();
+            },
+
+            subscribeStops: function() {
+                if (this.unsubscribe) this.unsubscribe();
+                if (!this.filters.date) return;
+
+                const [year, month, day] = this.filters.date.split('-').map(Number);
+                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
+                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
+
+                // Query by Date Range
+                const q = query(
+                    collection(db, "ensaque_paradas"), 
+                    where("createdAt", ">=", start),
+                    where("createdAt", "<=", end),
+                    orderBy("createdAt", "desc")
+                );
+
+                this.unsubscribe = onSnapshot(q, (snapshot) => {
+                    const data = [];
+                    snapshot.forEach(doc => {
+                        const d = doc.data();
+                        if(d.reason || d.status) {
+                            data.push({id: doc.id, ...d});
+                        }
+                    });
+                    this.cachedStops = data;
+                    this.render();
+                });
+            },
+
+            switchTab: function(tabId) {
+                this.currentTab = tabId; 
+                const tabs = ['global', 'bb01', 'bb02', 'bb03', 'bb04']; 
+                tabs.forEach(t => { 
+                    const btn = document.getElementById('btn-stop-' + t); 
+                    if(btn) { 
+                        if(t === tabId) { btn.classList.add('active'); btn.classList.remove('inactive'); } 
+                        else { btn.classList.remove('active'); btn.classList.add('inactive'); } 
+                    } 
+                });
+                
+                const titleMap = { 
+                    'global': 'Visão Global de Paradas', 
+                    'bb01': 'Paradas - Ensacadeira 01', 
+                    'bb02': 'Paradas - Ensacadeira 02', 
+                    'bb03': 'Paradas - Ensacadeira 03', 
+                    'bb04': 'Paradas - Ensacadeira 04' 
+                }; 
+                document.getElementById('stops-subtitle').textContent = titleMap[tabId]; 
+                this.render();
+            },
+
+            render: function() {
+                const tbody = document.getElementById('stops-table-body'); 
+                if(!tbody) return; 
+                tbody.innerHTML = "";
+                
+                // 1. Filter by Line (Tab)
+                let filteredStops = this.cachedStops; 
+                if(this.currentTab !== 'global') { 
+                    filteredStops = this.cachedStops.filter(stop => stop.lineId === this.currentTab); 
+                }
+
+                // 2. Filter by Shift (In-Memory)
+                if (this.filters.shift !== 'all') {
+                    filteredStops = filteredStops.filter(stop => stop.shift === this.filters.shift);
+                }
+
+                let totalMinutes = 0; 
+                let count = 0; 
+                let reasons = {}; 
+                let lines = {};
+
+                if(filteredStops.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 italic">Nenhum registro encontrado.</td></tr>'; 
+                } else { 
+                    filteredStops.forEach(stop => { 
+                        const rawStart = stop.time || stop.createdAt;
+                        const startDate = this.parseDate(rawStart) || new Date();
+                        
+                        const rawEnd = stop.end_time;
+                        const endDate = rawEnd ? this.parseDate(rawEnd) : null;
+                        
+                        let duration = stop.duration_minutes || 0;
+                        if (duration === 0 && endDate) {
+                            const diffMs = endDate - startDate;
+                            duration = Math.floor(diffMs / 60000); 
+                        }
+                        
+                        if (stop.reason) {
+                            totalMinutes += duration; 
+                            count++; 
+                            const r = stop.reason; 
+                            reasons[r] = (reasons[r] || 0) + duration;
+                        }
+                        
+                        const lineDisplay = stop.lineId ? stop.lineId.replace('bb','Linha ') : 'N/A'; 
+                        if (stop.reason) lines[lineDisplay] = (lines[lineDisplay] || 0) + duration;
+
+                        const startTimeStr = startDate.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+                        const endTimeStr = endDate ? endDate.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--';
+                        
+                        const isStatusChange = stop.type === 'status_change';
+                        const rowClass = isStatusChange ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50';
+                        const reasonDisplay = isStatusChange ? `Status alterado para: <b>${stop.status}</b>` : stop.reason;
+
+                        const row = `
+                        <tr class="${rowClass} border-b border-slate-100 transition">
+                            <td class="px-6 py-4 text-slate-500 font-mono text-xs">${startDate.toLocaleDateString()}</td>
+                            <td class="px-6 py-4 font-mono text-xs">${startTimeStr}</td>
+                            <td class="px-6 py-4 font-mono text-xs">${endTimeStr}</td>
+                            <td class="px-6 py-4 text-center">
+                                ${duration > 0 ? `<span class="font-bold text-red-600 bg-red-50 px-2 py-1 rounded text-xs">${duration} min</span>` : '-'}
+                            </td>
+                            <td class="px-6 py-4 font-bold text-slate-700 text-xs">${lineDisplay}</td>
+                            <td class="px-6 py-4 text-slate-800 text-sm">${reasonDisplay}</td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="stopsController.confirmDeleteStop('${stop.id}')" class="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-50" title="Excluir Parada">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>`; 
+                        tbody.innerHTML += row; 
+                    }); 
+                }
+                
+                const hours = Math.floor(totalMinutes / 60); 
+                const mins = totalMinutes % 60; 
+                document.getElementById('kpi-stops-time').textContent = `${hours}h ${mins}m`; 
+                document.getElementById('kpi-stops-count').textContent = count; 
+                
+                const avg = count > 0 ? Math.round(totalMinutes/count) : 0; 
+                document.getElementById('kpi-stops-mttr').textContent = `${avg} min`;
+                
+                let topReason = "--"; 
+                let maxVal = 0; 
+                for(const [r, v] of Object.entries(reasons)) { if(v > maxVal) { maxVal = v; topReason = r; } } 
+                document.getElementById('kpi-stops-reason').textContent = topReason; 
+                
+                this.updateCharts(reasons, lines);
+                lucide.createIcons();
+            },
+
+            confirmDeleteStop: function(id) {
+                this.stopToDelete = id;
+                document.getElementById('modal-stop-delete-confirm').classList.remove('hidden');
+            },
+
+            closeDeleteModal: function() {
+                document.getElementById('modal-stop-delete-confirm').classList.add('hidden');
+                this.stopToDelete = null;
+            },
+
+            executeDeleteStop: async function() {
+                if(!this.stopToDelete) return;
+                
                 try {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                } catch (error) {
-                    err.textContent = "Acesso negado. Verifique suas credenciais.";
-                    err.classList.remove('hidden');
-                } finally {
-                    btn.textContent = "ACESSAR DASHBOARD";
+                    await deleteDoc(doc(db, "ensaque_paradas", this.stopToDelete));
+                    this.closeDeleteModal();
+                } catch(e) {
+                    alert("Erro ao excluir: " + e.message);
+                }
+            },
+
+            updateCharts: function(reasons, lines) {
+                const ctx1 = document.getElementById('stopsParetoChart')?.getContext('2d');
+                if(ctx1) { 
+                    if(this.paretoChart) this.paretoChart.destroy(); 
+                    const sortedReasons = Object.entries(reasons).sort((a,b) => b[1] - a[1]).slice(0, 8); 
+                    this.paretoChart = new Chart(ctx1, { 
+                        type: 'bar', 
+                        data: { 
+                            labels: sortedReasons.map(i => i[0]), 
+                            datasets: [{ 
+                                label: 'Minutos Parados', 
+                                data: sortedReasons.map(i => i[1]), 
+                                backgroundColor: '#ef4444', 
+                                borderRadius: 4 
+                            }] 
+                        }, 
+                        options: { 
+                            indexAxis: 'y', 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { legend: { display: false } } 
+                        } 
+                    }); 
+                }
+                
+                const ctx2 = document.getElementById('stopsLineChart')?.getContext('2d');
+                if(ctx2) { 
+                    if(this.lineChart) this.lineChart.destroy(); 
+                    let chartLabels, chartData, chartTitle; 
+                    
+                    if (this.currentTab === 'global') { 
+                        chartLabels = Object.keys(lines); 
+                        chartData = Object.values(lines); 
+                        chartTitle = 'Distribuição por Linha'; 
+                    } else { 
+                        chartLabels = Object.keys(reasons); 
+                        chartData = Object.values(reasons); 
+                        chartTitle = 'Distribuição por Motivo'; 
+                    } 
+                    
+                    const titleEl = document.getElementById('chart-title-lines'); 
+                    if(titleEl) titleEl.textContent = chartTitle; 
+                    
+                    this.lineChart = new Chart(ctx2, { 
+                        type: 'doughnut', 
+                        data: { 
+                            labels: chartLabels, 
+                            datasets: [{ 
+                                data: chartData, 
+                                backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444', '#8b5cf6', '#ec4899'], 
+                                borderWidth: 0 
+                            }] 
+                        }, 
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            cutout: '60%', 
+                            plugins: { 
+                                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } 
+                            } 
+                        } 
+                    }); 
                 }
             }
         };
 
-        // --- CONTROLLER DO DASHBOARD (REALTIME) ---
         const dashboard = {
-            currentTab: 'global',
-            unsubscribes: [], // Para limpar listeners ao sair
-
-            init: function() {
-                lucide.createIcons();
-                this.startClock();
-                window.authSystem.init();
-                
-                // Navegação
-                window.navigation = {
-                    goTo: (viewId) => {
-                        document.querySelectorAll('main').forEach(el => el.classList.add('hidden'));
-                        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-                        document.getElementById('view-' + viewId).classList.remove('hidden');
-                        
-                        const navId = 'nav-' + viewId;
-                        if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
-                        
-                        // Controle de abas no topo
-                        const tabs = document.getElementById('dashboard-tabs');
-                        const title = document.getElementById('page-header-title');
-                        
-                        if(viewId === 'dashboard') {
-                            tabs.classList.remove('hidden');
-                            title.classList.add('hidden');
-                        } else {
-                            tabs.classList.add('hidden');
-                            title.classList.remove('hidden');
-                            // Definir título baseado no ID se necessário
-                        }
-                        lucide.createIcons();
+            currentTab: 'global', cachedData: [], hiddenLots: new Set(), filters: { date: '', shift: 'all', line: 'global' }, productionChart: null, adherenceChart: null, sCurveChart: null, avgRateChart: null, lotToDelete: null, productionData: [], sidebarOpen: false, unsubscribeProd: null, rawProductionData: [],
+            
+            init: function() { 
+                lucide.createIcons(); 
+                this.startClock(); 
+                this.setTodayDate(); 
+                window.authSystem.init(); 
+                settings.init(); 
+                shiftSettings.init(); 
+                dataCenter.init(); 
+                usersController.init(); 
+                window.addEventListener('resize', () => this.handleResize());
+            },
+            
+            handleResize: function() {
+                const sidebar = document.getElementById('app-sidebar');
+                const overlay = document.getElementById('mobile-overlay');
+                if (window.innerWidth >= 768) {
+                    this.sidebarOpen = false;
+                    sidebar.classList.remove('hidden'); sidebar.classList.add('flex');
+                    overlay.classList.add('hidden');
+                } else {
+                    if(!this.sidebarOpen) {
+                        sidebar.classList.add('hidden'); sidebar.classList.remove('flex');
+                        overlay.classList.add('hidden');
                     }
-                };
+                }
             },
-
-            switchTab: function(tabId) {
-                this.currentTab = tabId;
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                document.getElementById('tab-' + tabId).classList.add('active');
-                
-                // Atualiza título e subtítulo
-                const titles = {
-                    'global': 'Visão Global de Produção',
-                    'bb01': 'Ensacadeira 01 - Detalhes',
-                    'bb02': 'Ensacadeira 02 - Detalhes',
-                    'bb03': 'Ensacadeira 03 - Detalhes',
-                    'bb04': 'Ensacadeira 04 - Detalhes'
-                };
-                document.getElementById('page-title').textContent = titles[tabId];
-                
-                // Recarrega filtros (na prática, o onSnapshot já filtra, aqui só atualizaria a view se tivéssemos dados separados em memória)
-                this.refreshKPIs(); 
+            
+            setTodayDate: function() { 
+                const today = new Date().toISOString().split('T')[0]; 
+                document.getElementById('filter-date').value = today; 
+                this.filters.date = today; 
             },
-
+            
+            updateFilters: function() { 
+                this.filters.date = document.getElementById('filter-date').value; 
+                this.filters.shift = document.getElementById('filter-shift').value; 
+                this.filters.line = document.getElementById('filter-line').value; 
+                
+                this.subscribeProduction(this.filters.date);
+                
+                if(['global', 'bb01', 'bb02', 'bb03', 'bb04'].includes(this.filters.line)) this.switchTab(this.filters.line, false); 
+                this.renderView(); 
+            },
+            
+            resetFilters: function() { 
+                this.setTodayDate(); 
+                document.getElementById('filter-shift').value = 'all'; 
+                document.getElementById('filter-line').value = 'global'; 
+                this.updateFilters(); 
+            },
+            
+            startClock: function() { setInterval(() => { const now = new Date(); const el = document.getElementById('last-update'); if(el) el.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}); }, 1000); },
+            
             startListeners: function() {
-                // 1. Listener da Produção (Últimos 50 registros)
-                const q = query(collection(db, "ensaque_producao"), orderBy("createdAt", "desc"), limit(50));
+                // Listener de Lotes Fechados (Tabela) - Agora dispara recalcCharts()
+                const q = query(collection(db, "ensaque_lotes_fechados"), orderBy("closedAt", "desc"), limit(100));
+                onSnapshot(q, (snapshot) => {
+                    const data = []; const hiddenSet = new Set();
+                    snapshot.forEach(doc => { const d = doc.data(); data.push({ id: doc.id, ...d }); if (d.hidden && d.summary && d.summary.last_lot) hiddenSet.add(d.summary.last_lot); });
+                    this.cachedData = data; 
+                    this.hiddenLots = hiddenSet; 
+                    this.renderView(); // Atualiza tabela
+                    this.recalcCharts(); // FORÇA ATUALIZAÇÃO DOS GRÁFICOS
+                    
+                    if(!document.getElementById('view-traceability').classList.contains('hidden')) traceabilityController.render();
+                });
                 
-                const unsubProd = onSnapshot(q, (snapshot) => {
-                    const tableBody = document.getElementById('live-feed-body');
-                    tableBody.innerHTML = "";
+                // Listener de Status
+                onSnapshot(collection(db, "ensaque_status_linhas"), (snapshot) => {
+                    const kpiStatus = document.getElementById('kpi-line-status');
+                    if(kpiStatus) {
+                        let statusSummary = ""; const docs = []; snapshot.forEach(doc => docs.push({id: doc.id, ...doc.data()})); docs.sort((a, b) => a.id.localeCompare(b.id));
+                        docs.forEach((data) => { const lineNum = data.id.replace('bb',''); const textClass = data.color === 'emerald' ? 'text-emerald-600' : (data.color === 'red' ? 'text-red-600' : 'text-slate-600'); statusSummary += `<div class="flex justify-between w-full"><span class="font-bold text-slate-500">L${lineNum}:</span> <span class="${textClass} font-bold text-xs uppercase">${data.status.substring(0,10)}</span></div>`; });
+                        kpiStatus.innerHTML = statusSummary || "<span class='text-slate-400'>Sem dados</span>";
+                    }
+                });
+
+                this.subscribeProduction(this.filters.date);
+            },
+            
+            subscribeProduction: function(dateString) {
+                if (this.unsubscribeProd) this.unsubscribeProd();
+                if (!dateString) return;
+
+                const [year, month, day] = dateString.split('-').map(Number);
+                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
+                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
+
+                const qProd = query(collection(db, "ensaque_producao"), where("createdAt", ">=", start), where("createdAt", "<=", end), orderBy("createdAt", "asc"));
+                
+                this.unsubscribeProd = onSnapshot(qProd, (snapshot) => {
+                    const pData = [];
+                    snapshot.forEach(doc => { const d = doc.data(); if(d.type === 'real') pData.push(d); });
+                    this.rawProductionData = pData; // Guarda dados crus
+                    this.recalcCharts(); // Recalcula combinando
+                });
+                
+                // Força recalculo inicial mesmo se prod estiver vazio
+                this.recalcCharts();
+            },
+
+            // NOVA FUNÇÃO: Combina dados de Produção Real + Lotes Fechados para os gráficos
+            recalcCharts: function() {
+                if (!this.filters.date) return;
+
+                const [year, month, day] = this.filters.date.split('-').map(Number);
+                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
+                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
+
+                // Começa com dados de produção real (se houver)
+                let combinedData = [...this.rawProductionData];
+
+                // Adiciona dados simulados dos lotes fechados (apenas se não estiverem já na produção real)
+                // Como o novo sistema não grava na produção real, podemos assumir que lotes fechados são novos dados
+                const closedLotsOfDay = this.cachedData.filter(l => {
+                    if (!l.closedAt) return false;
+                    const d = l.closedAt.toDate ? l.closedAt.toDate() : new Date(l.closedAt);
+                    return d >= start && d <= end;
+                });
+
+                closedLotsOfDay.forEach(lot => {
+                    // Distribui a produção do lote no horário de fechamento
+                    // Isso cria um "pico" no gráfico na hora do fechamento, o que é o comportamento esperado
+                    for(let i=0; i< (lot.summary.totalBags || 0); i++) {
+                        combinedData.push({
+                            createdAt: lot.closedAt, 
+                            lot: lot.summary.lot,
+                            weight: lot.summary.bagWeight
+                        });
+                    }
+                });
+
+                // Ordena tudo por horário para o gráfico de linha ficar correto
+                combinedData.sort((a,b) => {
+                    const dateA = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                    const dateB = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                    return dateA - dateB;
+                });
+
+                this.productionData = combinedData;
+                this.updateChartData();
+            },
+
+            updateChartData: function() {
+                const activeData = this.productionData.filter(item => !this.hiddenLots.has(item.lot));
+                const hourlyData = new Array(24).fill(0); let cumulative = 0; const cumulativeData = []; const labels = []; const rateData = []; let totalBagsForAvg = 0; let activeHoursCount = 0;
+                
+                this.productionData.forEach(item => { 
+                    const date = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt); 
+                    const hour = date.getHours(); 
+                    if(hour >= 0 && hour <= 23) hourlyData[hour] += 1; 
+                });
+                
+                for(let i=6; i<=22; i++) { 
+                    labels.push(i + 'h'); 
+                    const bagsInHour = hourlyData[i]; 
+                    cumulative += bagsInHour; 
+                    cumulativeData.push(cumulative); 
+                    rateData.push(bagsInHour); 
+                    if (bagsInHour > 0) { totalBagsForAvg += bagsInHour; activeHoursCount++; } 
+                }
+                
+                const avgRate = activeHoursCount > 0 ? (totalBagsForAvg / activeHoursCount) : 0; 
+                const avgLineData = new Array(labels.length).fill(avgRate); 
+                const displayHourly = hourlyData.slice(6, 23);
+                
+                this.updateChart(labels, displayHourly); 
+                this.updateSCurveChart(labels, displayHourly, cumulativeData); 
+                this.updateAvgRateChart(labels, displayHourly, avgLineData);
+            },
+            
+            // ... (Restante das funções de gráfico e renderização mantidas)
+            updateChart: function(labels, dataValues) { const ctx = document.getElementById('productionChart')?.getContext('2d'); if (!ctx) return; if(this.productionChart) this.productionChart.destroy(); const gradient = ctx.createLinearGradient(0, 0, 0, 400); gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)'); gradient.addColorStop(1, 'rgba(37, 99, 235, 0)'); this.productionChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Produção', data: dataValues, borderColor: '#2563eb', backgroundColor: gradient, fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); },
+            updateSCurveChart: function(labels, dailyValues, cumulativeValues) { const ctx = document.getElementById('sCurveChart')?.getContext('2d'); if (!ctx) return; if(this.sCurveChart) this.sCurveChart.destroy(); this.sCurveChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ type: 'line', label: 'Acumulado', data: cumulativeValues, borderColor: '#10b981', borderDash: [5, 5], borderWidth: 2, fill: false, yAxisID: 'y1' }, { type: 'bar', label: 'Vol. Horário', data: dailyValues, backgroundColor: 'rgba(59, 130, 246, 0.6)', borderRadius: 2, yAxisID: 'y' }] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, y1: { type: 'linear', display: false, position: 'right', grid: { drawOnChartArea: false } }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } } }); },
+            updateAvgRateChart: function(labels, rateData, avgLineData) { const ctx = document.getElementById('avgRateChart')?.getContext('2d'); if (!ctx) return; if(this.avgRateChart) this.avgRateChart.destroy(); this.avgRateChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Média', data: avgLineData, borderColor: '#ef4444', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false }, { label: 'Ritmo', data: rateData, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } } }); },
+            updateAdherenceChart: function(realized, goal) { const ctx = document.getElementById('adherenceChart')?.getContext('2d'); if (!ctx) return; if(this.adherenceChart) this.adherenceChart.destroy(); const percentage = (goal > 0) ? Math.min(Math.round((realized / goal) * 100), 100) : 0; const remaining = 100 - percentage; document.getElementById('adherence-text').textContent = percentage + "%"; this.adherenceChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Realizado', 'Restante'], datasets: [{ data: [percentage, remaining], backgroundColor: ['#2563eb', '#cbd5e1'], borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } }); },
+            
+            renderView: function() {
+                const tbody = document.getElementById('lots-table-body'); if(!tbody) return; tbody.innerHTML = "";
+                let title = "Visão Global de Produção";
+                
+                // DATA FILTERING LOGIC (Fixed for Timezones)
+                const filterDateStr = this.filters.date; // YYYY-MM-DD
+                const [fYear, fMonth, fDay] = filterDateStr.split('-').map(Number);
+                
+                // Create local date boundaries for comparison
+                const filterStart = new Date(fYear, fMonth - 1, fDay, 0, 0, 0, 0);
+                const filterEnd = new Date(fYear, fMonth - 1, fDay, 23, 59, 59, 999);
+
+                const filteredData = this.cachedData.filter(item => { 
+                    if(item.hidden) return false; 
                     
-                    let totalBagsToday = 0;
-                    let totalWeightToday = 0;
+                    // Check Date
+                    let dateMatch = true;
+                    if (this.filters.date) {
+                         const d = item.closedAt ? (item.closedAt.toDate ? item.closedAt.toDate() : new Date(item.closedAt)) : null;
+                         if (d) {
+                             // Compare time value to handle timezone agnostic check
+                             dateMatch = d >= filterStart && d <= filterEnd;
+                         } else {
+                             dateMatch = false;
+                         }
+                    }
 
-                    // Data de hoje para filtro simples (Idealmente filtrar na query)
-                    const todayStr = new Date().toDateString();
-
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const date = data.createdAt.toDate();
-                        const timeStr = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    const shiftMatch = this.filters.shift === 'all' || item.shift === this.filters.shift; 
+                    const lineMatch = this.filters.line === 'global' || item.lineId === this.filters.line; 
+                    
+                    return dateMatch && shiftMatch && lineMatch; 
+                });
+                
+                if(this.filters.line !== 'global') title = `Produção - Ensacadeira ${this.filters.line.replace('bb0', '')}`;
+                document.getElementById('page-title').textContent = title;
+                
+                let totalBags = 0; let totalWeight = 0; let closedLots = 0;
+                
+                if (filteredData.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 italic">Nenhum dado encontrado para esta data.</td></tr>'; 
+                    this.updateAdherenceChart(0, 0); 
+                } else { 
+                    filteredData.forEach((data) => { 
+                        // Defensive check for summary
+                        const summary = data.summary || {};
+                        const date = data.closedAt ? (data.closedAt.toDate ? data.closedAt.toDate() : new Date(data.closedAt)) : new Date(); 
+                        const timeStr = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); 
+                        const dateStr = date.toLocaleDateString(); 
                         
-                        // Somar KPIs (apenas do dia)
-                        if (date.toDateString() === todayStr) {
-                            totalBagsToday++;
-                            totalWeightToday += (data.weight || 0);
-                        }
-
-                        // Preencher Tabela
-                        const row = `
-                            <tr class="bg-white border-b hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 font-mono font-bold">${timeStr}</td>
-                                <td class="px-6 py-4 font-bold text-slate-800">${data.lineName || data.lineId}</td>
-                                <td class="px-6 py-4">${data.culture} <span class="text-xs text-slate-400 ml-1">${data.cultivar}</span></td>
-                                <td class="px-6 py-4"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold border border-slate-200">${data.lot}</span></td>
-                                <td class="px-6 py-4 text-right font-bold text-blue-600">${data.weight} kg</td>
-                            </tr>
-                        `;
-                        tableBody.innerHTML += row;
-                    });
-
-                    // Atualizar KPIs na tela
-                    document.getElementById('kpi-total-bags').textContent = totalBagsToday;
-                    document.getElementById('kpi-total-ton').textContent = (totalWeightToday / 1000).toFixed(2); // Toneladas
-                    
-                }, (error) => {
-                    console.error("Erro ao ler produção:", error);
-                });
-
-                // 2. Listener de Status das Linhas
-                const unsubStatus = onSnapshot(collection(db, "ensaque_status_linhas"), (snapshot) => {
-                    let activeCount = 0;
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.status === 'OPERANDO') activeCount++;
-                    });
-                    document.getElementById('kpi-active-lines').innerHTML = `<span class="w-3 h-3 rounded-full bg-green-500"></span> ${activeCount} Online`;
-                });
-
-                this.unsubscribes.push(unsubProd, unsubStatus);
+                        totalBags += Number(summary.totalBags) || 0; 
+                        totalWeight += Number(summary.totalWeight) || 0; 
+                        closedLots++; 
+                        
+                        const rowId = data.id; 
+                        const summaryRow = `<tr class="bg-white border-b hover:bg-slate-50 cursor-pointer transition-colors" onclick="window.toggleDetails('${rowId}', '${summary.lot}')"><td class="px-6 py-4 font-mono font-bold">${dateStr} ${timeStr}</td><td class="px-6 py-4 font-bold">${data.shift || '-'}</td><td class="px-6 py-4 text-slate-800">${data.lineName || '-'}</td><td class="px-6 py-4"><div class="font-bold text-slate-900">${summary.culture || '?'}</div><div class="text-xs text-slate-500">${summary.cultivar || '-'}</div></td><td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold border border-blue-200">LOTE FECHADO</span><div class="text-[10px] text-slate-500 mt-1">Ref: ${summary.lot || '-'}</div></td><td class="px-6 py-4 text-right font-black text-emerald-600 text-lg">${(summary.totalWeight || 0).toLocaleString()} kg</td><td class="px-6 py-4 text-center text-slate-400"><i data-lucide="chevron-down" id="icon-${rowId}" class="w-5 h-5 transition-transform duration-300"></i></td><td class="px-6 py-4 text-center"><button onclick="event.stopPropagation(); dashboard.confirmDeleteLot('${rowId}')" class="btn-icon hover:bg-red-100 text-red-600" title="Ocultar"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td></tr><tr id="detail-${rowId}" class="hidden bg-slate-50 border-b"><td colspan="8" class="p-4"><div class="bg-white rounded border border-slate-200 p-4 shadow-inner"><div class="flex justify-between items-center border-b pb-2 mb-2"><h4 class="text-xs font-bold text-slate-500 uppercase">Detalhamento do Lote: ${summary.lot}</h4><div class="text-xs text-slate-400">Total Bags: ${summary.totalBags}</div></div><div id="content-${rowId}" class="flex justify-center py-4"><span class="text-slate-400 text-sm flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> Detalhes individuais indisponíveis (Lote Otimizado)</span></div></div></td></tr>`; tbody.innerHTML += summaryRow; 
+                    }); 
+                    this.updateAdherenceChart(totalBags, 0); 
+                }
+                
+                document.getElementById('kpi-total-bags').textContent = totalBags.toLocaleString('pt-BR'); 
+                document.getElementById('kpi-total-ton').textContent = (totalWeight / 1000).toLocaleString('pt-BR', {minimumFractionDigits: 3, maximumFractionDigits: 3}) + " t"; 
+                document.getElementById('kpi-closed-lots').textContent = closedLots; 
+                lucide.createIcons();
             },
-
-            refreshKPIs: function() {
-                // Lógica para recalcular KPIs baseado na aba selecionada (Global vs Linha Específica)
-                // Implementação futura: filtrar o array de dados recebido do snapshot
-            },
-
-            startClock: function() {
-                setInterval(() => {
-                    const now = new Date();
-                    document.getElementById('last-update').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-                }, 1000);
+            
+            confirmDeleteLot: function(id) { this.lotToDelete = id; document.getElementById('modal-delete-confirm').classList.remove('hidden'); },
+            executeDelete: async function() { if(this.lotToDelete) { const btn = document.getElementById('btn-confirm-delete'); btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToDelete), { hidden: true }); this.closeDeleteModal(); this.lotToDelete = null; } catch(e) { alert("Erro: " + e.message); } finally { btn.disabled = false; btn.innerText = "Sim, Remover"; } } },
+            closeDeleteModal: function() { document.getElementById('modal-delete-confirm').classList.add('hidden'); },
+            toggleDetails: function(rowId, lotNumber) { const detailRow = document.getElementById(`detail-${rowId}`); const icon = document.getElementById(`icon-${rowId}`); if (detailRow.classList.contains('hidden')) { detailRow.classList.remove('hidden'); icon.style.transform = "rotate(180deg)"; } else { detailRow.classList.add('hidden'); icon.style.transform = "rotate(0deg)"; } },
+            switchTab: function(tabId, updateDropdown = true) { this.currentTab = tabId; this.filters.line = tabId; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.getElementById('tab-' + tabId).classList.add('active'); if(updateDropdown) document.getElementById('filter-line').value = tabId; this.renderView(); },
+            
+            // Lógica do Menu Mobile
+            toggleSidebar: function() {
+                this.sidebarOpen = !this.sidebarOpen;
+                const sidebar = document.getElementById('app-sidebar');
+                const overlay = document.getElementById('mobile-overlay');
+                if (this.sidebarOpen) {
+                    sidebar.classList.remove('hidden'); sidebar.classList.add('flex');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('hidden'); sidebar.classList.remove('flex');
+                    overlay.classList.add('hidden');
+                }
             }
         };
+
+        // --- GLOBAL EXPORTS ---
+        window.dashNav = { goTo: (viewId) => { 
+            document.querySelectorAll('main').forEach(el => el.classList.add('hidden')); 
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active')); 
+            const viewEl = document.getElementById('view-' + viewId); if(viewEl) viewEl.classList.remove('hidden'); 
+            const navEl = document.getElementById('nav-' + viewId); if(navEl) navEl.classList.add('active'); 
+            const tabs = document.getElementById('dashboard-tabs'); const title = document.getElementById('page-header-title'); 
+            if(dashboard.sidebarOpen) dashboard.toggleSidebar();
+            if(viewId === 'dashboard') { tabs.classList.remove('hidden'); title.classList.add('hidden'); dashboard.renderView(); } 
+            else { tabs.classList.add('hidden'); title.classList.remove('hidden'); title.innerHTML = `<i data-lucide="hash" class="text-blue-500"></i> ${viewId.toUpperCase()}`; if(viewId === 'stops') stopsController.init(); } 
+            lucide.createIcons(); 
+        }};
+        
+        window.dashboard = dashboard;
+        window.authSystem = authSystem;
+        window.traceabilityController = traceabilityController;
+        window.stopsController = stopsController;
+        
+        window.settings = settings;
+        window.shiftSettings = shiftSettings;
+        window.dataCenter = dataCenter;
+        window.usersController = usersController;
+        window.resetZone = resetZone;
+        
+        window.toggleDetails = dashboard.toggleDetails;
+        window.confirmDelete = () => dashboard.executeDelete();
+        window.cancelDelete = () => dashboard.closeDeleteModal();
 
         document.addEventListener('DOMContentLoaded', () => dashboard.init());
     </script>
