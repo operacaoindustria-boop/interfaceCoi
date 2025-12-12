@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -16,9 +18,12 @@
         .sidebar-link:hover { background: #1e293b; color: white; }
         .sidebar-link.active { background: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
         .card { background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
-        .nav-tab { padding: 0.75rem 1.5rem; color: #64748b; font-weight: 600; font-size: 0.875rem; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
-        .nav-tab:hover { color: #334155; }
+        
+        /* Estilo Nav Tab (Padrão para todo o sistema) */
+        .nav-tab { padding: 0.75rem 1.5rem; color: #64748b; font-weight: 600; font-size: 0.875rem; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; white-space: nowrap; }
+        .nav-tab:hover { color: #334155; border-bottom-color: #cbd5e1; }
         .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+        
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -28,9 +33,6 @@
         .status-shipped { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
         
         .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 999; }
-        .sub-tab-btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; }
-        .sub-tab-btn.active { background-color: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-        .sub-tab-btn.inactive { color: #64748b; hover:bg-slate-50; }
         .btn-icon { padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
         .btn-icon:hover { transform: scale(1.1); }
         .editable-kpi:hover { background-color: #f8fafc; cursor: pointer; border-color: #94a3b8; }
@@ -106,11 +108,11 @@
                     <i data-lucide="menu" class="w-7 h-7"></i>
                 </button>
                 <div class="flex gap-6 overflow-x-auto no-scrollbar" id="dashboard-tabs">
-                    <button onclick="dashboard.switchTab('global')" class="nav-tab active whitespace-nowrap" id="tab-global">Visão Global</button>
-                    <button onclick="dashboard.switchTab('bb01')" class="nav-tab whitespace-nowrap" id="tab-bb01">Ensacadeira 01</button>
-                    <button onclick="dashboard.switchTab('bb02')" class="nav-tab whitespace-nowrap" id="tab-bb02">Ensacadeira 02</button>
-                    <button onclick="dashboard.switchTab('bb03')" class="nav-tab whitespace-nowrap" id="tab-bb03">Ensacadeira 03</button>
-                    <button onclick="dashboard.switchTab('bb04')" class="nav-tab whitespace-nowrap" id="tab-bb04">Ensacadeira 04</button>
+                    <button onclick="dashboard.switchTab('global')" class="nav-tab active" id="tab-global">Visão Global</button>
+                    <button onclick="dashboard.switchTab('bb01')" class="nav-tab" id="tab-bb01">Ensacadeira 01</button>
+                    <button onclick="dashboard.switchTab('bb02')" class="nav-tab" id="tab-bb02">Ensacadeira 02</button>
+                    <button onclick="dashboard.switchTab('bb03')" class="nav-tab" id="tab-bb03">Ensacadeira 03</button>
+                    <button onclick="dashboard.switchTab('bb04')" class="nav-tab" id="tab-bb04">Ensacadeira 04</button>
                 </div>
                 <div id="page-header-title" class="hidden font-bold text-slate-700 text-lg flex items-center gap-2"></div>
             </div>
@@ -121,7 +123,17 @@
         <main id="view-dashboard" class="flex-1 overflow-y-auto p-6 fade-in">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end">
                 <div class="flex-1 min-w-[200px]"><h2 class="text-xl font-bold text-slate-800" id="page-title">Visão Global de Produção</h2><p class="text-slate-500 text-sm mt-1" id="page-subtitle">Acompanhamento consolidado de lotes fechados.</p></div>
-                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label><input type="date" id="filter-date" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm"></div>
+                
+                <!-- FILTROS DASHBOARD -->
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Inicial</label>
+                    <input type="date" id="filter-start-date" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Final</label>
+                    <input type="date" id="filter-end-date" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm">
+                </div>
+                
                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Turno</label><select id="filter-shift" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm min-w-[120px] bg-white"><option value="all">Todos</option><option value="Turno A">Turno A</option><option value="Turno B">Turno B</option><option value="Turno C">Turno C</option></select></div>
                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ensacadeira</label><select id="filter-line" onchange="dashboard.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm min-w-[140px] bg-white"><option value="global">Todas as Linhas</option><option value="bb01">Ensacadeira 01</option><option value="bb02">Ensacadeira 02</option><option value="bb03">Ensacadeira 03</option><option value="bb04">Ensacadeira 04</option></select></div>
                 <button onclick="dashboard.resetFilters()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Limpar Filtros"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
@@ -152,31 +164,33 @@
 
         <!-- VIEW 2: RASTREABILIDADE (Mantido) -->
         <main id="view-traceability" class="hidden flex-1 overflow-y-auto p-6 fade-in">
-             <div class="flex justify-between items-end mb-6"><div><h2 class="text-2xl font-bold text-slate-800">Rastreabilidade e Estoque</h2><p class="text-slate-500 text-sm mt-1">Gestão de armazenamento e expedição.</p></div><div class="flex gap-2"><button class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50"><i data-lucide="filter" class="w-4 h-4"></i> Filtros</button><div class="flex bg-white p-1 rounded-lg border border-slate-200"><button onclick="traceabilityController.switchSubTab('stock')" id="btn-tab-stock" class="sub-tab-btn active">Em Estoque</button><button onclick="traceabilityController.switchSubTab('shipped')" id="btn-tab-shipped" class="sub-tab-btn inactive">Expedidos</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6"><div class="card border-l-4 border-l-cyan-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Bags Armazenados</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-storage-bags">0</h3><p class="text-xs text-cyan-600 font-bold mt-1">Estoque Atual</p></div><div class="card border-l-4 border-l-blue-600 p-4 editable-kpi" onclick="traceabilityController.updateEnv('temp')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Temp. Média</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-temp">--</span>°C</h3></div><div class="card border-l-4 border-l-indigo-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('humid')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Umidade</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-humid">--</span>%</h3></div><div class="card border-l-4 border-l-amber-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('expiry')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Próx. Venc.</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-xl font-bold text-slate-800 mt-2" id="env-expiry">--/--</h3></div></div><div id="tab-content-stock" class="card"><h3 class="font-bold text-slate-800 mb-4">Estoque Atual (Lotes em Câmara)</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Entrada</th><th class="px-6 py-3 text-center">Dias</th><th class="px-6 py-3">Localização Real</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="traceability-table-body"><tr><td colspan="7" class="text-center py-8 text-slate-400">Carregando estoque...</td></tr></tbody></table></div></div><div id="tab-content-shipped" class="card hidden"><h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="truck" class="w-5 h-5 text-blue-600"></i> Histórico de Expedição</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Expedição</th><th class="px-6 py-3">Detalhes</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="shipped-table-body"></tbody></table></div></div>
+             <div class="flex justify-between items-end mb-6"><div><h2 class="text-2xl font-bold text-slate-800">Rastreabilidade e Estoque</h2><p class="text-slate-500 text-sm mt-1">Gestão de armazenamento e expedição.</p></div><div class="flex gap-2"><button class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50"><i data-lucide="filter" class="w-4 h-4"></i> Filtros</button><div class="flex bg-white p-1 rounded-lg border border-slate-200"><button onclick="traceabilityController.switchSubTab('stock')" id="btn-tab-stock" class="nav-tab active">Em Estoque</button><button onclick="traceabilityController.switchSubTab('shipped')" id="btn-tab-shipped" class="nav-tab inactive">Expedidos</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6"><div class="card border-l-4 border-l-cyan-500 p-4"><p class="text-xs font-bold text-slate-400 uppercase">Bags Armazenados</p><h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-storage-bags">0</h3><p class="text-xs text-cyan-600 font-bold mt-1">Estoque Atual</p></div><div class="card border-l-4 border-l-blue-600 p-4 editable-kpi" onclick="traceabilityController.updateEnv('temp')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Temp. Média</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-temp">--</span>°C</h3></div><div class="card border-l-4 border-l-indigo-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('humid')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Umidade</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-3xl font-bold text-slate-800 mt-1"><span id="env-humid">--</span>%</h3></div><div class="card border-l-4 border-l-amber-500 p-4 editable-kpi" onclick="traceabilityController.updateEnv('expiry')"><div class="flex justify-between"><p class="text-xs font-bold text-slate-400 uppercase">Próx. Venc.</p><i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i></div><h3 class="text-xl font-bold text-slate-800 mt-2" id="env-expiry">--/--</h3></div></div><div id="tab-content-stock" class="card"><h3 class="font-bold text-slate-800 mb-4">Estoque Atual (Lotes em Câmara)</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Entrada</th><th class="px-6 py-3 text-center">Dias</th><th class="px-6 py-3">Localização Real</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="traceability-table-body"><tr><td colspan="7" class="text-center py-8 text-slate-400">Carregando estoque...</td></tr></tbody></table></div></div><div id="tab-content-shipped" class="card hidden"><h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="truck" class="w-5 h-5 text-blue-600"></i> Histórico de Expedição</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left text-slate-600"><thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200"><tr><th class="px-6 py-3">Lote</th><th class="px-6 py-3">Produto</th><th class="px-6 py-3">Data Expedição</th><th class="px-6 py-3">Detalhes</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="shipped-table-body"></tbody></table></div></div>
         </main>
 
-        <!-- VIEW 3: GESTÃO DE PARADAS (ATUALIZADA COM FILTROS DE DATA/TURNO) -->
+        <!-- VIEW 3: GESTÃO DE PARADAS (CORRIGIDO VISUAL E FUNCIONAL) -->
         <main id="view-stops" class="hidden flex-1 overflow-y-auto p-6 fade-in">
              <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800">Gestão de Paradas</h2>
                     <p class="text-slate-500 text-sm mt-1" id="stops-subtitle">Visão Global de Paradas</p>
                 </div>
-                <div class="flex bg-white p-1 rounded-lg border border-slate-200 overflow-x-auto max-w-full">
-                    <button onclick="stopsController.switchTab('global')" id="btn-stop-global" class="sub-tab-btn active whitespace-nowrap">Global</button>
-                    <button onclick="stopsController.switchTab('bb01')" id="btn-stop-bb01" class="sub-tab-btn inactive whitespace-nowrap">Ens 01</button>
-                    <button onclick="stopsController.switchTab('bb02')" id="btn-stop-bb02" class="sub-tab-btn inactive whitespace-nowrap">Ens 02</button>
-                    <button onclick="stopsController.switchTab('bb03')" id="btn-stop-bb03" class="sub-tab-btn inactive whitespace-nowrap">Ens 03</button>
-                    <button onclick="stopsController.switchTab('bb04')" id="btn-stop-bb04" class="sub-tab-btn inactive whitespace-nowrap">Ens 04</button>
+                
+                <!-- ABAS LIMPAS (SEM ROLAGEM VISÍVEL) -->
+                <div class="flex gap-6 overflow-x-auto no-scrollbar border-b border-slate-200 pb-px min-w-0">
+                    <button onclick="stopsController.switchTab('global')" id="btn-stop-global" class="nav-tab active">Global</button>
+                    <button onclick="stopsController.switchTab('bb01')" id="btn-stop-bb01" class="nav-tab">Ens 01</button>
+                    <button onclick="stopsController.switchTab('bb02')" id="btn-stop-bb02" class="nav-tab">Ens 02</button>
+                    <button onclick="stopsController.switchTab('bb03')" id="btn-stop-bb03" class="nav-tab">Ens 03</button>
+                    <button onclick="stopsController.switchTab('bb04')" id="btn-stop-bb04" class="nav-tab">Ens 04</button>
                 </div>
                 
-                <!-- NOVOS FILTROS DE PARADAS (DATA + TURNO) -->
-                <div class="flex gap-2 items-center">
-                    <div class="relative">
-                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-                             <i data-lucide="calendar" class="w-4 h-4"></i>
-                         </div>
-                         <input type="date" id="stops-filter-date" onchange="stopsController.updateFilters()" class="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600 font-medium">
+                <!-- FILTROS DE DATA/TURNO (STOP) -->
+                <div class="flex gap-2 items-center flex-shrink-0">
+                    <div class="relative flex items-center gap-1">
+                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+                         <input type="date" id="stops-filter-start-date" onchange="stopsController.updateFilters()" class="pl-9 pr-2 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600 font-medium w-36" placeholder="Início">
+                         <span class="text-slate-400 font-bold">-</span>
+                         <input type="date" id="stops-filter-end-date" onchange="stopsController.updateFilters()" class="px-2 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600 font-medium w-32" placeholder="Fim">
                     </div>
                     <select id="stops-filter-shift" onchange="stopsController.updateFilters()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600 font-bold min-w-[120px]">
                         <option value="all">Todos Turnos</option>
@@ -213,12 +227,381 @@
         </main>
 
         <!-- Demais Views (Mantidas) -->
-        <main id="view-reports" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Módulo de Relatórios</div></main>
-        <main id="view-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Culturas</div></main>
-        <main id="view-shift-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Parâmetros de Turno</div></main>
-        <main id="view-data-center" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Central de Dados</div></main>
+        <main id="view-reports" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <!-- Header e Filtros -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <h2 class="text-xl font-bold text-slate-800">Relatório de Produção</h2>
+                    <p class="text-slate-500 text-sm mt-1">Análise de performance Meta vs. Realizado.</p>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Inicial</label>
+                    <input type="date" id="report-start-date" onchange="reportsController.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Final</label>
+                    <input type="date" id="report-end-date" onchange="reportsController.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Turno</label>
+                    <select id="report-shift-filter" onchange="reportsController.updateFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer shadow-sm min-w-[120px] bg-white">
+                        <option value="all">Todos</option>
+                        <option value="Turno A">Turno A</option>
+                        <option value="Turno B">Turno B</option>
+                        <option value="Turno C">Turno C</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                 <div class="card border-l-4 border-l-blue-500 p-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Total Realizado (Bags)</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-report-real">--</h3>
+                 </div>
+                 <div class="card border-l-4 border-l-slate-400 p-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Meta Total (Bags)</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-report-goal">--</h3>
+                 </div>
+                 <div class="card border-l-4 border-l-emerald-500 p-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Aderência à Meta</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-report-adherence">--</h3>
+                 </div>
+            </div>
+            
+            <!-- Gráfico -->
+            <div class="card mb-6">
+                <h3 class="font-bold text-slate-800 mb-4">Comparativo Diário: Meta vs. Realizado</h3>
+                <div class="h-80 w-full"><canvas id="reports-comparison-chart"></canvas></div>
+            </div>
+
+            <!-- Tabela de Acompanhamento -->
+            <div class="card">
+                <h3 class="font-bold text-slate-800 mb-4">Acompanhamento Detalhado por Cultura</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3">Data</th>
+                                <th class="px-6 py-3">Cultura</th>
+                                <th class="px-6 py-3 text-right">Meta (Bags)</th>
+                                <th class="px-6 py-3 text-right">Realizado (Bags)</th>
+                                <th class="px-6 py-3 text-right">Diferença</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table-body">
+                            <tr><td colspan="5" class="text-center py-12 text-slate-400">Selecione um período para gerar o relatório.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        <main id="view-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Gestão de Culturas</h2>
+                    <p class="text-slate-500 text-sm mt-1">Adicione ou remova culturas disponíveis para a produção.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-6 border-b border-slate-200 mb-6">
+                <button onclick="settings.switchTab('active')" id="btn-cultures-active" class="nav-tab active">Culturas Ativas</button>
+                <button onclick="settings.switchTab('add')" id="btn-cultures-add" class="nav-tab">Adicionar Cultura</button>
+            </div>
+
+            <!-- Aba de Culturas Ativas -->
+            <div id="tab-content-cultures-active" class="fade-in">
+                <div class="card max-w-4xl mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-4">Culturas Ativas no Sistema</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3">Nome da Cultura</th>
+                                    <th class="px-6 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cultures-table-body">
+                                <!-- Linhas preenchidas via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba de Adicionar Cultura -->
+            <div id="tab-content-cultures-add" class="hidden fade-in">
+                <div class="card max-w-lg mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-1">Adicionar Nova Cultura</h3>
+                    <p class="text-sm text-slate-500 mb-6">A nova cultura estará disponível para seleção no terminal do operador.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="culture-new-name" class="block text-xs font-medium text-slate-500 mb-1">Nome da Cultura</label>
+                            <input type="text" id="culture-new-name" placeholder="Ex: Milho" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="mt-8 text-right">
+                        <button onclick="settings.addCulture()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 ml-auto">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Adicionar e Salvar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <main id="view-shift-settings" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Parâmetros de Turno</h2>
+                    <p class="text-slate-500 text-sm mt-1">Configure os horários dos turnos e metas de produção.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-6 border-b border-slate-200 mb-6">
+                <button onclick="shiftSettings.switchTab('schedules')" id="btn-shift-schedules" class="nav-tab active">Horários dos Turnos</button>
+                <button onclick="shiftSettings.switchTab('goals')" id="btn-shift-goals" class="nav-tab">Metas por Cultura</button>
+            </div>
+
+            <!-- Aba de Horários de Turnos -->
+            <div id="tab-content-schedules" class="fade-in">
+                <div class="card max-w-4xl mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-1">Definir Horários dos Turnos</h3>
+                    <p class="text-sm text-slate-500 mb-6">Ajuste o início e o fim de cada turno para o cálculo correto da produção.</p>
+                    <div class="space-y-6">
+                        <!-- Turno A -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                            <h4 class="font-bold text-slate-700 md:col-span-1">Turno A</h4>
+                            <div class="flex items-center gap-4 md:col-span-2">
+                                <div>
+                                    <label for="turnoA-inicio" class="block text-xs font-medium text-slate-500 mb-1">Início</label>
+                                    <input type="time" id="turnoA-inicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label for="turnoA-fim" class="block text-xs font-medium text-slate-500 mb-1">Fim</label>
+                                    <input type="time" id="turnoA-fim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Turno B -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                            <h4 class="font-bold text-slate-700 md:col-span-1">Turno B</h4>
+                            <div class="flex items-center gap-4 md:col-span-2">
+                                <div>
+                                    <label for="turnoB-inicio" class="block text-xs font-medium text-slate-500 mb-1">Início</label>
+                                    <input type="time" id="turnoB-inicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label for="turnoB-fim" class="block text-xs font-medium text-slate-500 mb-1">Fim</label>
+                                    <input type="time" id="turnoB-fim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Turno C -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                            <h4 class="font-bold text-slate-700 md:col-span-1">Turno C</h4>
+                            <div class="flex items-center gap-4 md:col-span-2">
+                                <div>
+                                    <label for="turnoC-inicio" class="block text-xs font-medium text-slate-500 mb-1">Início</label>
+                                    <input type="time" id="turnoC-inicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label for="turnoC-fim" class="block text-xs font-medium text-slate-500 mb-1">Fim</label>
+                                    <input type="time" id="turnoC-fim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-right">
+                        <button onclick="shiftSettings.saveSchedules()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 ml-auto">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span id="save-schedules-btn-text">Salvar Horários</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba de Metas por Cultura -->
+            <div id="tab-content-goals" class="hidden fade-in">
+                <div class="card max-w-4xl mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-1">Definir Metas Diárias por Cultura</h3>
+                    <p class="text-sm text-slate-500 mb-6">Estabeleça a meta de ensaque (em bags) para cada tipo de cultura.</p>
+                    
+                    <div class="flex items-end gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200 mb-6">
+                        <div class="flex-1">
+                            <label for="goal-cultura-nome" class="block text-xs font-medium text-slate-500 mb-1">Nome da Cultura</label>
+                            <input type="text" id="goal-cultura-nome" placeholder="Ex: Soja" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex-1">
+                            <label for="goal-cultura-meta" class="block text-xs font-medium text-slate-500 mb-1">Meta Diária (Bags)</label>
+                            <input type="number" id="goal-cultura-meta" placeholder="Ex: 5000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button onclick="shiftSettings.addGoal()" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3">Cultura</th>
+                                    <th class="px-6 py-3">Meta Diária (Bags)</th>
+                                    <th class="px-6 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goals-table-body">
+                                <!-- As linhas serão preenchidas via JS -->
+                                <tr><td colspan="3" class="text-center py-8 text-slate-400">Nenhuma meta definida.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <div class="mt-8 text-right">
+                        <button onclick="shiftSettings.saveGoals()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 ml-auto">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span id="save-goals-btn-text">Salvar Metas</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <main id="view-data-center" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Central de Dados</h2>
+                    <p class="text-slate-500 text-sm mt-1">Exporte relatórios, planilhas e gerencie backups do sistema.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-6 border-b border-slate-200 mb-6">
+                <button onclick="dataCenter.switchTab('export')" id="btn-dc-export" class="nav-tab active">Exportação</button>
+                <button onclick="dataCenter.switchTab('backup')" id="btn-dc-backup" class="nav-tab">Backup de Dados</button>
+                <button onclick="dataCenter.switchTab('integration')" id="btn-dc-integration" class="nav-tab">Integrações</button>
+            </div>
+
+            <!-- Aba de Exportação -->
+            <div id="tab-content-dc-export" class="fade-in space-y-8">
+                <!-- Exportar PDF -->
+                <div class="card max-w-5xl mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-1">Exportar Relatórios (PDF)</h3>
+                    <p class="text-sm text-slate-500 mb-6">Gere um arquivo PDF a partir dos relatórios do sistema. Os filtros de data e turno da página de relatórios serão aplicados.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="dataCenter.exportReportAsPDF('production')" class="bg-white border border-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>
+                            <span>Relatório de Produção</span>
+                        </button>
+                        <button onclick="dataCenter.exportReportAsPDF('stops')" class="bg-white border border-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>
+                            <span>Relatório de Paradas</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Exportar CSV -->
+                <div class="card max-w-5xl mx-auto">
+                    <h3 class="font-bold text-slate-800 mb-1">Exportar Dados para Planilha (CSV)</h3>
+                    <p class="text-sm text-slate-500 mb-6">Exporte dados brutos para análise em Excel, Google Sheets ou outro software.</p>
+                    <div class="flex flex-col md:flex-row items-end gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                        <div class="flex-1 w-full">
+                            <label for="csv-export-type" class="block text-xs font-medium text-slate-500 mb-1">Tipo de Dado</label>
+                            <select id="csv-export-type" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm bg-white">
+                                <option value="lotes_fechados">Lotes de Produção (Fechados)</option>
+                                <option value="registros_parada">Registros de Parada</option>
+                                <option value="estoque_atual">Estoque Atual</option>
+                            </select>
+                        </div>
+                        <div class="w-full md:w-auto">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Data Inicial</label>
+                            <input type="date" id="csv-export-start-date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                        </div>
+                        <div class="w-full md:w-auto">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Data Final</label>
+                            <input type="date" id="csv-export-end-date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                        </div>
+                        <button onclick="dataCenter.exportDataAsCSV()" class="w-full md:w-auto bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2 shadow-md">
+                            <i data-lucide="sheet" class="w-4 h-4"></i>
+                            <span>Exportar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba de Backup -->
+            <div id="tab-content-dc-backup" class="hidden fade-in">
+                <div class="card max-w-3xl mx-auto text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-600 mb-4">
+                        <i data-lucide="database-backup" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2 text-lg">Backup Completo do Sistema</h3>
+                    <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">Crie e baixe um arquivo JSON contendo todos os dados de produção, paradas, configurações e rastreabilidade. Recomenda-se fazer backups periódicos.</p>
+                    <button onclick="dataCenter.generateBackup()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 mx-auto shadow-lg">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                        <span>Gerar e Baixar Backup</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aba de Integração -->
+            <div id="tab-content-dc-integration" class="hidden fade-in">
+                <div class="card max-w-3xl mx-auto text-center">
+                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                        <i data-lucide="webhook" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2 text-lg">Integração com Outros Sistemas</h3>
+                    <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">Esta área é reservada para a configuração de chaves de API e webhooks para integrações com sistemas ERP ou outras plataformas.</p>
+                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-6 text-xs text-slate-500 font-mono">
+                        [ Módulo de Integração - Em Desenvolvimento ]
+                    </div>
+                </div>
+            </div>
+        </main>
         <main id="view-users" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Gestão de Usuários</div></main>
-        <main id="view-reset-zone" class="hidden flex-1 overflow-y-auto p-6 fade-in"><div class="text-center py-20 text-slate-400">Zona de Reset</div></main>
+        <main id="view-reset-zone" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Zona de Reset Global</h2>
+                    <p class="text-slate-500 text-sm mt-1">Execute ações de limpeza local ou permanente no sistema.</p>
+                </div>
+            </div>
+
+            <div class="space-y-8 max-w-4xl mx-auto">
+                <!-- Card de Reset Local -->
+                <div class="card border-l-4 border-amber-400">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-lg">Resetar Visualização Local</h3>
+                            <p class="text-sm text-slate-500 mt-1 mb-4">Esta ação limpará todos os dados em cache na interface e recarregará a página. É útil para resolver problemas de visualização ou sincronia. <strong class="font-bold">Nenhum dado será apagado do banco de dados.</strong></p>
+                            <button onclick="resetZone.confirmLocalReset()" class="bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 transition flex items-center gap-2 shadow-md">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                <span>Resetar Interface Local</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Reset do Banco de Dados -->
+                <div class="card border-l-4 border-red-500 bg-red-50/50">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-red-800 text-lg">Reset Permanente do Banco de Dados</h3>
+                            <p class="text-sm text-red-700 mt-1 mb-4">
+                                <strong class="font-bold">Atenção: Ação Irreversível.</strong><br>
+                                Esta ação apagará <strong class="uppercase">todos os dados</strong> do sistema, incluindo produção, paradas, configurações e estoque. Recomenda-se fortemente <strong class="font-bold">fazer um backup</strong> na Central de Dados antes de continuar.
+                            </p>
+                            <button onclick="resetZone.confirmDatabaseReset()" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center gap-2 shadow-lg shadow-red-500/20">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>Apagar Dados do Banco de Dados</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
 
         <!-- MODAIS -->
         <div id="modal-delete-confirm" class="modal-backdrop hidden"><div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center"><div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4"><i data-lucide="trash-2" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-slate-800 mb-2">Excluir Registro?</h3><p class="text-sm text-slate-500 mb-6">O registro será ocultado deste painel.</p><div class="flex gap-3"><button onclick="window.cancelDelete()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button><button onclick="window.confirmDelete()" id="btn-confirm-delete" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">Sim, Remover</button></div></div></div>
@@ -240,6 +623,20 @@
             </div>
         </div>
 
+        <!-- GENERIC INFO/CONFIRM MODAL -->
+        <div id="modal-info" class="modal-backdrop hidden">
+            <div class="bg-white w-full max-w-md rounded-2xl p-6 m-4 shadow-2xl text-center">
+                <div id="modal-info-icon" class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                    <i data-lucide="info" class="w-6 h-6"></i>
+                </div>
+                <h3 id="modal-info-title" class="text-lg font-bold text-slate-800 mb-2">Title</h3>
+                <p id="modal-info-message" class="text-sm text-slate-500 mb-6">Message goes here.</p>
+                <div id="modal-info-buttons" class="flex gap-3">
+                    <button onclick="infoModal.hide()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">OK</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script type="module">
@@ -248,11 +645,645 @@
         import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, updateDoc, deleteDoc, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- MOCK CONTROLLERS ---
-        const settings = { init: function() { console.log("Settings module loaded"); } };
-        const shiftSettings = { init: function() { console.log("Shift Settings module loaded"); } };
-        const dataCenter = { init: function() { console.log("Data Center module loaded"); } };
+        const settings = {
+            currentTab: 'active',
+            cultures: [], // Array local de culturas ativas
+
+            init: function() {
+                this.loadCultures();
+            },
+
+            switchTab: function(tabId) {
+                this.currentTab = tabId;
+                const tabActive = document.getElementById('tab-content-cultures-active');
+                const tabAdd = document.getElementById('tab-content-cultures-add');
+                const btnActive = document.getElementById('btn-cultures-active');
+                const btnAdd = document.getElementById('btn-cultures-add');
+
+                if (tabId === 'active') {
+                    tabActive.classList.remove('hidden');
+                    tabAdd.classList.add('hidden');
+                    btnActive.classList.add('active');
+                    btnAdd.classList.remove('active');
+                } else {
+                    tabActive.classList.add('hidden');
+                    tabAdd.classList.remove('hidden');
+                    btnActive.classList.remove('active');
+                    btnAdd.classList.add('active');
+                }
+            },
+
+            loadCultures: async function() {
+                try {
+                    const docRef = doc(db, "ensaque_config", "cultures");
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        // O documento armazena as culturas num array chamado 'activeCultures'
+                        this.cultures = docSnap.data().activeCultures || [];
+                    }
+                    this.renderCulturesTable();
+                } catch (e) {
+                    console.error("Erro ao carregar culturas:", e);
+                    infoModal.show("Erro", "Falha ao carregar as culturas do sistema.", "error");
+                }
+            },
+
+            renderCulturesTable: function() {
+                const tbody = document.getElementById('cultures-table-body');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                if (this.cultures.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" class="text-center py-8 text-slate-400">Nenhuma cultura ativa.</td></tr>';
+                } else {
+                    this.cultures.sort().forEach(cultureName => {
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 font-bold text-slate-800">${cultureName}</td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="settings.removeCulture('${cultureName}')" class="btn-icon hover:bg-red-100 text-red-600" title="Remover Cultura">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+                lucide.createIcons();
+            },
+
+            addCulture: function() {
+                const nameInput = document.getElementById('culture-new-name');
+                const newName = nameInput.value.trim();
+
+                if (!newName) {
+                    infoModal.show("Atenção", "O nome da cultura não pode estar vazio.", "warning");
+                    return;
+                }
+
+                if (this.cultures.find(c => c.toLowerCase() === newName.toLowerCase())) {
+                    infoModal.show("Atenção", `A cultura "${newName}" já existe.`, "warning");
+                    return;
+                }
+
+                infoModal.show("Confirmar", `Adicionar a cultura "${newName}"?`, "confirm", () => {
+                    this.cultures.push(newName);
+                    this.saveCultures();
+                    nameInput.value = '';
+                    this.switchTab('active'); // Volta para a lista
+                });
+            },
+
+            removeCulture: function(cultureName) {
+                infoModal.show("Confirmar Exclusão", `Tem certeza que deseja remover a cultura "${cultureName}"?`, "confirm", () => {
+                    this.cultures = this.cultures.filter(c => c !== cultureName);
+                    this.saveCultures();
+                });
+            },
+
+            saveCultures: async function() {
+                try {
+                    await setDoc(doc(db, "ensaque_config", "cultures"), { activeCultures: this.cultures });
+                    infoModal.show("Sucesso", "A lista de culturas foi atualizada.", "success");
+                    this.renderCulturesTable(); // Re-renderiza a tabela para refletir a mudança
+                } catch (e) {
+                    console.error("Erro ao salvar culturas:", e);
+                    infoModal.show("Erro", "Ocorreu um erro ao salvar a lista de culturas.", "error");
+                    this.loadCultures(); // Recarrega do banco para reverter a alteração visual
+                }
+            }
+        };
+        const shiftSettings = {
+            currentTab: 'schedules',
+            goals: [], // Array local para armazenar metas [{cultura: 'Soja', meta: 5000}]
+
+            init: function() {
+                this.loadSchedules();
+                this.loadGoals();
+                this.renderGoalsTable();
+                lucide.createIcons();
+            },
+
+            switchTab: function(tabId) {
+                this.currentTab = tabId;
+                const tabSchedules = document.getElementById('tab-content-schedules');
+                const tabGoals = document.getElementById('tab-content-goals');
+                const btnSchedules = document.getElementById('btn-shift-schedules');
+                const btnGoals = document.getElementById('btn-shift-goals');
+
+                if (tabId === 'schedules') {
+                    tabSchedules.classList.remove('hidden');
+                    tabGoals.classList.add('hidden');
+                    btnSchedules.classList.add('active');
+                    btnGoals.classList.remove('active');
+                } else {
+                    tabSchedules.classList.add('hidden');
+                    tabGoals.classList.remove('hidden');
+                    btnSchedules.classList.remove('active');
+                    btnGoals.classList.add('active');
+                }
+            },
+
+            loadSchedules: async function() {
+                try {
+                    const docRef = doc(db, "ensaque_config", "shift_schedules");
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        document.getElementById('turnoA-inicio').value = data.turnoA_inicio || '';
+                        document.getElementById('turnoA-fim').value = data.turnoA_fim || '';
+                        document.getElementById('turnoB-inicio').value = data.turnoB_inicio || '';
+                        document.getElementById('turnoB-fim').value = data.turnoB_fim || '';
+                        document.getElementById('turnoC-inicio').value = data.turnoC_inicio || '';
+                        document.getElementById('turnoC-fim').value = data.turnoC_fim || '';
+                    } else {
+                        console.log("Nenhum horário de turno configurado.");
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar horários:", e);
+                    infoModal.show("Erro", "Falha ao carregar as configurações de horário.", "error");
+                }
+            },
+
+            saveSchedules: async function() {
+                const btn = document.getElementById('save-schedules-btn-text');
+                btn.textContent = 'Salvando...';
+                try {
+                    const data = {
+                        turnoA_inicio: document.getElementById('turnoA-inicio').value,
+                        turnoA_fim: document.getElementById('turnoA-fim').value,
+                        turnoB_inicio: document.getElementById('turnoB-inicio').value,
+                        turnoB_fim: document.getElementById('turnoB-fim').value,
+                        turnoC_inicio: document.getElementById('turnoC-inicio').value,
+                        turnoC_fim: document.getElementById('turnoC-fim').value,
+                    };
+                    await setDoc(doc(db, "ensaque_config", "shift_schedules"), data);
+                    infoModal.show("Sucesso", "Horários dos turnos salvos com sucesso!", "success");
+                } catch (e) {
+                    console.error("Erro ao salvar horários:", e);
+                    infoModal.show("Erro", "Ocorreu um erro ao salvar os horários.", "error");
+                } finally {
+                    btn.textContent = 'Salvar Horários';
+                }
+            },
+            
+            loadGoals: async function() {
+                try {
+                    const docRef = doc(db, "ensaque_config", "daily_goals");
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        this.goals = docSnap.data().goals || [];
+                        this.renderGoalsTable();
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar metas:", e);
+                }
+            },
+
+            addGoal: function() {
+                const nomeInput = document.getElementById('goal-cultura-nome');
+                const metaInput = document.getElementById('goal-cultura-meta');
+                const nome = nomeInput.value.trim();
+                const meta = metaInput.value.trim();
+
+                if (nome && meta) {
+                    // Verifica se a cultura já existe
+                    const existingGoal = this.goals.find(g => g.cultura.toLowerCase() === nome.toLowerCase());
+                    if (existingGoal) {
+                        infoModal.show("Atenção", `A cultura "${nome}" já possui uma meta definida. Remova a antiga para adicionar uma nova.`, "warning");
+                        return;
+                    }
+                    this.goals.push({ cultura: nome, meta: parseInt(meta, 10) });
+                    this.renderGoalsTable();
+                    nomeInput.value = '';
+                    metaInput.value = '';
+                    nomeInput.focus();
+                } else {
+                    infoModal.show("Atenção", "Preencha o nome da cultura e a meta.", "warning");
+                }
+            },
+
+            removeGoal: function(culturaNome) {
+                this.goals = this.goals.filter(g => g.cultura !== culturaNome);
+                this.renderGoalsTable();
+            },
+
+            renderGoalsTable: function() {
+                const tbody = document.getElementById('goals-table-body');
+                if (!tbody) return;
+                
+                tbody.innerHTML = ''; // Limpa a tabela
+
+                if (this.goals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-slate-400">Nenhuma meta definida.</td></tr>';
+                } else {
+                    this.goals.forEach(goal => {
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 font-bold text-slate-800">${goal.cultura}</td>
+                                <td class="px-6 py-4 font-mono text-blue-600 font-bold">${goal.meta.toLocaleString('pt-BR')} Bags</td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="shiftSettings.removeGoal('${goal.cultura}')" class="btn-icon hover:bg-red-100 text-red-600" title="Remover Meta">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+                lucide.createIcons();
+            },
+
+            saveGoals: async function() {
+                const btn = document.getElementById('save-goals-btn-text');
+                btn.textContent = 'Salvando...';
+                try {
+                    // O objeto a ser salvo contém a chave 'goals' que é um array
+                    await setDoc(doc(db, "ensaque_config", "daily_goals"), { goals: this.goals });
+                    infoModal.show("Sucesso", "Metas de produção salvas com sucesso!", "success");
+                } catch (e) {
+                    console.error("Erro ao salvar metas:", e);
+                    infoModal.show("Erro", "Ocorreu um erro ao salvar as metas.", "error");
+                } finally {
+                    btn.textContent = 'Salvar Metas';
+                }
+            }
+        };
+        const dataCenter = {
+            init: function() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('csv-export-start-date').value = today;
+                document.getElementById('csv-export-end-date').value = today;
+            },
+
+            switchTab: function(tabId) {
+                ['export', 'backup', 'integration'].forEach(id => {
+                    document.getElementById(`tab-content-dc-${id}`).classList.add('hidden');
+                    document.getElementById(`btn-dc-${id}`).classList.remove('active');
+                });
+                document.getElementById(`tab-content-dc-${tabId}`).classList.remove('hidden');
+                document.getElementById(`btn-dc-${tabId}`).classList.add('active');
+            },
+
+            exportReportAsPDF: function(reportType) {
+                infoModal.show("Aguarde", "Gerando PDF do relatório...", "info");
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const title = reportType === 'production' ? 'Relatório de Produção' : 'Relatório de Paradas';
+                const filters = reportsController.filters;
+                const filterText = `Período: ${new Date(filters.startDate).toLocaleDateString()} a ${new Date(filters.endDate).toLocaleDateString()} | Turno: ${filters.shift}`;
+
+                doc.setFontSize(18);
+                doc.text(title, 14, 22);
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text(filterText, 14, 30);
+
+                let headers, body;
+                if (reportType === 'production') {
+                    headers = [['Data', 'Cultura', 'Meta (Bags)', 'Realizado (Bags)', 'Diferença']];
+                    body = Array.from(document.querySelectorAll('#reports-table-body tr')).map(tr => Array.from(tr.cells).map(td => td.innerText));
+                } else { // stops
+                    headers = [['Data', 'Início', 'Fim', 'Duração', 'Linha', 'Motivo']];
+                    body = Array.from(document.querySelectorAll('#stops-table-body tr')).map(tr => Array.from(tr.cells).slice(0, 6).map(td => td.innerText));
+                }
+
+                doc.autoTable({
+                    startY: 35,
+                    head: headers,
+                    body: body,
+                    theme: 'striped',
+                    headStyles: { fillColor: [22, 163, 74] },
+                });
+                
+                doc.save(`${title.toLowerCase().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+                infoModal.hide();
+            },
+
+            exportDataAsCSV: async function() {
+                const dataType = document.getElementById('csv-export-type').value;
+                const startDate = document.getElementById('csv-export-start-date').value;
+                const endDate = document.getElementById('csv-export-end-date').value;
+
+                if (!startDate || !endDate) {
+                    infoModal.show("Atenção", "Por favor, selecione a data inicial e final para a exportação.", "warning");
+                    return;
+                }
+                
+                infoModal.show("Aguarde", `Exportando dados de ${dataType}...`, "info");
+
+                const [sy, sm, sd] = startDate.split('-').map(Number);
+                const [ey, em, ed] = endDate.split('-').map(Number);
+                const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+                const end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+
+                let collectionName, headers, rowBuilder;
+
+                switch(dataType) {
+                    case 'lotes_fechados':
+                        collectionName = 'ensaque_lotes_fechados';
+                        headers = ['ID', 'Data Fechamento', 'Turno', 'Linha', 'Cultura', 'Cultivar', 'Lote', 'Total Bags', 'Peso Total (kg)'];
+                        rowBuilder = (d) => [d.id, d.closedAt?.toDate(), d.shift, d.lineName, d.summary?.culture, d.summary?.cultivar, d.summary?.lot, d.summary?.totalBags, d.summary?.totalWeight];
+                        break;
+                    case 'registros_parada':
+                        collectionName = 'ensaque_paradas';
+                        headers = ['ID', 'Data', 'Linha', 'Motivo', 'Duração (min)'];
+                        rowBuilder = (d) => [d.id, d.createdAt?.toDate(), d.lineId, d.reason, d.duration_minutes];
+                        break;
+                    case 'estoque_atual':
+                        collectionName = 'ensaque_lotes_fechados';
+                        headers = ['Lote', 'Cultura', 'Cultivar', 'Data Entrada', 'Local', 'Rua', 'Posição'];
+                        rowBuilder = (d) => [d.summary?.last_lot, d.summary?.culture, d.summary?.cultivar, d.closedAt?.toDate(), d.summary?.storage?.chamber, d.summary?.storage?.street, d.summary?.storage?.position];
+                        break;
+                }
+
+                const q = query(collection(db, collectionName), where("createdAt", ">=", start), where("createdAt", "<=", end));
+                const snapshot = await getDocs(q);
+                let data = [];
+                snapshot.forEach(doc => data.push({id: doc.id, ...doc.data()}));
+                
+                if (dataType === 'estoque_atual') {
+                    data = data.filter(d => d.status !== 'shipped');
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+                data.forEach(item => {
+                    const row = rowBuilder(item).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(",");
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `${dataType}_${startDate}_a_${endDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                infoModal.hide();
+            },
+
+            generateBackup: async function() {
+                infoModal.show("Aguarde", "Gerando backup completo... Isso pode levar alguns minutos.", "info");
+                
+                const collectionsToBackup = [
+                    'ensaque_lotes_fechados', 
+                    'ensaque_paradas', 
+                    'ensaque_status_linhas',
+                    'ensaque_config' 
+                ];
+                
+                let backupData = {};
+
+                try {
+                    for (const collectionName of collectionsToBackup) {
+                        const snapshot = await getDocs(collection(db, collectionName));
+                        backupData[collectionName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    }
+
+                    const jsonString = JSON.stringify(backupData, (key, value) => {
+                        // Converte Timestamps para string ISO
+                        if (value && value.toDate) {
+                            return value.toDate().toISOString();
+                        }
+                        return value;
+                    }, 2);
+                    
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `backup_mes_ensaque_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    infoModal.hide();
+
+                } catch (e) {
+                    console.error("Erro ao gerar backup:", e);
+                    infoModal.show("Erro", "Falha ao gerar o backup: " + e.message, "error");
+                }
+            }
+        };
         const usersController = { init: function() { console.log("Users Controller module loaded"); } };
         const resetZone = { init: function() { console.log("Reset Zone module loaded"); } };
+        const reportsController = {
+            filters: { startDate: '', endDate: '', shift: 'all' },
+            comparisonChart: null,
+
+            init: function() {
+                // Define as datas padrão (últimos 7 dias)
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(endDate.getDate() - 6);
+
+                document.getElementById('report-start-date').valueAsDate = startDate;
+                document.getElementById('report-end-date').valueAsDate = endDate;
+                
+                this.updateFilters();
+            },
+
+            updateFilters: function() {
+                this.filters.startDate = document.getElementById('report-start-date').value;
+                this.filters.endDate = document.getElementById('report-end-date').value;
+                this.filters.shift = document.getElementById('report-shift-filter').value;
+                this.loadData();
+            },
+
+            loadData: async function() {
+                const tbody = document.getElementById('reports-table-body');
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400"><i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin"></i></td></tr>`;
+                lucide.createIcons();
+
+                if (!this.filters.startDate || !this.filters.endDate) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400">Selecione um período para gerar o relatório.</td></tr>`;
+                    return;
+                }
+
+                try {
+                    // 1. Buscar metas
+                    const goalsDoc = await getDoc(doc(db, "ensaque_config", "daily_goals"));
+                    const goalsData = goalsDoc.exists() ? goalsDoc.data().goals : [];
+                    const goalsMap = new Map(goalsData.map(g => [g.cultura, g.meta]));
+
+                    // 2. Buscar produção
+                    const [sy, sm, sd] = this.filters.startDate.split('-').map(Number);
+                    const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
+                    const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+                    const end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+
+                    let productionQuery = query(
+                        collection(db, "ensaque_lotes_fechados"),
+                        where("closedAt", ">=", start),
+                        where("closedAt", "<=", end)
+                    );
+                    
+                    const productionSnapshot = await getDocs(productionQuery);
+                    let productionData = [];
+                    productionSnapshot.forEach(doc => {
+                        productionData.push(doc.data());
+                    });
+
+                    // 3. Filtrar por turno se necessário
+                    if (this.filters.shift !== 'all') {
+                        productionData = productionData.filter(item => item.shift === this.filters.shift);
+                    }
+
+                    this.processAndRender(productionData, goalsMap, start, end);
+
+                } catch (e) {
+                    console.error("Erro ao gerar relatório:", e);
+                    infoModal.show("Erro", "Falha ao gerar o relatório. Verifique o console para mais detalhes.", "error");
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-red-500">Ocorreu um erro ao carregar os dados.</td></tr>`;
+                }
+            },
+
+            processAndRender: function(productionData, goalsMap, startDate, endDate) {
+                let reportData = new Map();
+                let totalReal = 0;
+                let totalGoal = 0;
+
+                // Agrega produção por dia e cultura
+                productionData.forEach(lot => {
+                    if (lot.summary && lot.summary.culture && lot.closedAt) {
+                        const date = lot.closedAt.toDate().toISOString().split('T')[0]; // YYYY-MM-DD
+                        const culture = lot.summary.culture;
+                        const bags = Number(lot.summary.totalBags) || 0;
+                        
+                        const key = `${date}|${culture}`;
+                        const current = reportData.get(key) || { real: 0, goal: 0, culture: culture, date: date };
+                        current.real += bags;
+                        reportData.set(key, current);
+                    }
+                });
+
+                // Preenche os dias sem produção e calcula a meta
+                 for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    for (const [culture, dailyGoal] of goalsMap.entries()) {
+                         const key = `${dateStr}|${culture}`;
+                         if (!reportData.has(key)) {
+                             reportData.set(key, { real: 0, goal: dailyGoal, culture: culture, date: dateStr });
+                         } else {
+                            let entry = reportData.get(key);
+                            entry.goal = dailyGoal;
+                            reportData.set(key, entry);
+                         }
+                    }
+                }
+                
+                const sortedReport = [...reportData.values()].sort((a,b) => a.date.localeCompare(b.date) || a.culture.localeCompare(b.culture));
+
+                // Renderiza a tabela
+                const tbody = document.getElementById('reports-table-body');
+                tbody.innerHTML = '';
+                if (sortedReport.length === 0) {
+                     tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400">Nenhum dado de produção encontrado para o período.</td></tr>`;
+                } else {
+                    sortedReport.forEach(item => {
+                        totalReal += item.real;
+                        totalGoal += item.goal;
+                        const diff = item.real - item.goal;
+                        const diffColor = diff >= 0 ? 'text-emerald-600' : 'text-red-600';
+                        const diffSign = diff >= 0 ? '+' : '';
+
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4 font-mono text-xs">${new Date(item.date).toLocaleDateString()}</td>
+                                <td class="px-6 py-4 font-bold text-slate-700">${item.culture}</td>
+                                <td class="px-6 py-4 text-right font-mono">${item.goal.toLocaleString('pt-BR')}</td>
+                                <td class="px-6 py-4 text-right font-mono font-bold text-blue-700">${item.real.toLocaleString('pt-BR')}</td>
+                                <td class="px-6 py-4 text-right font-mono font-bold ${diffColor}">${diffSign}${diff.toLocaleString('pt-BR')}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+                
+                // Atualiza KPIs
+                const adherence = totalGoal > 0 ? (totalReal / totalGoal) * 100 : 0;
+                document.getElementById('kpi-report-real').textContent = totalReal.toLocaleString('pt-BR');
+                document.getElementById('kpi-report-goal').textContent = totalGoal.toLocaleString('pt-BR');
+                document.getElementById('kpi-report-adherence').textContent = `${adherence.toFixed(1)}%`;
+
+                // Agrega dados para o gráfico (por dia, somando todas as culturas)
+                const chartData = new Map();
+                 for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    chartData.set(dateStr, { real: 0, goal: 0 });
+                }
+                sortedReport.forEach(item => {
+                    const entry = chartData.get(item.date);
+                    if (entry) {
+                        entry.real += item.real;
+                        entry.goal += item.goal;
+                    }
+                });
+
+                const sortedChartData = [...chartData.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+                
+                const labels = sortedChartData.map(item => new Date(item[0]).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+                const realData = sortedChartData.map(item => item[1].real);
+                const goalData = sortedChartData.map(item => item[1].goal);
+                
+                this.renderChart(labels, realData, goalData);
+            },
+            
+            renderChart: function(labels, realData, goalData) {
+                const ctx = document.getElementById('reports-comparison-chart')?.getContext('2d');
+                if (!ctx) return;
+                if (this.comparisonChart) this.comparisonChart.destroy();
+
+                this.comparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Meta',
+                                data: goalData,
+                                backgroundColor: '#e2e8f0',
+                                borderColor: '#94a3b8',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Realizado',
+                                data: realData,
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 4,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                align: 'end'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
 
         const firebaseConfig = { apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", authDomain: "integracaocoi.firebaseapp.com", projectId: "integracaocoi", storageBucket: "integracaocoi.firebasestorage.app", messagingSenderId: "177203745489", appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" };
         const app = initializeApp(firebaseConfig);
@@ -260,6 +1291,69 @@
         const db = getFirestore(app);
 
         // --- CONTROLLERS REAIS ---
+
+        const infoModal = {
+            show: function(title, message, type = 'info', onConfirm = null) {
+                const modal = document.getElementById('modal-info');
+                const titleEl = document.getElementById('modal-info-title');
+                const messageEl = document.getElementById('modal-info-message');
+                const iconContainer = document.getElementById('modal-info-icon');
+                const buttonsContainer = document.getElementById('modal-info-buttons');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                // Reset icon and buttons
+                iconContainer.innerHTML = '';
+                buttonsContainer.innerHTML = '';
+
+                let icon, iconClass;
+
+                switch (type) {
+                    case 'success':
+                        icon = 'check-circle';
+                        iconClass = 'bg-emerald-100 text-emerald-600';
+                        break;
+                    case 'error':
+                        icon = 'x-circle';
+                        iconClass = 'bg-red-100 text-red-600';
+                        break;
+                    case 'warning':
+                        icon = 'alert-triangle';
+                        iconClass = 'bg-amber-100 text-amber-600';
+                        break;
+                    case 'confirm':
+                        icon = 'help-circle';
+                        iconClass = 'bg-blue-100 text-blue-600';
+                        break;
+                    default:
+                        icon = 'info';
+                        iconClass = 'bg-slate-100 text-slate-600';
+                }
+
+                iconContainer.className = `inline-flex items-center justify-center w-12 h-12 rounded-full ${iconClass} mb-4`;
+                iconContainer.innerHTML = `<i data-lucide="${icon}" class="w-6 h-6"></i>`;
+
+                if (type === 'confirm' && onConfirm) {
+                    buttonsContainer.innerHTML = `
+                        <button onclick="infoModal.hide()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">Cancelar</button>
+                        <button id="modal-info-confirm-btn" class="flex-1 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700 transition">Confirmar</button>
+                    `;
+                    document.getElementById('modal-info-confirm-btn').onclick = () => {
+                        onConfirm();
+                        this.hide();
+                    };
+                } else {
+                    buttonsContainer.innerHTML = `<button onclick="infoModal.hide()" class="w-full py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700 transition">OK</button>`;
+                }
+
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            },
+            hide: function() {
+                document.getElementById('modal-info').classList.add('hidden');
+            }
+        };
 
         const authSystem = {
             init: function() {
@@ -283,9 +1377,13 @@
                 const email = document.getElementById('login-email').value;
                 const pass = document.getElementById('login-pass').value;
                 try { await signInWithEmailAndPassword(auth, email, pass); } 
-                catch (error) { alert("Erro de login: " + error.message); }
+                catch (error) { infoModal.show("Erro de Login", error.message, "error"); }
             },
-            logout: async function() { if(confirm("Sair do sistema?")) await signOut(auth); }
+            logout: async function() { 
+                infoModal.show("Sair", "Você tem certeza que deseja sair do sistema?", "confirm", async () => {
+                    await signOut(auth);
+                });
+            }
         };
 
         const traceabilityController = {
@@ -323,26 +1421,23 @@
             },
             markShipped: function(id) { this.lotToShip = id; document.getElementById('modal-ship-confirm').classList.remove('hidden'); },
             closeShipModal: function() { document.getElementById('modal-ship-confirm').classList.add('hidden'); this.lotToShip = null; },
-            executeShip: async function() { if(!this.lotToShip) return; const btn = document.getElementById('btn-confirm-ship'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToShip), { status: 'shipped', shippedAt: new Date() }); this.closeShipModal(); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = "Confirmar"; } },
+            executeShip: async function() { if(!this.lotToShip) return; const btn = document.getElementById('btn-confirm-ship'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToShip), { status: 'shipped', shippedAt: new Date() }); this.closeShipModal(); } catch(e) { infoModal.show("Erro", e.message, "error"); } finally { btn.innerHTML = "Confirmar"; } },
             deleteLot: function(id) { this.traceLotToDelete = id; document.getElementById('modal-trace-delete-confirm').classList.remove('hidden'); },
             closeTraceDeleteModal: function() { document.getElementById('modal-trace-delete-confirm').classList.add('hidden'); this.traceLotToDelete = null; },
-            executeTraceDelete: async function() { if(!this.traceLotToDelete) return; const btn = document.getElementById('btn-confirm-trace-delete'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.traceLotToDelete), { hidden: true }); this.closeTraceDeleteModal(); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = "Excluir"; } }
+            executeTraceDelete: async function() { if(!this.traceLotToDelete) return; const btn = document.getElementById('btn-confirm-trace-delete'); btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.traceLotToDelete), { hidden: true }); this.closeTraceDeleteModal(); } catch(e) { infoModal.show("Erro", e.message, "error"); } finally { btn.innerHTML = "Excluir"; } }
         };
 
         const stopsController = {
             cachedStops: [], 
             currentTab: 'global', 
-            filters: { date: '', shift: 'all' }, // Unified filter state
+            filters: { startDate: '', endDate: '', shift: 'all' }, 
             paretoChart: null, 
             lineChart: null,
             unsubscribe: null,
             stopToDelete: null,
 
             init: function() {
-                // Set default date to today
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('stops-filter-date').value = today;
-                this.filters.date = today;
+                // Ao iniciar, NÃO definimos datas. Deixamos vazio para pegar tudo.
                 this.updateFilters();
             },
             
@@ -362,28 +1457,39 @@
             },
 
             updateFilters: function() {
-                this.filters.date = document.getElementById('stops-filter-date').value;
+                this.filters.startDate = document.getElementById('stops-filter-start-date').value;
+                this.filters.endDate = document.getElementById('stops-filter-end-date').value;
                 this.filters.shift = document.getElementById('stops-filter-shift').value;
-                
-                // Re-subscribe if date changes or initial load
                 this.subscribeStops();
             },
 
             subscribeStops: function() {
                 if (this.unsubscribe) this.unsubscribe();
-                if (!this.filters.date) return;
 
-                const [year, month, day] = this.filters.date.split('-').map(Number);
-                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
-                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
+                let q;
 
-                // Query by Date Range
-                const q = query(
-                    collection(db, "ensaque_paradas"), 
-                    where("createdAt", ">=", start),
-                    where("createdAt", "<=", end),
-                    orderBy("createdAt", "desc")
-                );
+                // Se NÃO tiver datas selecionadas, busca os últimos 200 registros (Snapshot Inicial)
+                if (!this.filters.startDate || !this.filters.endDate) {
+                    q = query(
+                        collection(db, "ensaque_paradas"), 
+                        orderBy("createdAt", "desc"),
+                        limit(200)
+                    );
+                } else {
+                    // Se TIVER datas, filtra pelo range
+                    const [sy, sm, sd] = this.filters.startDate.split('-').map(Number);
+                    const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
+                    
+                    const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0); 
+                    const end = new Date(ey, em - 1, ed, 23, 59, 59, 999); 
+
+                    q = query(
+                        collection(db, "ensaque_paradas"), 
+                        where("createdAt", ">=", start),
+                        where("createdAt", "<=", end),
+                        orderBy("createdAt", "desc")
+                    );
+                }
 
                 this.unsubscribe = onSnapshot(q, (snapshot) => {
                     const data = [];
@@ -400,12 +1506,13 @@
 
             switchTab: function(tabId) {
                 this.currentTab = tabId; 
+                // Toggle active state for nav-tabs
                 const tabs = ['global', 'bb01', 'bb02', 'bb03', 'bb04']; 
                 tabs.forEach(t => { 
                     const btn = document.getElementById('btn-stop-' + t); 
                     if(btn) { 
-                        if(t === tabId) { btn.classList.add('active'); btn.classList.remove('inactive'); } 
-                        else { btn.classList.remove('active'); btn.classList.add('inactive'); } 
+                        if(t === tabId) { btn.classList.add('active'); } 
+                        else { btn.classList.remove('active'); } 
                     } 
                 });
                 
@@ -425,13 +1532,13 @@
                 if(!tbody) return; 
                 tbody.innerHTML = "";
                 
-                // 1. Filter by Line (Tab)
+                // 1. Filtrar por Linha (Aba)
                 let filteredStops = this.cachedStops; 
                 if(this.currentTab !== 'global') { 
                     filteredStops = this.cachedStops.filter(stop => stop.lineId === this.currentTab); 
                 }
 
-                // 2. Filter by Shift (In-Memory)
+                // 2. Filtrar por Turno (Memória)
                 if (this.filters.shift !== 'all') {
                     filteredStops = filteredStops.filter(stop => stop.shift === this.filters.shift);
                 }
@@ -528,7 +1635,7 @@
                     await deleteDoc(doc(db, "ensaque_paradas", this.stopToDelete));
                     this.closeDeleteModal();
                 } catch(e) {
-                    alert("Erro ao excluir: " + e.message);
+                    infoModal.show("Erro", "Erro ao excluir: " + e.message, "error");
                 }
             },
 
@@ -599,12 +1706,12 @@
         };
 
         const dashboard = {
-            currentTab: 'global', cachedData: [], hiddenLots: new Set(), filters: { date: '', shift: 'all', line: 'global' }, productionChart: null, adherenceChart: null, sCurveChart: null, avgRateChart: null, lotToDelete: null, productionData: [], sidebarOpen: false, unsubscribeProd: null, rawProductionData: [],
+            currentTab: 'global', cachedData: [], hiddenLots: new Set(), filters: { startDate: '', endDate: '', shift: 'all', line: 'global' }, productionChart: null, adherenceChart: null, sCurveChart: null, avgRateChart: null, lotToDelete: null, productionData: [], sidebarOpen: false, unsubscribeProd: null, rawProductionData: [],
             
             init: function() { 
                 lucide.createIcons(); 
                 this.startClock(); 
-                this.setTodayDate(); 
+                this.updateFilters(); // Inicia sem filtros para pegar snapshot inicial
                 window.authSystem.init(); 
                 settings.init(); 
                 shiftSettings.init(); 
@@ -628,25 +1735,21 @@
                 }
             },
             
-            setTodayDate: function() { 
-                const today = new Date().toISOString().split('T')[0]; 
-                document.getElementById('filter-date').value = today; 
-                this.filters.date = today; 
-            },
-            
             updateFilters: function() { 
-                this.filters.date = document.getElementById('filter-date').value; 
+                this.filters.startDate = document.getElementById('filter-start-date').value; 
+                this.filters.endDate = document.getElementById('filter-end-date').value;
                 this.filters.shift = document.getElementById('filter-shift').value; 
                 this.filters.line = document.getElementById('filter-line').value; 
                 
-                this.subscribeProduction(this.filters.date);
+                this.subscribeProduction();
                 
                 if(['global', 'bb01', 'bb02', 'bb03', 'bb04'].includes(this.filters.line)) this.switchTab(this.filters.line, false); 
                 this.renderView(); 
             },
             
             resetFilters: function() { 
-                this.setTodayDate(); 
+                document.getElementById('filter-start-date').value = '';
+                document.getElementById('filter-end-date').value = '';
                 document.getElementById('filter-shift').value = 'all'; 
                 document.getElementById('filter-line').value = 'global'; 
                 this.updateFilters(); 
@@ -678,18 +1781,27 @@
                     }
                 });
 
-                this.subscribeProduction(this.filters.date);
+                this.subscribeProduction();
             },
             
-            subscribeProduction: function(dateString) {
+            subscribeProduction: function() {
                 if (this.unsubscribeProd) this.unsubscribeProd();
-                if (!dateString) return;
 
-                const [year, month, day] = dateString.split('-').map(Number);
-                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
-                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
+                let qProd;
+                // Se não tem filtro de data, não busca produção detalhada (ou busca últimos N se quiser)
+                // Para simplificar e evitar queries pesadas, só buscamos produção real se houver data
+                if (!this.filters.startDate || !this.filters.endDate) {
+                    this.rawProductionData = [];
+                    this.recalcCharts();
+                    return;
+                }
 
-                const qProd = query(collection(db, "ensaque_producao"), where("createdAt", ">=", start), where("createdAt", "<=", end), orderBy("createdAt", "asc"));
+                const [sy, sm, sd] = this.filters.startDate.split('-').map(Number);
+                const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
+                const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0); 
+                const end = new Date(ey, em - 1, ed, 23, 59, 59, 999); 
+
+                qProd = query(collection(db, "ensaque_producao"), where("createdAt", ">=", start), where("createdAt", "<=", end), orderBy("createdAt", "asc"));
                 
                 this.unsubscribeProd = onSnapshot(qProd, (snapshot) => {
                     const pData = [];
@@ -697,33 +1809,33 @@
                     this.rawProductionData = pData; // Guarda dados crus
                     this.recalcCharts(); // Recalcula combinando
                 });
-                
-                // Força recalculo inicial mesmo se prod estiver vazio
-                this.recalcCharts();
             },
 
             // NOVA FUNÇÃO: Combina dados de Produção Real + Lotes Fechados para os gráficos
             recalcCharts: function() {
-                if (!this.filters.date) return;
-
-                const [year, month, day] = this.filters.date.split('-').map(Number);
-                const start = new Date(year, month - 1, day, 0, 0, 0, 0); 
-                const end = new Date(year, month - 1, day, 23, 59, 59, 999); 
-
-                // Começa com dados de produção real (se houver)
                 let combinedData = [...this.rawProductionData];
+                let filterStart, filterEnd;
 
-                // Adiciona dados simulados dos lotes fechados (apenas se não estiverem já na produção real)
-                // Como o novo sistema não grava na produção real, podemos assumir que lotes fechados são novos dados
+                // Se houver filtros de data, usa para filtrar lotes fechados também
+                if (this.filters.startDate && this.filters.endDate) {
+                    const [sy, sm, sd] = this.filters.startDate.split('-').map(Number);
+                    const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
+                    filterStart = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+                    filterEnd = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+                } else {
+                    // Se não tiver filtro, define "Hoje" como base para os gráficos não quebrarem
+                    const now = new Date();
+                    filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
+                    filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+                }
+
                 const closedLotsOfDay = this.cachedData.filter(l => {
                     if (!l.closedAt) return false;
                     const d = l.closedAt.toDate ? l.closedAt.toDate() : new Date(l.closedAt);
-                    return d >= start && d <= end;
+                    return d >= filterStart && d <= filterEnd;
                 });
 
                 closedLotsOfDay.forEach(lot => {
-                    // Distribui a produção do lote no horário de fechamento
-                    // Isso cria um "pico" no gráfico na hora do fechamento, o que é o comportamento esperado
                     for(let i=0; i< (lot.summary.totalBags || 0); i++) {
                         combinedData.push({
                             createdAt: lot.closedAt, 
@@ -733,7 +1845,6 @@
                     }
                 });
 
-                // Ordena tudo por horário para o gráfico de linha ficar correto
                 combinedData.sort((a,b) => {
                     const dateA = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
                     const dateB = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
@@ -782,29 +1893,33 @@
                 const tbody = document.getElementById('lots-table-body'); if(!tbody) return; tbody.innerHTML = "";
                 let title = "Visão Global de Produção";
                 
-                // DATA FILTERING LOGIC (Fixed for Timezones)
-                const filterDateStr = this.filters.date; // YYYY-MM-DD
-                const [fYear, fMonth, fDay] = filterDateStr.split('-').map(Number);
-                
-                // Create local date boundaries for comparison
-                const filterStart = new Date(fYear, fMonth - 1, fDay, 0, 0, 0, 0);
-                const filterEnd = new Date(fYear, fMonth - 1, fDay, 23, 59, 59, 999);
+                let filterStart, filterEnd;
+                // Previne crash se as datas estiverem vazias
+                if(this.filters.startDate && this.filters.endDate) {
+                    const [sy, sm, sd] = this.filters.startDate.split('-').map(Number);
+                    const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
+                    filterStart = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+                    filterEnd = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+                }
 
                 const filteredData = this.cachedData.filter(item => { 
                     if(item.hidden) return false; 
                     
-                    // Check Date
                     let dateMatch = true;
-                    if (this.filters.date) {
+                    // Se o filtro de data estiver ATIVO, aplica a lógica
+                    if (this.filters.startDate && this.filters.endDate) {
+                         // Date compare logic
                          const d = item.closedAt ? (item.closedAt.toDate ? item.closedAt.toDate() : new Date(item.closedAt)) : null;
                          if (d) {
-                             // Compare time value to handle timezone agnostic check
                              dateMatch = d >= filterStart && d <= filterEnd;
                          } else {
                              dateMatch = false;
                          }
+                    } else {
+                        // Se estiver VAZIO, mostra TUDO (sem filtro de data)
+                        dateMatch = true;
                     }
-
+                    
                     const shiftMatch = this.filters.shift === 'all' || item.shift === this.filters.shift; 
                     const lineMatch = this.filters.line === 'global' || item.lineId === this.filters.line; 
                     
@@ -844,7 +1959,7 @@
             },
             
             confirmDeleteLot: function(id) { this.lotToDelete = id; document.getElementById('modal-delete-confirm').classList.remove('hidden'); },
-            executeDelete: async function() { if(this.lotToDelete) { const btn = document.getElementById('btn-confirm-delete'); btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToDelete), { hidden: true }); this.closeDeleteModal(); this.lotToDelete = null; } catch(e) { alert("Erro: " + e.message); } finally { btn.disabled = false; btn.innerText = "Sim, Remover"; } } },
+            executeDelete: async function() { if(this.lotToDelete) { const btn = document.getElementById('btn-confirm-delete'); btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>...`; try { await updateDoc(doc(db, "ensaque_lotes_fechados", this.lotToDelete), { hidden: true }); this.closeDeleteModal(); this.lotToDelete = null; } catch(e) { infoModal.show("Erro", e.message, "error"); } finally { btn.disabled = false; btn.innerText = "Sim, Remover"; } } },
             closeDeleteModal: function() { document.getElementById('modal-delete-confirm').classList.add('hidden'); },
             toggleDetails: function(rowId, lotNumber) { const detailRow = document.getElementById(`detail-${rowId}`); const icon = document.getElementById(`icon-${rowId}`); if (detailRow.classList.contains('hidden')) { detailRow.classList.remove('hidden'); icon.style.transform = "rotate(180deg)"; } else { detailRow.classList.add('hidden'); icon.style.transform = "rotate(0deg)"; } },
             switchTab: function(tabId, updateDropdown = true) { this.currentTab = tabId; this.filters.line = tabId; document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.getElementById('tab-' + tabId).classList.add('active'); if(updateDropdown) document.getElementById('filter-line').value = tabId; this.renderView(); },
@@ -873,7 +1988,14 @@
             const tabs = document.getElementById('dashboard-tabs'); const title = document.getElementById('page-header-title'); 
             if(dashboard.sidebarOpen) dashboard.toggleSidebar();
             if(viewId === 'dashboard') { tabs.classList.remove('hidden'); title.classList.add('hidden'); dashboard.renderView(); } 
-            else { tabs.classList.add('hidden'); title.classList.remove('hidden'); title.innerHTML = `<i data-lucide="hash" class="text-blue-500"></i> ${viewId.toUpperCase()}`; if(viewId === 'stops') stopsController.init(); } 
+            else { 
+                tabs.classList.add('hidden'); 
+                title.classList.remove('hidden'); 
+                title.innerHTML = `<i data-lucide="hash" class="text-blue-500"></i> ${viewId.toUpperCase()}`; 
+                if(viewId === 'stops') stopsController.init();
+                if(viewId === 'reports') reportsController.init();
+                if(viewId === 'data-center') dataCenter.init();
+            } 
             lucide.createIcons(); 
         }};
         
@@ -881,9 +2003,12 @@
         window.authSystem = authSystem;
         window.traceabilityController = traceabilityController;
         window.stopsController = stopsController;
+        window.infoModal = infoModal;
+        window.reportsController = reportsController;
         
         window.settings = settings;
         window.shiftSettings = shiftSettings;
+        window.dataCenter = dataCenter;
         window.dataCenter = dataCenter;
         window.usersController = usersController;
         window.resetZone = resetZone;

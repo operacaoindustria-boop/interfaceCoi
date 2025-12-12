@@ -1,146 +1,1099 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso Restrito - Planejamento Operacional</title>
+    <title>Planejamento Operacional - Indústria</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: sans-serif;
+        }
+        .fixed-feedback {
+            position: static; /* Default to static for mobile-first */
+            max-width: 100%;
+            text-align: center;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 0;
+        }
+        @media (min-width: 640px) { /* sm breakpoint from Tailwind */
+            .fixed-feedback {
+                position: sticky;
+                top: 70px; /* Position below the sticky header */
+                z-index: 50;
+                max-width: 90%;
+                width: fit-content;
+                border-radius: 0.375rem; /* Tailwind's rounded-md */
+            }
+        }
+        
+        /* Melhora a responsividade em telas menores */
+        @media (max-width: 639px) {
+            .header-title {
+                font-size: 1rem; /* Reduz o tamanho da fonte do título */
+            }
+            .header-button {
+                padding: 0.25rem 0.5rem; /* Reduz o padding dos botões */
+                font-size: 0.875rem;
+            }
+            .form-buttons {
+                flex-direction: column; /* Empilha os botões */
+            }
+            .form-buttons button {
+                width: 100%; /* Botões com largura total */
+            }
         }
     </style>
 </head>
-<body class="bg-slate-100">
+<body class="bg-gray-50">
+    <div id="root"></div>
 
-    <div id="app-container" class="min-h-screen flex items-center justify-center">
-        
-        <!-- Tela de Login (Padrão) -->
-        <div id="login-screen" class="w-full max-w-md">
-            <div class="bg-white p-8 rounded-xl shadow-2xl border-t-4 border-blue-600">
-                <div class="flex justify-center mb-6">
-                    <img src="img/logo-2021.png" alt="Logo da Empresa" class="h-16">
-                </div>
-                <h2 class="text-3xl font-bold text-slate-800 text-center mb-2">
-                    Acesso Restrito
-                </h2>
-                <p class="text-center text-slate-500 mb-8">Interface de Planejamento Operacional</p>
-                
-                <form id="login-form" class="space-y-6">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-slate-700">E-mail</label>
-                        <input
-                            type="email"
-                            id="email"
-                            required
-                            class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="seu.email@exemplo.com"
-                        />
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-slate-700">Senha</label>
-                        <input
-                            type="password"
-                            id="password"
-                            required
-                            class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="••••••••"
-                        />
-                    </div>
-                    
-                    <div id="error-message" class="text-red-600 text-sm text-center font-semibold" style="display: none;"></div>
-                    
-                    <div>
-                        <button
-                            type="submit"
-                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                            Entrar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <script type="text/babel">
+        const { useState, useEffect, useContext, createContext } = React;
 
-        <!-- Tela de Carregamento (Oculta) -->
-        <div id="loading-screen" style="display: none;">
-            <p class="text-xl font-semibold text-slate-600 animate-pulse">Verificando sessão...</p>
-        </div>
-
-    </div>
-
-    <script type="module">
-        // Importações do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { FIREBASE_CONFIG } from "./firebase_config.js";
+        // --- Configuração do Firebase ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
+            authDomain: "integracaocoi.firebaseapp.com",
+            projectId: "integracaocoi",
+            storageBucket: "integracaocoi.firebasestorage.app",
+            messagingSenderId: "177203745489",
+            appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
+        };
 
         // Inicializa Firebase
-        const app = initializeApp(FIREBASE_CONFIG);
-        const auth = getAuth(app);
+        const app = firebase.initializeApp(FIREBASE_CONFIG);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        // Elementos do DOM
-        const loginScreen = document.getElementById('login-screen');
-        const loadingScreen = document.getElementById('loading-screen');
-        const loginForm = document.getElementById('login-form');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const errorMessage = document.getElementById('error-message');
+        const PUBLIC_PLANNING_PATH = 'planejamento_coi/status_publico';
 
-        // Função para mostrar erro
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
+        // --- Contexto de Autenticação ---
+        const AuthContext = createContext(null);
 
-        // Função para esconder erro
-        function hideError() {
-            errorMessage.style.display = 'none';
-        }
+        const AuthProvider = ({ children }) => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-        // Gerenciador de estado de autenticação
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Se o usuário já está logado, redireciona para o Menu Principal
-                window.location.href = 'menu.html';
-            } else {
-                // Se não há usuário, mostra a tela de login e esconde o carregamento
-                loadingScreen.style.display = 'none';
-                loginScreen.style.display = 'block';
-            }
-        });
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    setCurrentUser(user);
+                    setLoading(false);
+                });
+                return unsubscribe;
+            }, []);
 
-        // Gerenciador de submit do formulário
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
+            const value = { currentUser, loading, auth, db };
 
-            const email = emailInput.value;
-            const password = passwordInput.value;
+            return (
+                <AuthContext.Provider value={value}>
+                    {children}
+                </AuthContext.Provider>
+            );
+        };
 
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                // O onAuthStateChanged vai cuidar do redirecionamento
-            } catch (err) {
-                console.error("Erro de Autenticação:", err.code);
-                if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-                    showError("E-mail ou senha inválidos. Tente novamente.");
-                } else if (err.code === "auth/operation-not-allowed") {
-                    showError("Login por E-mail/Senha não está ativado no Console do Firebase.");
+        // --- Tela de Login ---
+        const LoginScreen = () => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [error, setError] = useState('');
+            const [isRegistering, setIsRegistering] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+
+                if (isRegistering) {
+                    if (password !== confirmPassword) {
+                        setError("As senhas não coincidem.");
+                        return;
+                    }
+                    try {
+                        await auth.createUserWithEmailAndPassword(email, password);
+                        // O onAuthStateChanged irá lidar com o redirecionamento
+                    } catch (err) {
+                        console.error("Erro de Cadastro:", err);
+                        if (err.code === 'auth/email-already-in-use') {
+                            setError("Este e-mail já está em uso.");
+                        } else if (err.code === 'auth/weak-password') {
+                            setError("A senha deve ter no mínimo 6 caracteres.");
+                        } else {
+                            setError("Falha no cadastro. Verifique o console.");
+                        }
+                    }
                 } else {
-                    showError("Falha na autenticação. Verifique o console para mais detalhes.");
+                    try {
+                        await auth.signInWithEmailAndPassword(email, password);
+                        window.location.href = 'menu.html';
+                    } catch (err) {
+                        console.error("Erro de Autenticação:", err);
+                        if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+                            setError("E-mail ou senha inválidos.");
+                        } else {
+                            setError("Falha na autenticação. .");
+                        }
+                    }
                 }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4" style={{background: 'linear-gradient(to right, #6a11cb, #2575fc)'}}>
+                    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+                        <div className="text-center mb-8">
+                            {/* Você pode adicionar um logo aqui */}
+                            <h1 className="text-3xl font-bold text-gray-800">Bem-vindo</h1>
+                            <p className="text-gray-500">{isRegistering ? "Crie sua conta para continuar" : "Faça login para acessar o painel"}</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">E-mail</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="seu.email@exemplo.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Senha</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="********"
+                                />
+                            </div>
+                            {isRegistering && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Confirmar Senha</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="********"
+                                    />
+                                </div>
+                            )}
+                            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                            <div>
+                                <button
+                                    type="submit"
+                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-md font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105"
+                                >
+                                    {isRegistering ? 'Cadastrar' : 'Entrar'}
+                                </button>
+                            </div>
+                        </form>
+                        <div className="mt-6 text-center">
+                            <a
+                                href="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setIsRegistering(!isRegistering);
+                                    setError('');
+                                    setConfirmPassword('');
+                                }}
+                                className="text-sm text-indigo-600 hover:text-indigo-500"
+                            >
+                                {isRegistering ? 'Já tem uma conta? Faça login' : 'Não tem uma conta? Cadastre-se'}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Formulário de Planejamento (Interface A) ---
+        const PlanningForm = () => {
+            const { currentUser, db } = useContext(AuthContext);
+            const [feedback, setFeedback] = useState('');
+            const [feedbackType, setFeedbackType] = useState('success');
+
+            // Carrega o estado inicial do localStorage ou define um padrão
+            const getInitialState = () => {
+                try {
+                    const savedContext = localStorage.getItem('planningContext');
+                    const savedSectors = localStorage.getItem('planningSectors');
+                    
+                    let context = savedContext ? JSON.parse(savedContext) : null;
+                    const sectors = savedSectors ? JSON.parse(savedSectors) : {};
+
+                    if (!context) {
+                        const now = new Date();
+                        const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                        context = { data: dateString, turno: 'TURNO: A' };
+                    }
+
+                    return { context, sectors };
+                } catch (error) {
+                    console.error("Erro ao carregar dados do localStorage:", error);
+                    const now = new Date();
+                    const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    return { context: { data: dateString, turno: 'TURNO: A' }, sectors: {} };
+                }
+            };
+
+            const initialState = getInitialState();
+            const [sectorsState, setSectorsState] = useState(initialState.sectors);
+            const [contextState, setContextState] = useState(initialState.context);
+
+            const SECTORS_LIST = [
+                { name: 'ADUBO', id: 'adubo' },
+                { name: 'CRISTO REI', id: 'cristo-rei' },
+                { name: 'ENSAQUE', id: 'ensaque' },
+                { name: 'GRANELEIRO AGROCEMA', id: 'graneleiro-agrocema' },
+                { name: 'GRANELEIRO SEDE', id: 'graneleiro-sede' },
+                { name: 'HARVER', id: 'harver' },
+                { name: 'KSI', id: 'ksi' },
+                { name: 'MARCOLDS', id: 'marcolds' },
+                { name: 'MOEGA/RECEPÇÃO', id: 'moega-recepcao' },
+                { name: 'MOMESSO LINHAS 1,2,3,4 E 5', id: 'momesso-linhas-12345' },
+                { name: 'PELETIZAÇÃO', id: 'peletizacao' },
+                { name: 'RAINHA DA SERRA', id: 'rainha-da-serra' },
+                { name: 'SECAGEM SEDE', id: 'secagem-sede' },
+                { name: 'SHAPARRAL', id: 'shaparral' },
+                { name: 'SILOS E PRÉ SECAGENS', id: 'silos-e-pre-secagens' },
+                { name: 'UBS BENEFICIAMENTO', id: 'ubs-beneficiamento' }
+            ];
+
+            const getDraftPath = () => `planejamento_coi_drafts/${currentUser.uid}/drafts/current_planning`;
+
+            // Efeito para salvar o estado no localStorage a cada mudança
+            useEffect(() => {
+                try {
+                    localStorage.setItem('planningContext', JSON.stringify(contextState));
+                    localStorage.setItem('planningSectors', JSON.stringify(sectorsState));
+                } catch (error) {
+                    console.error("Erro ao salvar no localStorage:", error);
+                }
+            }, [contextState, sectorsState]);
+
+
+            useEffect(() => {
+                const loadInitialData = async () => {
+                    if (!currentUser) return;
+
+                    // Se já temos dados (do localStorage), não sobrescrevemos com o rascunho do Firestore
+                    const hasLocalData = Object.keys(sectorsState).length > 0;
+                    if (hasLocalData) {
+                        // Apenas damos um feedback de que o rascunho local foi carregado
+                        if (feedback === '') setFeedback('Rascunho local carregado.');
+                        return;
+                    }
+
+                    // Se não há dados locais, tentamos carregar do Firestore
+                    try {
+                        const docRef = db.doc(getDraftPath());
+                        const docSnap = await docRef.get();
+                        
+                        if (docSnap.exists) {
+                            const data = docSnap.data();
+                            const sectorsObj = {};
+                            (data.setores || []).forEach(sector => {
+                                const reconstructedStatus = (sector.atividades || []).map(act => act.text).join('\n');
+                                sectorsObj[sector.id] = { status: reconstructedStatus, prioridade: sector.prioridade };
+                            });
+                            setSectorsState(sectorsObj);
+                            setContextState({ data: data.data, turno: data.turno });
+                            setFeedback('Rascunho do servidor carregado.');
+                        }
+                    } catch (e) {
+                        console.error("Erro ao carregar rascunho do servidor:", e);
+                        setFeedbackType('error');
+                        setFeedback('Erro ao carregar rascunho do servidor.');
+                    }
+                };
+                loadInitialData();
+            }, [currentUser, db]);
+
+            const saveDraft = async (dataToSave) => {
+                if (!currentUser) return;
+                try {
+                    await db.doc(getDraftPath()).set(dataToSave);
+                } catch (e) {
+                    console.error("Falha ao salvar rascunho:", e);
+                }
+            };
+
+            // Efeito para salvar rascunho automaticamente no Firestore (com debounce)
+            useEffect(() => {
+                if (!currentUser || !db) return;
+
+                const handler = setTimeout(() => {
+                    const setoresArray = SECTORS_LIST.map(sector => {
+                        const statusValue = sectorsState[sector.id]?.status || '';
+                        const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                            text: line.trim(),
+                            completed: false
+                        }));
+
+                        if (atividades.length === 0 && !(sectorsState[sector.id]?.observacoes || '').trim()) {
+                            return null;
+                        }
+
+                        return {
+                            id: sector.id,
+                            nome: sector.name,
+                            atividades: atividades,
+                            prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL',
+                            observacoes: sectorsState[sector.id]?.observacoes || ''
+                        };
+                    }).filter(s => s !== null);
+
+                    const draftData = {
+                        timestamp: Date.now(),
+                        data: contextState.data,
+                        turno: contextState.turno,
+                        setores: setoresArray
+                    };
+                    
+                    saveDraft(draftData);
+                }, 1500); // Salva 1.5s após o usuário parar de digitar
+
+                return () => {
+                    clearTimeout(handler);
+                };
+            }, [sectorsState, contextState, currentUser, db]);
+
+            const handlePublish = async (e) => {
+                e.preventDefault();
+                
+                const setoresArray = SECTORS_LIST.map(sector => {
+                    const statusValue = sectorsState[sector.id]?.status || '';
+                    const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                        text: line.trim(),
+                        completed: false,
+                        status: sectorsState[sector.id]?.kanbanStatus || 'todo'
+                    }));
+
+                    if (atividades.length === 0) {
+                        return null;
+                    }
+
+                    return {
+                        id: sector.id,
+                        nome: sector.name,
+                        atividades: atividades,
+                        prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL',
+                        observacoes: sectorsState[sector.id]?.observacoes || ''
+                    };
+                }).filter(s => s !== null);
+
+                const finalData = {
+                    timestamp: Date.now(),
+                    data: contextState.data,
+                    turno: contextState.turno,
+                    setores: setoresArray
+                };
+
+                if (!finalData.data || !finalData.turno || finalData.setores.length === 0) {
+                    setFeedbackType('error');
+                    setFeedback('Preencha a Data, o Turno e pelo menos um Status de Setor.');
+                    return;
+                }
+
+                try {
+                    await saveDraft(finalData); // Salva um último rascunho que é igual ao publicado
+                    await db.doc(PUBLIC_PLANNING_PATH).set(finalData);
+                    setFeedbackType('success');
+                    setFeedback('Planejamento salvo e atualizado com sucesso!');
+                } catch (err) {
+                    console.error("Erro ao publicar:", err);
+                    setFeedbackType('error');
+                    setFeedback('ERRO: Falha na publicação. Verifique as permissões do Firestore.');
+                }
+            };
+
+            const openDashboard = () => {
+                const baseUrl = window.location.href.split('?')[0];
+                const dashboardUrl = `${baseUrl}?page=dashboard`;
+                window.location.assign(dashboardUrl);
+            };
+
+            const handlePublishAndOpen = async (e) => {
+                e.preventDefault();
+                
+                const setoresArray = SECTORS_LIST.map(sector => {
+                    const statusValue = sectorsState[sector.id]?.status || '';
+                    const atividades = statusValue.split('\n').filter(line => line.trim() !== '').map(line => ({
+                        text: line.trim(),
+                        completed: false,
+                        status: sectorsState[sector.id]?.kanbanStatus || 'todo'
+                    }));
+
+                    if (atividades.length === 0) {
+                        return null;
+                    }
+
+                    return {
+                        id: sector.id,
+                        nome: sector.name,
+                        atividades: atividades,
+                        prioridade: sectorsState[sector.id]?.prioridade || 'NORMAL'
+                    };
+                }).filter(s => s !== null);
+
+                const finalData = {
+                    timestamp: Date.now(),
+                    data: contextState.data,
+                    turno: contextState.turno,
+                    setores: setoresArray
+                };
+
+                if (!finalData.data || !finalData.turno || finalData.setores.length === 0) {
+                    setFeedbackType('error');
+                    setFeedback('Preencha a Data, o Turno e pelo menos um Status de Setor.');
+                    return;
+                }
+
+                try {
+                    await saveDraft(finalData);
+                    await db.doc(PUBLIC_PLANNING_PATH).set(finalData);
+                    setFeedbackType('success');
+                    setFeedback('Planejamento salvo e atualizado com sucesso!');
+                    openDashboard();
+                } catch (err) {
+                    console.error("Erro ao publicar:", err);
+                    setFeedbackType('error');
+                    setFeedback('ERRO: Falha na publicação. Verifique as permissões do Firestore.');
+                }
+            };
+
+            const handleLogout = () => {
+                auth.signOut().catch(e => console.error("Erro ao deslogar:", e));
+            };
+            
+            const clearForm = () => {
+                const dateString = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+                const clearedContext = { data: dateString, turno: 'TURNO: A' };
+                const clearedSectors = {};
+
+                // Limpa o estado do React
+                setSectorsState(clearedSectors);
+                setContextState(clearedContext);
+
+                // A limpeza do estado acima acionará o useEffect para limpar o localStorage.
+                // Limpa também o rascunho do Firestore.
+                saveDraft({ data: dateString, turno: 'TURNO: A', setores: [] });
+
+                setFeedback('Formulário limpo.');
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
+                        <div className="max-w-6xl mx-auto flex justify-between items-center">
+                            <h1 className="text-lg sm:text-xl font-semibold flex items-center">
+                                <span className="hidden sm:inline mr-2">📋</span>
+                                <span className="hidden md:inline">Planejamento Operacional - Indústria</span>
+                                <span className="md:hidden">Plan. Operacional</span>
+                            </h1>
+                            <div className="flex items-center space-x-3">
+                                <span className="text-sm hidden md:block">Usuário: {currentUser.email}</span>
+                                <a 
+                                    href="menu.html"
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Voltar ao Menu
+                                </a>
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Sair
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <form onSubmit={handlePublish} className="max-w-6xl mx-auto p-4 sm:p-6">
+                        
+                        {feedback && (
+                            <div className={`fixed-feedback p-3 mb-4 rounded-md text-sm font-medium ${feedbackType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {feedback}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap justify-start items-center gap-4 mb-6 p-3 bg-gray-100 rounded-md border border-gray-200">
+                            <div className="flex items-center space-x-2">
+                                <label htmlFor="data-ref" className="font-semibold text-gray-700 text-sm">Data:</label>
+                                <input
+                                    type="date"
+                                    id="data-ref"
+                                    required
+                                    value={contextState.data || ''}
+                                    onChange={(e) => setContextState(prev => ({...prev, data: e.target.value}))}
+                                    className="p-2 rounded-md border border-gray-300 bg-white shadow-sm text-sm"
+                                />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <label className="font-semibold text-gray-700 text-sm">Turno:</label>
+                                <div className="bg-gray-200 p-1 rounded-full flex items-center space-x-1">
+                                    {['TURNO: A', 'TURNO: B', 'TURNO: C'].map(turnoValue => (
+                                        <button
+                                            type="button"
+                                            key={turnoValue}
+                                            onClick={() => setContextState(prev => ({...prev, turno: turnoValue}))}
+                                            className={`px-5 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ease-in-out ${
+                                                contextState.turno === turnoValue
+                                                    ? 'bg-white text-blue-700 shadow'
+                                                    : 'bg-transparent text-gray-500 hover:bg-gray-300/50'
+                                            }`}
+                                        >
+                                            {turnoValue.replace('TURNO: ', '')}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+                            {SECTORS_LIST.map(sector => (
+                                <div key={sector.id} className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+                                    <h2 className="text-lg font-bold text-white bg-gray-700 px-4 py-2">{sector.name}</h2>
+                                    <div className="p-4">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                            Status e Próximos Passos
+                                        </label>
+                                        <textarea
+                                            id={`status-${sector.id}`}
+                                            placeholder="Descreva o status do setor..."
+                                            value={sectorsState[sector.id]?.status || ''}
+                                            onChange={(e) => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], status: e.target.value}}))}
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-inner text-sm"
+                                            rows="4"
+                                        />
+                                        
+                                        <div className="mt-3">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                Prioridade
+                                            </label>
+                                            <div className="flex items-center space-x-1 mt-2">
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'BAIXA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'BAIXA' ? 'bg-slate-500 text-white border-slate-500' : 'text-gray-600 hover:bg-slate-100'}`}>Baixa</button>
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'NORMAL'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'NORMAL' ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-600 hover:bg-blue-100'}`}>Normal</button>
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'MÉDIA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'MÉDIA' ? 'bg-orange-500 text-white border-orange-500' : 'text-gray-600 hover:bg-orange-100'}`}>Média</button>
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], prioridade: 'ALTA'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.prioridade || 'NORMAL') === 'ALTA' ? 'bg-red-600 text-white border-red-600' : 'text-gray-600 hover:bg-red-100'}`}>Alta</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                Status Kanban
+                                            </label>
+                                            <div className="flex items-center space-x-1 mt-2">
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], kanbanStatus: 'todo'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.kanbanStatus || 'todo') === 'todo' ? 'bg-gray-500 text-white border-gray-500' : 'text-gray-600 hover:bg-gray-100'}`}>A fazer</button>
+                                                <button type="button" onClick={() => setSectorsState(prev => ({...prev, [sector.id]: {...prev[sector.id], kanbanStatus: 'doing'}}))} className={`flex-1 py-1 text-xs font-semibold rounded-md border transition-colors ${ (sectorsState[sector.id]?.kanbanStatus || 'todo') === 'doing' ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-600 hover:bg-blue-100'}`}>Fazendo</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 flex flex-col sm:flex-row sm:justify-center items-center gap-3 px-4 sm:px-0">
+                            <button
+                                type="button"
+                                onClick={clearForm}
+                                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-100 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Limpar
+                            </button>
+                            <button
+                                type="submit"
+                                className="w-full sm:w-auto px-6 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Salvar e Atualizar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handlePublishAndOpen}
+                                className="w-full sm:w-auto px-6 py-2 rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-sm font-semibold"
+                            >
+                                Salvar e Abrir Dashboard
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        // --- Dashboard (Interface B) ---
+        const DashboardViewer = () => {
+            const { db } = useContext(AuthContext);
+            const [planningData, setPlanningData] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                console.log("DashboardViewer: Initializing listener for PUBLIC_PLANNING_PATH");
+                if (!db) {
+                    setLoading(false);
+                    console.log("DashboardViewer: Firestore DB not available.");
+                    return;
+                }
+                
+                const unsubscribe = db.doc(PUBLIC_PLANNING_PATH).onSnapshot((docSnap) => {
+                    if (docSnap.exists) {
+                        const data = docSnap.data();
+                        setPlanningData(data);
+                        console.log("DashboardViewer: Received data:", data);
+                    } else {
+                        setPlanningData(null);
+                        console.log("DashboardViewer: Document does not exist.");
+                    }
+                    setLoading(false);
+                }, (error) => {
+                    console.error("DashboardViewer: Firestore listener error:", error);
+                    setLoading(false);
+                });
+
+                return () => {
+                    console.log("DashboardViewer: Unsubscribing from Firestore listener.");
+                    unsubscribe();
+                };
+            }, [db]);
+
+            const handleUpdateActivityStatus = async (sectorId, activityIndex, newStatus) => {
+                const docRef = db.doc(PUBLIC_PLANNING_PATH);
+                try {
+                    const docSnap = await docRef.get();
+                    if (!docSnap.exists) return;
+
+                    const currentData = docSnap.data();
+                    const updatedSetores = currentData.setores.map(sector => {
+                        if (sector.id === sectorId) {
+                            const updatedAtividades = sector.atividades.map((atividade, idx) => {
+                                if (idx === activityIndex) {
+                                    return { ...atividade, status: newStatus, completed: newStatus === 'done' };
+                                }
+                                return atividade;
+                            });
+                            return { ...sector, atividades: updatedAtividades };
+                        }
+                        return sector;
+                    });
+
+                    await docRef.update({ setores: updatedSetores });
+
+                } catch (error) {
+                    console.error("Erro ao atualizar status da atividade:", error);
+                }
+            };
+
+            const handleObservationChange = async (sectorId, newObservation) => {
+                const docRef = db.doc(PUBLIC_PLANNING_PATH);
+                try {
+                    const docSnap = await docRef.get();
+                    if (!docSnap.exists) return;
+
+                    const currentData = docSnap.data();
+                    const updatedSetores = currentData.setores.map(sector => {
+                        if (sector.id === sectorId) {
+                            return { ...sector, observacoes: newObservation };
+                        }
+                        return sector;
+                    });
+
+                    await docRef.update({ setores: updatedSetores });
+
+                } catch (error) {
+                    console.error("Erro ao atualizar observação:", error);
+                }
+            };
+
+            const handleArchiveAndDownload = async () => {
+                if (!planningData) return;
+
+                const doneItems = [];
+                planningData.setores.forEach(sector => {
+                    (sector.atividades || []).forEach(activity => {
+                        if (activity.status === 'done' || activity.completed) {
+                            doneItems.push({
+                                sector: sector.nome,
+                                activity: activity.text,
+                                priority: sector.prioridade || 'NORMAL',
+                                date: planningData.data,
+                                turn: planningData.turno
+                            });
+                        }
+                    });
+                });
+
+                if (doneItems.length === 0) {
+                    alert("Não há itens concluídos para arquivar.");
+                    return;
+                }
+
+                const csvHeader = "Data,Turno,Setor,Atividade,Prioridade\n";
+                const csvRows = doneItems.map(item =>
+                    `"${item.date}","${item.turn}","${item.sector}","${item.activity}","${item.priority}"`
+                ).join("\n");
+                const csvContent = csvHeader + csvRows;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `planejamento_concluido_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                const historyData = {
+                    ...planningData,
+                    archivedAt: new Date().toISOString()
+                };
+                await db.collection('historico_planejamento').add(historyData);
+
+                const newSetores = planningData.setores.map(sector => {
+                    const newAtividades = (sector.atividades || []).filter(
+                        activity => activity.status !== 'done' && !activity.completed
+                    );
+                    return { ...sector, atividades: newAtividades };
+                }).filter(sector => sector.atividades.length > 0);
+
+                await db.doc(PUBLIC_PLANNING_PATH).update({ setores: newSetores });
+
+                alert("Itens concluídos foram arquivados e o download do CSV foi iniciado.");
+            };
+
+            const handleSendToSheet = async () => {
+                if (!planningData) {
+                    alert("Não há dados de planejamento para enviar.");
+                    return;
+                }
+
+                const doneItems = [];
+                planningData.setores.forEach(sector => {
+                    (sector.atividades || []).forEach(activity => {
+                        if (activity.status === 'done' || activity.completed) {
+                            doneItems.push([
+                                planningData.data || '',
+                                planningData.turno || '',
+                                sector.nome || '',
+                                activity.text || '',
+                                sector.prioridade || 'NORMAL'
+                            ]);
+                        }
+                    });
+                });
+
+                if (doneItems.length === 0) {
+                    alert("Não há itens na coluna 'Feito' para enviar.");
+                    return;
+                }
+
+                const headers = ['Data', 'Turno', 'Setor', 'Atividade', 'Prioridade'];
+                const csvContent = "data:text/csv;charset=utf-8," + headers.join(";") + "\n" + doneItems.map(e => e.join(";")).join("\n");
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", `planejamento_concluido_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const handleClearDoneColumn = async () => {
+                if (!planningData) return;
+
+                const hasDoneItems = planningData.setores.some(sector => 
+                    (sector.atividades || []).some(activity => activity.status === 'done' || activity.completed)
+                );
+
+                if (!hasDoneItems) {
+                    alert("Não há itens na coluna 'Feito' para limpar.");
+                    return;
+                }
+
+                if (!confirm("Tem certeza que deseja limpar todos os itens da coluna 'Feito'? Esta ação não pode ser desfeita.")) {
+                    return;
+                }
+
+                const newSetores = planningData.setores.map(sector => {
+                    const newAtividades = (sector.atividades || []).filter(
+                        activity => activity.status !== 'done' && !activity.completed
+                    );
+                    return { ...sector, atividades: newAtividades };
+                }).filter(sector => sector.atividades.length > 0 || (sector.observacoes && sector.observacoes.trim() !== '')); // Keep sectors that still have activities or observations
+
+                try {
+                    await db.doc(PUBLIC_PLANNING_PATH).update({ setores: newSetores });
+                    alert("A coluna 'Feito' foi limpa com sucesso.");
+                } catch (error) {
+                    console.error("Erro ao limpar a coluna 'Feito':", error);
+                    alert("Ocorreu um erro ao limpar a coluna. Verifique o console.");
+                }
+            };
+
+            const handleExportPdf = () => {
+                console.log("Botão Exportar para PDF clicado!"); // Adicionado para depuração
+                const element = document.getElementById('dashboard-content');
+                if (!element) {
+                    console.error("Element with ID 'dashboard-content' not found.");
+                    return;
+                }
+
+                const opt = {
+                    margin:       1,
+                    filename:     'planejamento_coi_dashboard.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, logging: true, dpi: 192, letterRendering: true },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                window.html2pdf().set(opt).from(element).save();
+            };
+
+            const getPriorityClass = (priority) => {
+                const p = priority ? priority.toUpperCase() : 'NORMAL';
+                switch (p) {
+                    case 'ALTA': return 'border-red-500';
+                    case 'MÉDIA': return 'border-orange-400';
+                    case 'BAIXA': return 'border-yellow-400';
+                    default: return 'border-gray-300';
+                }
+            };
+            
+            const getPriorityBadgeClass = (priority) => {
+                const p = priority ? priority.toUpperCase() : 'NORMAL';
+                switch (p) {
+                    case 'ALTA': return 'bg-red-100 text-red-800';
+                    case 'MÉDIA': return 'bg-orange-100 text-orange-800';
+                    case 'BAIXA': return 'bg-yellow-100 text-yellow-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                }
+            };
+
+            const sortedSetores = planningData?.setores ? [...planningData.setores].sort((a, b) => {
+                const order = { 'ALTA': 1, 'MÉDIA': 2, 'BAIXA': 3, 'NORMAL': 4 };
+                return (order[a.prioridade] || 4) - (order[b.prioridade] || 4);
+            }) : [];
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <p className="text-lg font-semibold text-gray-500">Carregando Dashboard...</p>
+                    </div>
+                );
             }
-        });
 
-        // Exibe a tela de carregamento inicialmente
-        loadingScreen.style.display = 'block';
-        loginScreen.style.display = 'none';
+            const KanbanBoard = ({ setores, onUpdateActivityStatus, onSendToSheet, onClearDoneColumn }) => {
+                const columns = {
+                    todo: { title: 'A Fazer', atividades: [] },
+                    doing: { title: 'Fazendo', atividades: [] },
+                    done: { title: 'Feito', atividades: [] },
+                };
 
+                setores.forEach(sector => {
+                    (sector.atividades || []).forEach((atividade, index) => {
+                        const card = { sector, atividade, index };
+                        if (atividade.status === 'doing') {
+                            columns.doing.atividades.push(card);
+                        } else if (atividade.status === 'done' || atividade.completed) {
+                            columns.done.atividades.push(card);
+                        } else {
+                            columns.todo.atividades.push(card);
+                        }
+                    });
+                });
+
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {Object.keys(columns).map(key => (
+                            <div key={key} className="bg-gray-100 rounded-lg p-4">
+                                <h3 className="text-lg font-bold text-gray-800 mb-4">{columns[key].title}</h3>
+                                <div className="space-y-4">
+                                    {columns[key].atividades.map(({ sector, atividade, index }) => (
+                                        <div key={`${sector.id}-${index}`} className={`bg-white p-4 rounded-md shadow-sm border-l-4 ${getPriorityClass(sector.prioridade)}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="text-base font-bold text-gray-800">{sector.nome}</h4>
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getPriorityBadgeClass(sector.prioridade)}`}>
+                                                    {sector.prioridade}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-700">{atividade.text}</p>
+                                            <div className="mt-4 flex justify-end space-x-2">
+                                                {atividade.status !== 'todo' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'todo')} className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded">A fazer</button>
+                                                )}
+                                                {atividade.status !== 'doing' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'doing')} className="text-xs bg-blue-200 hover:bg-blue-300 text-blue-700 px-2 py-1 rounded">Fazendo</button>
+                                                )}
+                                                {atividade.status !== 'done' && (
+                                                    <button onClick={() => onUpdateActivityStatus(sector.id, index, 'done')} className="text-xs bg-green-200 hover:bg-green-300 text-green-700 px-2 py-1 rounded">Feito</button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {key === 'done' && (
+                                    <div className="mt-4 space-y-2">
+                                        <button
+                                            onClick={onSendToSheet}
+                                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            Enviar para Planilha
+                                        </button>
+                                        <button
+                                            onClick={onClearDoneColumn}
+                                            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            Limpar Coluna 'Feito'
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+            
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white p-3 shadow-sm text-gray-800 border-b border-gray-200 sticky top-0 z-10">
+                        <div className="max-w-6xl mx-auto flex justify-between items-center">
+                            <h1 className="text-lg sm:text-xl font-semibold flex items-center">
+                                <span className="hidden sm:inline mr-2">📊</span>
+                                <span className="hidden md:inline">Dashboard COI - Planejamento</span>
+                                <span className="md:hidden">Dashboard COI</span>
+                            </h1>
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={handleExportPdf}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Exportar para PDF
+                                </button>
+                                <a 
+                                    href="menu.html"
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded-md text-sm"
+                                >
+                                    Voltar ao Menu
+                                </a>
+                                <div className="text-right text-xs sm:text-sm">
+                                    <p className="font-semibold text-green-600">Status: Conectado</p>
+                                    <p className="hidden sm:block">Última Atualização: {planningData ? new Date(planningData.timestamp).toLocaleTimeString('pt-BR') : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main id="dashboard-content" className="max-w-6xl mx-auto p-4 sm:p-6">
+                        <div className="bg-gray-100 p-3 rounded-md border border-gray-200 mb-6 text-center">
+                            <p className="mt-1 text-sm text-gray-600">
+                                Data: <span className="font-semibold text-blue-700">{planningData?.data || 'N/A'}</span> | 
+                                Turno: <span className="font-semibold text-blue-700">{planningData?.turno || 'N/A'}</span>
+                            </p>
+                        </div>
+                        
+                        {sortedSetores.length > 0 ? (
+                            <KanbanBoard
+                                setores={sortedSetores}
+                                onUpdateActivityStatus={handleUpdateActivityStatus}
+                                onUpdateObservation={handleObservationChange}
+                                onSendToSheet={handleSendToSheet}
+                                onClearDoneColumn={handleClearDoneColumn}
+                            />
+                        ) : (
+                            <p className="text-center text-gray-500 p-6 col-span-full">Nenhum planejamento disponível.</p>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Componente Principal (Roteador) ---
+        const App = () => {
+            const { currentUser, loading } = useContext(AuthContext);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDashboardPage = urlParams.get('page') === 'dashboard';
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <p className="text-lg font-semibold text-gray-600">Iniciando...</p>
+                    </div>
+                );
+            }
+
+            if (isDashboardPage) {
+                return <DashboardViewer />;
+            }
+            
+            if (!currentUser) {
+                return <LoginScreen />;
+            }
+
+            return <PlanningForm />;
+        };
+
+        const Main = () => (
+            <AuthProvider>
+                <App />
+            </AuthProvider>
+        );
+
+        ReactDOM.render(<Main />, document.getElementById('root'));
     </script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
 </body>
 </html>

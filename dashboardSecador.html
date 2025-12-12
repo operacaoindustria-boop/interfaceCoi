@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gestão - Secagem</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React, ReactDOM, Prop-Types & Recharts -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Prop-Types é obrigatório para a versão UMD do Recharts funcionar corretamente -->
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    
+    <!-- Recharts (Versão Fixa e Estável) -->
+    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- SUPRESSÃO DE AVISOS DO REACT/RECHARTS ---
+        // A versão atual do Recharts emite avisos sobre defaultProps que poluem o console.
+        // Este bloco filtra esses avisos específicos para manter o console limpo.
+        const originalConsoleError = console.error;
+        console.error = (...args) => {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('Support for defaultProps will be removed')) {
+                return;
+            }
+            originalConsoleError(...args);
+        };
+
+        const { useState, useEffect } = React;
+        // Importa Recharts do objeto global
+        const { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+        // --- Ícones SVG ---
+        const Icons = {
+            LayoutDashboard: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+            Wind: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>,
+            Droplets: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.8-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>,
+            Clock: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Activity: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            AlertTriangle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>,
+            ChevronRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>,
+            ArrowLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        };
+
+        // --- Dados Simulados ---
+        const DRYERS_DATA = [
+          { id: 1, name: 'Silo 01', status: 'drying', product: 'Soja BMX', batch: 'Lote-A102', tempAir: 55, tempMass: 38, moisture: 16.5, target: 13.0 },
+          { id: 2, name: 'Silo 02', status: 'cooling', product: 'Milho 2B', batch: 'Lote-B440', tempAir: 25, tempMass: 32, moisture: 13.2, target: 13.0 },
+          { id: 3, name: 'Silo 03', status: 'stopped', product: 'Vazio', batch: '-', tempAir: 24, tempMass: 24, moisture: 0, target: 13.0 },
+          { id: 4, name: 'Silo 04', status: 'drying', product: 'Soja Bras', batch: 'Lote-C991', tempAir: 58, tempMass: 40, moisture: 15.1, target: 12.5 },
+        ];
+
+        const HISTORY_DATA = [
+          { time: '08:00', umidade: 18.0, tempMassa: 28 },
+          { time: '09:00', umidade: 17.5, tempMassa: 32 },
+          { time: '10:00', umidade: 16.8, tempMassa: 35 },
+          { time: '11:00', umidade: 16.2, tempMassa: 38 },
+          { time: '12:00', umidade: 15.5, tempMassa: 40 },
+          { time: '13:00', umidade: 14.8, tempMassa: 41 },
+        ];
+
+        // --- Componentes UI ---
+        const Card = ({ children, className = "" }) => (
+          <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
+            {children}
+          </div>
+        );
+
+        const StatusBadge = ({ status }) => {
+          const styles = {
+            drying: 'bg-orange-100 text-orange-700 border-orange-200',
+            cooling: 'bg-blue-100 text-blue-700 border-blue-200',
+            stopped: 'bg-slate-100 text-slate-600 border-slate-200',
+          };
+          const labels = { drying: 'Secando', cooling: 'Resfriando', stopped: 'Parado' };
+          
+          return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[status]}`}>
+              {labels[status]}
+            </span>
+          );
+        };
+
+        // --- App Dashboard ---
+        function DashboardApp() {
+          const activeDryers = DRYERS_DATA.filter(d => d.status === 'drying').length;
+          const activeSilos = DRYERS_DATA.filter(d => d.moisture > 0);
+          const avgMoisture = activeSilos.length > 0 
+            ? (activeSilos.reduce((acc, curr) => acc + curr.moisture, 0) / activeSilos.length).toFixed(1)
+            : '0.0';
+
+          return (
+            <div className="min-h-screen bg-slate-50 font-sans p-6">
+              <header className="flex justify-between items-center mb-8">
+                <div className="flex items-center">
+                  <a href="menu.html" className="mr-4 p-2 bg-white rounded-lg hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors">
+                        <Icons.ArrowLeft className="w-5 h-5" />
+                  </a>
+                  <div className="bg-blue-600 p-2 rounded-lg mr-3 shadow-lg shadow-blue-200">
+                    <Icons.LayoutDashboard className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-slate-800">MES Dashboard</h1>
+                    <p className="text-sm text-slate-500">Visão Gerencial - Unidade 01</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-slate-700">{new Date().toLocaleDateString()}</div>
+                  <div className="text-xs text-slate-400">Atualizado há 2 min</div>
+                </div>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <Card className="p-5 flex items-center justify-between border-l-4 border-l-orange-500">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Secagem Ativa</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1">{activeDryers} <span className="text-lg text-slate-400 font-normal">/ {DRYERS_DATA.length}</span></p>
+                  </div>
+                  <div className="bg-orange-50 p-3 rounded-full text-orange-500">
+                    <Icons.Wind className="w-6 h-6" />
+                  </div>
+                </Card>
+
+                <Card className="p-5 flex items-center justify-between border-l-4 border-l-blue-500">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Umidade Média</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1">{avgMoisture}%</p>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-full text-blue-500">
+                    <Icons.Droplets className="w-6 h-6" />
+                  </div>
+                </Card>
+
+                <Card className="p-5 flex items-center justify-between border-l-4 border-l-green-500">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Previsão Término</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1">16:30h</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-full text-green-500">
+                    <Icons.Clock className="w-6 h-6" />
+                  </div>
+                </Card>
+
+                <Card className="p-5 flex items-center justify-between border-l-4 border-l-purple-500">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Eficiência</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1">94%</p>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-full text-purple-500">
+                    <Icons.Activity className="w-6 h-6" />
+                  </div>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="flex justify-between items-end">
+                    <h2 className="text-lg font-bold text-slate-700">Status dos Secadores</h2>
+                    <button className="text-sm text-blue-600 font-medium hover:underline">Ver Planta Baixa</button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {DRYERS_DATA.map(dryer => (
+                      <Card key={dryer.id} className="relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="absolute top-0 left-0 h-1.5 bg-slate-100 w-full">
+                          <div 
+                            className={`h-full transition-all duration-1000 ${dryer.moisture <= dryer.target ? 'bg-green-500' : 'bg-blue-500'}`}
+                            style={{ width: `${(dryer.target / (dryer.moisture || 1)) * 100}%` }}
+                          />
+                        </div>
+
+                        <div className="p-5">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h4 className="font-bold text-slate-800 flex items-center text-lg">
+                                {dryer.name}
+                                {dryer.tempMass > 39 && <Icons.AlertTriangle className="w-4 h-4 text-red-500 ml-2 animate-bounce" />}
+                              </h4>
+                              <p className="text-xs text-slate-500">{dryer.product} • <span className="font-mono">{dryer.batch}</span></p>
+                            </div>
+                            <StatusBadge status={dryer.status} />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 mt-4">
+                            <div className="bg-slate-50 p-2 rounded text-center">
+                              <span className="text-xs text-slate-400 block">Ar Ent.</span>
+                              <span className="font-bold text-slate-700">{dryer.tempAir}°C</span>
+                            </div>
+                            <div className={`p-2 rounded text-center ${dryer.tempMass > 40 ? 'bg-red-50 border border-red-100' : 'bg-slate-50'}`}>
+                              <span className={`text-xs block ${dryer.tempMass > 40 ? 'text-red-400' : 'text-slate-400'}`}>Massa</span>
+                              <span className={`font-bold ${dryer.tempMass > 40 ? 'text-red-700' : 'text-slate-700'}`}>{dryer.tempMass}°C</span>
+                            </div>
+                            <div className="bg-blue-50 p-2 rounded text-center border border-blue-100">
+                              <span className="text-xs text-blue-400 block">Umidade</span>
+                              <span className="font-bold text-blue-700">{dryer.moisture}%</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex justify-between items-center text-xs text-slate-400">
+                            <span>Meta: {dryer.target}%</span>
+                            <div className="flex items-center text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                              Detalhes <Icons.ChevronRight className="w-3 h-3" />
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h2 className="text-lg font-bold text-slate-700">Análise de Tendência</h2>
+                  
+                  <Card className="p-4 h-72">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase mb-4">Curva de Secagem (Silo 01)</h3>
+                    <ResponsiveContainer width="100%" height="85%">
+                      <AreaChart data={HISTORY_DATA}>
+                        <defs>
+                          <linearGradient id="colorMoisture" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                        <YAxis yAxisId="left" domain={[12, 20]} orientation="left" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                        <Tooltip 
+                          contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} 
+                          itemStyle={{fontSize: '12px'}}
+                        />
+                        <Area yAxisId="left" type="monotone" dataKey="umidade" name="Umidade" stroke="#3b82f6" fillOpacity={1} fill="url(#colorMoisture)" strokeWidth={2} />
+                        <Line yAxisId="right" type="monotone" dataKey="tempMassa" name="Temp. Massa" stroke="#f97316" dot={false} strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Card>
+
+                  <Card className="p-4 bg-yellow-50 border border-yellow-200">
+                     <div className="flex">
+                       <Icons.AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                       <div>
+                         <h4 className="font-bold text-yellow-800 text-sm">Atenção Requerida</h4>
+                         <p className="text-xs text-yellow-700 mt-1 leading-relaxed">
+                           O <strong>Silo 04</strong> apresenta desvio na temperatura da massa. Verifique se o inversor do ventilador está operando na frequência correta.
+                         </p>
+                         <button className="mt-2 text-xs font-bold text-yellow-800 underline">Marcar como resolvido</button>
+                       </div>
+                     </div>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DashboardApp />);
+    </script>
+</body>
+</html>
