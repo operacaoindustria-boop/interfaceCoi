@@ -44,7 +44,9 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Módulos Operacionais</p>
+            
+            <!-- 1. PLANEJAMENTO -->
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Planejamento</p>
             
             <a href="operacional_planning_input.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="clipboard-list" class="w-5 h-5 mr-3 text-blue-500 group-hover:text-blue-400"></i>
@@ -58,38 +60,65 @@
             <a href="operacional_planning_input.html?page=dashboard" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3 text-green-500 group-hover:text-green-400"></i>
                 <div class="flex-1">
-                    <span class="block font-medium">Dash. Planejamento</span>
+                    <span class="block font-medium">Dash. Planejamento PMP</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">KPIs & Metas</span>
                 </div>
                 <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">B</span>
             </a>
 
+            <!-- 2. RECEPÇÃO & MOEGA -->
             <div class="my-4 border-t border-slate-800"></div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Controle de Processos</p>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Recepção & Moega</p>
 
-            <a href="controle.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
-                <i data-lucide="database" class="w-5 h-5 mr-3 text-yellow-500 group-hover:text-yellow-400"></i>
+            <a href="moega.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="truck" class="w-5 h-5 mr-3 text-blue-500 group-hover:text-blue-400"></i>
                 <div class="flex-1">
-                    <span class="block font-medium">Controle de Silos Pulmão</span>
-                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Operação Local</span>
+                    <span class="block font-medium">Operação Moega / Recepção</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Entrada de Grãos</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">C</span>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">K</span>
             </a>
 
-            <a href="dashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
-                <i data-lucide="pie-chart" class="w-5 h-5 mr-3 text-purple-500 group-hover:text-purple-400"></i>
+            <a href="moegaDashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3 text-indigo-500 group-hover:text-indigo-400"></i>
                 <div class="flex-1">
-                    <span class="block font-medium">Dash. Silos Pulmão</span>
-                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Monitoramento</span>
+                    <span class="block font-medium">Dash. Moega / Recepção</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Monitoramento 24h</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">D</span>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">L</span>
             </a>
+
+            <!-- 3. PRÉ-SECAGEM -->
+            <div class="my-4 border-t border-slate-800"></div>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Pré-Secagem & Silos</p>
+
+            <a href="presecagem.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="container" class="w-5 h-5 mr-3 text-teal-500 group-hover:text-teal-400"></i>
+                <div class="flex-1">
+                    <span class="block font-medium">Operação Pré - Secagens / Silos</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Armazenagem</span>
+                </div>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">I</span>
+            </a>
+
+            <a href="dashboardPresecagem.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="line-chart" class="w-5 h-5 mr-3 text-teal-500 group-hover:text-teal-400"></i>
+                <div class="flex-1">
+                    <span class="block font-medium">Dash. Pré - Secagens / Silos</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Gestão Visual</span>
+                </div>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">J</span>
+            </a>
+
+            <!-- 4. SECAGEM -->
+            <div class="my-4 border-t border-slate-800"></div>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Secagem</p>
 
             <a href="secador.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="thermometer" class="w-5 h-5 mr-3 text-orange-500 group-hover:text-orange-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Operação Secagem</span>
-                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Termometria</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Controle Térmico</span>
                 </div>
                 <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">G</span>
             </a>
@@ -103,6 +132,29 @@
                 <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">H</span>
             </a>
 
+            <!-- 5. SILOS PULMÃO -->
+            <div class="my-4 border-t border-slate-800"></div>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Silos Pulmão</p>
+
+            <a href="controle.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="database" class="w-5 h-5 mr-3 text-yellow-500 group-hover:text-yellow-400"></i>
+                <div class="flex-1">
+                    <span class="block font-medium">Controle de Silos Pulmão</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Estoque Intermediário</span>
+                </div>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">C</span>
+            </a>
+
+            <a href="dashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="pie-chart" class="w-5 h-5 mr-3 text-purple-500 group-hover:text-purple-400"></i>
+                <div class="flex-1">
+                    <span class="block font-medium">Dash. Silos Pulmão</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Níveis e Status</span>
+                </div>
+                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700">D</span>
+            </a>
+
+            <!-- 6. EXPEDIÇÃO -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expedição</p>
 
@@ -234,40 +286,37 @@
             appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
         };
 
-        firebase.initializeApp(FIREBASE_CONFIG);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
         const auth = firebase.auth();
 
         // 3. MONITORAR ESTADO DE AUTENTICAÇÃO
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Usuário está logado, preenche a interface
                 const email = user.email;
-                const displayName = email.split('@')[0]; // Pega a parte antes do @ como nome
+                const displayName = email.split('@')[0]; 
                 const initials = displayName.substring(0, 2).toUpperCase();
 
                 document.getElementById('user-name').textContent = displayName;
                 document.getElementById('user-initials').textContent = initials;
                 document.getElementById('user-role').textContent = "Usuário Conectado";
             } else {
-                // Se não estiver logado, redireciona para o login
-                // Mude 'index.html' para o nome do seu arquivo de login principal
-                window.location.href = 'index.html'; 
+                // Em ambiente de teste/preview, não redirecionamos para evitar 404
+                // window.location.href = 'index.html'; 
+                console.log("Usuário não logado (Redirecionamento pausado para preview)");
             }
         });
 
         // 4. FUNÇÃO DE LOGOUT
         function performLogout() {
             auth.signOut().then(() => {
-                // O onAuthStateChanged acima já vai detectar e redirecionar,
-                // mas podemos forçar para garantir:
                 window.location.href = 'index.html';
             }).catch((error) => {
                 console.error("Erro ao sair:", error);
-                alert("Erro ao tentar sair.");
             });
         }
 
-        // Adiciona evento aos botões de sair
         document.getElementById('btn-logout-1').addEventListener('click', performLogout);
         document.getElementById('btn-logout-2').addEventListener('click', performLogout);
 

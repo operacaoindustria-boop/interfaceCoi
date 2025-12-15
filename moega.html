@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MES - Operação Moega</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+        }
+
+        .btn-industrial {
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        .btn-industrial:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .moega-selected {
+            border-color: #3b82f6 !important; /* blue-500 */
+            background-color: rgba(30, 58, 138, 0.4) !important; /* blue-900/40 */
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-slate-800 border-b border-slate-700 h-20 flex items-center justify-between px-6 shadow-lg sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <!-- BOTÃO VOLTAR AO MENU (Adicionado) -->
+            <a href="menu.html" class="group p-2 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 hover:text-white hover:bg-slate-600 transition-colors shadow-sm mr-2 flex items-center justify-center" title="Voltar ao Menu Principal">
+                <i data-lucide="arrow-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
+            </a>
+
+            <div class="bg-blue-600 p-2 rounded-lg shadow-lg">
+                <i data-lucide="factory" class="text-white h-8 w-8"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide text-white uppercase">Operação Moega</h1>
+                <p class="text-xs text-blue-400 font-bold tracking-wider">RECEBIMENTO DE GRÃOS</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+             <!-- Link atualizado para moegaDashboard.html -->
+            <a href="moegaDashboard.html" class="text-slate-400 hover:text-white text-sm font-bold flex items-center gap-2 border border-slate-600 rounded px-3 py-2 hover:bg-slate-700 transition">
+                <i data-lucide="external-link" class="w-4 h-4"></i> IR PARA DASHBOARD
+            </a>
+            <div class="text-right hidden sm:block">
+                <p id="clock" class="text-xl font-mono font-bold text-emerald-400">12:00</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO -->
+    <main class="flex-1 p-4 md:p-8 flex flex-col items-center">
+        
+        <div class="w-full max-w-4xl bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden mb-10">
+            
+            <div class="bg-slate-700/50 p-6 border-b border-slate-600">
+                <h2 class="text-xl font-bold text-white flex items-center gap-3">
+                    <i data-lucide="pen-tool" class="text-yellow-500 w-6 h-6"></i> 
+                    NOVA ENTRADA DE CARGA
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">Preencha os dados abaixo para liberar o descarregamento.</p>
+            </div>
+
+            <div class="p-6 md:p-10 grid grid-cols-1 gap-8">
+                
+                <!-- SELEÇÃO DE MOEGA -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <span class="bg-slate-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                        Selecionar Moega de Destino
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="selectMoega(1)" id="btn-moega-1" class="btn-moega h-32 rounded-xl border-2 border-slate-600 bg-slate-750 hover:bg-slate-700 flex flex-col items-center justify-center gap-3 transition-all">
+                            <span class="text-4xl font-bold text-slate-200">01</span>
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-widest status-text">DISPONÍVEL</span>
+                        </button>
+                        <button onclick="selectMoega(2)" id="btn-moega-2" class="btn-moega h-32 rounded-xl border-2 border-slate-600 bg-slate-750 hover:bg-slate-700 flex flex-col items-center justify-center gap-3 transition-all">
+                            <span class="text-4xl font-bold text-slate-200">02</span>
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-widest status-text">DISPONÍVEL</span>
+                        </button>
+                        <button onclick="selectMoega(3)" id="btn-moega-3" class="btn-moega h-32 rounded-xl border-2 border-slate-600 bg-slate-750 hover:bg-slate-700 flex flex-col items-center justify-center gap-3 transition-all">
+                            <span class="text-4xl font-bold text-slate-200">03</span>
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-widest status-text">DISPONÍVEL</span>
+                        </button>
+                        <button onclick="selectMoega(4)" id="btn-moega-4" class="btn-moega h-32 rounded-xl border-2 border-slate-600 bg-slate-750 hover:bg-slate-700 flex flex-col items-center justify-center gap-3 transition-all">
+                            <span class="text-4xl font-bold text-slate-200">04</span>
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-widest status-text">DISPONÍVEL</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DADOS DA CARGA -->
+                <div>
+                     <label class="block text-sm font-bold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <span class="bg-slate-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                        Dados do Ticket
+                    </label>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa do Veículo</label>
+                            <input type="text" id="input-placa" placeholder="ABC-1234" class="w-full h-16 bg-slate-900 border-2 border-slate-600 rounded-lg px-4 text-2xl font-bold text-white focus:border-blue-500 focus:ring-0 outline-none uppercase font-mono">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label>
+                            <select id="input-produto" class="w-full h-16 bg-slate-900 border-2 border-slate-600 rounded-lg px-4 text-xl font-bold text-white focus:border-blue-500 focus:ring-0 outline-none appearance-none">
+                                <option value="SOJA">🌱 SOJA</option>
+                                <option value="MILHO">🌽 MILHO</option>
+                                <option value="TRIGO">🌾 TRIGO</option>
+                                <option value="SORGO">🌰 SORGO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label>
+                        <div class="relative">
+                            <input type="number" id="input-peso" placeholder="00000" class="w-full h-20 bg-slate-900 border-2 border-slate-600 rounded-lg px-6 text-4xl font-bold text-emerald-400 focus:border-emerald-500 focus:ring-0 outline-none font-mono tracking-widest">
+                            <span class="absolute right-6 top-6 text-slate-500 font-bold text-xl">KG</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label>
+                            <input type="number" id="input-umidade" step="0.1" placeholder="14.0" class="w-full h-14 bg-slate-900 border-2 border-slate-600 rounded-lg px-4 text-xl font-bold text-white focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label>
+                            <input type="number" id="input-impureza" step="0.1" placeholder="1.0" class="w-full h-14 bg-slate-900 border-2 border-slate-600 rounded-lg px-4 text-xl font-bold text-white focus:border-blue-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RODAPÉ DE AÇÃO -->
+            <div class="bg-slate-900 p-6 flex flex-col md:flex-row gap-4 justify-between items-center border-t border-slate-700">
+                <button onclick="limparFormulario()" class="w-full md:w-auto px-8 py-4 rounded-lg text-slate-400 font-bold hover:bg-slate-800 hover:text-white transition uppercase tracking-wider">
+                    Cancelar
+                </button>
+                <button onclick="enviarDados()" class="w-full md:w-auto flex-1 max-w-md btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-lg font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-3">
+                    <i data-lucide="save" class="w-6 h-6"></i> Confirmar Entrada
+                </button>
+            </div>
+        </div>
+
+        <p class="text-slate-600 text-sm">Sistema MES Industrial v1.0.2 &bull; Operador Logado: USER_01</p>
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-8 py-4 rounded-lg shadow-2xl transition-all duration-300 opacity-0 -translate-y-10 flex items-center gap-3 z-50">
+        <i data-lucide="check-circle" class="w-8 h-8"></i>
+        <div>
+            <h3 class="font-bold text-lg">Registro Salvo!</h3>
+            <p class="text-emerald-100 text-sm">Dados enviados para o banco de gestão.</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let moegaSelecionada = null;
+
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR').substring(0, 5);
+        }, 1000);
+
+        function selectMoega(id) {
+            moegaSelecionada = id;
+            document.querySelectorAll('.btn-moega').forEach(btn => btn.classList.remove('moega-selected'));
+            document.getElementById(`btn-moega-${id}`).classList.add('moega-selected');
+        }
+
+        function enviarDados() {
+            const placa = document.getElementById('input-placa').value;
+            const produto = document.getElementById('input-produto').value;
+            const peso = document.getElementById('input-peso').value;
+            const umidade = document.getElementById('input-umidade').value || 0;
+            const impureza = document.getElementById('input-impureza').value || 0;
+
+            if (!moegaSelecionada) {
+                alert("ERRO: Selecione uma Moega de destino.");
+                return;
+            }
+            if (!placa || !peso) {
+                alert("ERRO: Placa e Peso são obrigatórios.");
+                return;
+            }
+
+            const novoRegistro = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                moega: moegaSelecionada,
+                placa: placa.toUpperCase(),
+                produto: produto,
+                peso: parseFloat(peso),
+                umidade: parseFloat(umidade),
+                impureza: parseFloat(impureza),
+                status: 'CONCLUIDO'
+            };
+
+            let dadosAntigos = JSON.parse(localStorage.getItem('mes_dados_logs') || "[]");
+            dadosAntigos.unshift(novoRegistro); 
+            localStorage.setItem('mes_dados_logs', JSON.stringify(dadosAntigos));
+
+            let estadoMoegas = JSON.parse(localStorage.getItem('mes_estado_moegas') || "{}");
+            estadoMoegas[moegaSelecionada] = {
+                status: 'RECEBENDO',
+                placa: placa.toUpperCase(),
+                produto: produto,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('mes_estado_moegas', JSON.stringify(estadoMoegas));
+
+            // Simular liberação automática após 10s
+            setTimeout(() => {
+                let currentStates = JSON.parse(localStorage.getItem('mes_estado_moegas') || "{}");
+                if (currentStates[moegaSelecionada]) {
+                    delete currentStates[moegaSelecionada];
+                    localStorage.setItem('mes_estado_moegas', JSON.stringify(currentStates));
+                }
+            }, 10000);
+
+            mostrarToast();
+            limparFormulario();
+        }
+
+        function limparFormulario() {
+            document.getElementById('input-placa').value = '';
+            document.getElementById('input-peso').value = '';
+            document.getElementById('input-umidade').value = '';
+            document.getElementById('input-impureza').value = '';
+            moegaSelecionada = null;
+            document.querySelectorAll('.btn-moega').forEach(btn => btn.classList.remove('moega-selected'));
+        }
+
+        function mostrarToast() {
+            const t = document.getElementById('toast');
+            t.classList.remove('opacity-0', '-translate-y-10');
+            setTimeout(() => {
+                t.classList.add('opacity-0', '-translate-y-10');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

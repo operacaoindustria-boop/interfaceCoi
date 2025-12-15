@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MES - Gestão Moega</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .status-active {
+            animation: pulse-green 2s infinite;
+            border-color: #10b981; 
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 h-16 flex items-center justify-between px-6 sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <!-- BOTÃO VOLTAR AO MENU (Adicionado) -->
+            <a href="menu.html" class="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors mr-2 flex items-center justify-center group" title="Voltar ao Menu">
+                <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+            </a>
+
+            <i data-lucide="bar-chart-3" class="text-blue-500 h-6 w-6"></i>
+            <h1 class="text-lg font-bold text-white uppercase tracking-wider">Dashboard Moega</h1>
+        </div>
+        <div class="flex items-center gap-4">
+             <!-- Link atualizado para moega.html -->
+             <a href="moega.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider border border-slate-700 px-3 py-1 rounded hover:bg-slate-800">
+                Ir para Operação
+            </a>
+            <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-xs text-emerald-500 font-bold uppercase">Ao Vivo</span>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-8">
+
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Total Recebido (Hoje)</p>
+                    <h3 class="text-3xl font-bold text-white" id="kpi-peso">0 <span class="text-sm text-slate-500">t</span></h3>
+                </div>
+                <div class="bg-blue-900/30 p-3 rounded-lg text-blue-400"><i data-lucide="scale"></i></div>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Cargas / Dia</p>
+                    <h3 class="text-3xl font-bold text-white" id="kpi-cargas">0</h3>
+                </div>
+                <div class="bg-yellow-900/30 p-3 rounded-lg text-yellow-400"><i data-lucide="truck"></i></div>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Umidade Média</p>
+                    <h3 class="text-3xl font-bold text-white" id="kpi-umidade">0%</h3>
+                </div>
+                <div class="bg-purple-900/30 p-3 rounded-lg text-purple-400"><i data-lucide="droplets"></i></div>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Status Pátio</p>
+                    <h3 class="text-xl font-bold text-emerald-400">FLUIDO</h3>
+                </div>
+                <div class="bg-emerald-900/30 p-3 rounded-lg text-emerald-400"><i data-lucide="activity"></i></div>
+            </div>
+        </div>
+
+        <!-- STATUS DAS MOEGAS EM TEMPO REAL -->
+        <div>
+            <h2 class="text-slate-300 font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> STATUS DAS MOEGAS
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6" id="moegas-container">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+
+        <!-- TABELA DE REGISTROS -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg flex flex-col">
+            <div class="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Histórico de Recebimento
+                </h3>
+                <button onclick="limparDados()" class="text-xs text-red-400 hover:text-red-300 hover:underline">Limpar Base de Dados</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider">
+                        <tr>
+                            <th class="p-4">Hora</th>
+                            <th class="p-4">Moega</th>
+                            <th class="p-4">Placa</th>
+                            <th class="p-4">Produto</th>
+                            <th class="p-4 text-right">Peso (Kg)</th>
+                            <th class="p-4 text-right">Umid.</th>
+                            <th class="p-4 text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300">
+                        <!-- Linhas aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const moegasConfig = [1, 2, 3, 4];
+
+        function atualizarDashboard() {
+            const logs = JSON.parse(localStorage.getItem('mes_dados_logs') || "[]");
+            const estadosAtuais = JSON.parse(localStorage.getItem('mes_estado_moegas') || "{}");
+
+            const totalPeso = logs.reduce((acc, curr) => acc + curr.peso, 0);
+            const mediaUmidade = logs.length > 0 
+                ? (logs.reduce((acc, curr) => acc + curr.umidade, 0) / logs.length).toFixed(1) 
+                : 0;
+            
+            document.getElementById('kpi-peso').innerText = (totalPeso / 1000).toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' t';
+            document.getElementById('kpi-cargas').innerText = logs.length;
+            document.getElementById('kpi-umidade').innerText = mediaUmidade + '%';
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            logs.slice(0, 15).forEach(log => {
+                const data = new Date(log.timestamp);
+                const hora = data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                
+                const tr = `
+                    <tr class="hover:bg-slate-750 transition">
+                        <td class="p-4 font-mono text-slate-400">${hora}</td>
+                        <td class="p-4"><span class="bg-slate-700 text-white px-2 py-1 rounded text-xs font-bold">M-0${log.moega}</span></td>
+                        <td class="p-4 font-bold text-white">${log.placa}</td>
+                        <td class="p-4 text-blue-300">${log.produto}</td>
+                        <td class="p-4 text-right font-mono text-emerald-400 font-bold">${log.peso.toLocaleString('pt-BR')}</td>
+                        <td class="p-4 text-right font-mono">${log.umidade}%</td>
+                        <td class="p-4 text-center"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-500 inline"></i></td>
+                    </tr>
+                `;
+                tbody.innerHTML += tr;
+            });
+            lucide.createIcons();
+
+            const moegasContainer = document.getElementById('moegas-container');
+            moegasContainer.innerHTML = '';
+
+            moegasConfig.forEach(id => {
+                const ocupada = estadosAtuais[id]; 
+                
+                let cardClass = 'border-slate-600 bg-slate-800';
+                let statusText = 'LIVRE';
+                let statusClass = 'text-slate-500 bg-slate-900';
+                let content = '<div class="h-10 flex items-center text-slate-500 text-sm">Aguardando...</div>';
+
+                if (ocupada) {
+                    cardClass = 'status-active bg-emerald-900/20 border-emerald-500';
+                    statusText = 'RECEBENDO';
+                    statusClass = 'text-white bg-emerald-600';
+                    content = `
+                        <div class="mt-2">
+                            <p class="text-2xl font-bold text-white">${ocupada.placa}</p>
+                            <p class="text-emerald-300 text-sm font-bold">${ocupada.produto}</p>
+                        </div>
+                    `;
+                }
+
+                const cardHTML = `
+                    <div class="rounded-xl border ${cardClass} p-5 transition-all duration-500">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-xl font-bold text-slate-200">MOEGA 0${id}</h4>
+                            <span class="px-2 py-1 rounded text-xs font-bold ${statusClass}">${statusText}</span>
+                        </div>
+                        ${content}
+                        <div class="mt-4 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 transition-all duration-1000" style="width: ${ocupada ? '100%' : '0%'}"></div>
+                        </div>
+                    </div>
+                `;
+                moegasContainer.innerHTML += cardHTML;
+            });
+        }
+
+        function limparDados() {
+            if(confirm("Deseja apagar todo o histórico de recebimento?")) {
+                localStorage.removeItem('mes_dados_logs');
+                localStorage.removeItem('mes_estado_moegas');
+                atualizarDashboard();
+            }
+        }
+
+        setInterval(atualizarDashboard, 2000);
+        atualizarDashboard();
+    </script>
+</body>
+</html>
