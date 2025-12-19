@@ -3,217 +3,712 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES - Gestão Moega</title>
+    <title>MES - Dashboard Moega</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
         
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
-        }
+        body { font-family: 'Roboto', sans-serif; background-color: #020617; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-        .status-active {
-            animation: pulse-green 2s infinite;
-            border-color: #10b981; 
-        }
+        /* Animações */
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        .status-active { animation: pulse-green 2s infinite; border-color: #10b981; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .status-paused { animation: pulse-red 2s infinite; border-color: #ef4444; }
         
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Sidebar Styles */
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #94a3b8; transition: all 0.2s; font-size: 0.875rem; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .nav-item:hover { background-color: #1e293b; color: #f1f5f9; }
+        .nav-item.active { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .nav-section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 1rem; }
+
+        /* Tabs */
+        .dashboard-tab { padding: 0.75rem 1.5rem; font-size: 0.875rem; font-weight: 600; color: #94a3b8; border-bottom: 2px solid transparent; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em; }
+        .dashboard-tab:hover { color: #e2e8f0; background-color: rgba(30, 41, 59, 0.5); }
+        .dashboard-tab.tab-active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(37, 99, 235, 0.1); }
+        
+        /* Modal */
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(2px); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-screen flex overflow-hidden">
 
-    <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 h-16 flex items-center justify-between px-6 sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <!-- BOTÃO VOLTAR AO MENU (Adicionado) -->
-            <a href="menu.html" class="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors mr-2 flex items-center justify-center group" title="Voltar ao Menu">
-                <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
-            </a>
-
-            <i data-lucide="bar-chart-3" class="text-blue-500 h-6 w-6"></i>
-            <h1 class="text-lg font-bold text-white uppercase tracking-wider">Dashboard Moega</h1>
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20 hidden md:flex">
+        <div class="h-16 flex items-center px-6 border-b border-slate-800">
+            <div class="bg-indigo-600 p-1.5 rounded-lg mr-3 shadow-lg shadow-indigo-500/20"><i data-lucide="factory" class="text-white h-5 w-5"></i></div>
+            <div><h1 class="font-bold text-white tracking-wide">MES SYSTEM</h1><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Módulo Recepção</p></div>
         </div>
-        <div class="flex items-center gap-4">
-             <!-- Link atualizado para moega.html -->
-             <a href="moega.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider border border-slate-700 px-3 py-1 rounded hover:bg-slate-800">
-                Ir para Operação
-            </a>
-            <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span class="text-xs text-emerald-500 font-bold uppercase">Ao Vivo</span>
+
+        <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+            <p class="nav-section-title">Principal</p>
+            <a href="#" class="nav-item active" id="menu-dashboard" onclick="switchMainView('dashboard')"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+            <a href="#" class="nav-item" id="menu-rastreabilidade" onclick="switchMainView('rastreabilidade')"><i data-lucide="map-pin" class="w-5 h-5"></i> Rastreabilidade</a>
+            <a href="#" class="nav-item" id="menu-paradas" onclick="switchMainView('paradas')"><i data-lucide="pause-circle" class="w-5 h-5"></i> Gestão de Paradas</a>
+            <a href="#" class="nav-item" id="menu-relatorios" onclick="switchMainView('relatorios')"><i data-lucide="file-bar-chart" class="w-5 h-5"></i> Relatórios</a>
+
+            <p class="nav-section-title">Configurações</p>
+            <a href="#" class="nav-item" id="menu-config-culturas" onclick="switchMainView('config-culturas')"><i data-lucide="sprout" class="w-5 h-5"></i> Gestão de Culturas</a>
+            <a href="#" class="nav-item" id="menu-config-turnos" onclick="switchMainView('config-turnos')"><i data-lucide="clock" class="w-5 h-5"></i> Parâmetros por Turno</a>
+            <a href="#" class="nav-item" id="menu-central-dados" onclick="switchMainView('central-dados')"><i data-lucide="database" class="w-5 h-5"></i> Central de Dados</a>
+            <a href="#" class="nav-item" id="menu-config-usuarios" onclick="switchMainView('config-usuarios')"><i data-lucide="users" class="w-5 h-5"></i> Usuários</a>
+            <a href="#" class="nav-item text-red-400 hover:bg-red-900/20 hover:text-red-300" id="menu-reset-zone" onclick="switchMainView('reset-zone')"><i data-lucide="trash-2" class="w-5 h-5"></i> Zona de Reset</a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 text-slate-300 font-bold">OP</div>
+                <div class="flex-1 min-w-0"><p class="text-sm font-medium text-white truncate">Operador Líder</p><p class="text-xs text-slate-500 truncate">Turno A - Logado</p></div>
+                <a href="menu.html" class="p-2 text-slate-400 hover:text-white transition-colors" title="Sair"><i data-lucide="log-out" class="w-5 h-5"></i></a>
+            </div>
         </div>
-    </header>
+    </aside>
 
-    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-8">
+    <!-- ÁREA PRINCIPAL -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-[#0f172a]">
+        
+        <!-- HEADER -->
+        <header class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 shrink-0">
+            <div class="flex items-center gap-4">
+                <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2" id="header-title"><i data-lucide="bar-chart-3" class="text-indigo-500 w-5 h-5"></i> Visão Geral</h2>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">SISTEMA ONLINE</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right hidden md:block"><p class="text-[10px] text-slate-500 uppercase font-bold">Última Atualização</p><p id="last-update" class="text-sm font-mono text-emerald-400 font-bold">--:--:--</p></div>
+                <div class="h-8 w-px bg-slate-700 hidden md:block"></div>
+                <a href="operacao_moega.html" class="group bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i> Painel Operacional</a>
+            </div>
+        </header>
 
-        <!-- KPI CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Total Recebido (Hoje)</p>
-                    <h3 class="text-3xl font-bold text-white" id="kpi-peso">0 <span class="text-sm text-slate-500">t</span></h3>
+        <!-- CONTAINER PRINCIPAL -->
+        <div id="main-content-area" class="flex-1 overflow-hidden relative">
+            
+            <!-- 1. DASHBOARD -->
+            <div id="view-main-dashboard" class="h-full flex flex-col">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setTab('visao-geral')" id="tab-visao-geral" class="dashboard-tab tab-active">Visão Geral</button>
+                    <button onclick="setTab('moega-1')" id="tab-moega-1" class="dashboard-tab">Moega 01</button>
+                    <button onclick="setTab('moega-2')" id="tab-moega-2" class="dashboard-tab">Moega 02</button>
+                    <button onclick="setTab('moega-3')" id="tab-moega-3" class="dashboard-tab">Moega 03</button>
+                    <button onclick="setTab('moega-4')" id="tab-moega-4" class="dashboard-tab">Moega 04</button>
                 </div>
-                <div class="bg-blue-900/30 p-3 rounded-lg text-blue-400"><i data-lucide="scale"></i></div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="view-visao-geral" class="space-y-8 fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-blue-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Total Recebido (Turno)</p><h3 class="text-4xl font-mono font-bold text-white" id="kpi-peso">0.0 <span class="text-lg text-slate-500">t</span></h3></div><div class="bg-blue-500/10 p-4 rounded-full text-blue-400"><i data-lucide="scale" class="w-8 h-8"></i></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-yellow-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Veículos</p><h3 class="text-4xl font-mono font-bold text-white" id="kpi-cargas">0</h3></div><div class="bg-yellow-500/10 p-4 rounded-full text-yellow-400"><i data-lucide="truck" class="w-8 h-8"></i></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-cyan-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Umidade Média</p><h3 class="text-4xl font-mono font-bold text-white" id="kpi-umidade">0.0<span class="text-lg text-slate-500">%</span></h3></div><div class="bg-cyan-500/10 p-4 rounded-full text-cyan-400"><i data-lucide="droplets" class="w-8 h-8"></i></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Moegas Ativas</p><h3 class="text-4xl font-mono font-bold text-emerald-400" id="kpi-ativas">0<span class="text-lg text-slate-500">/4</span></h3></div><div class="bg-emerald-500/10 p-4 rounded-full text-emerald-400"><i data-lucide="activity" class="w-8 h-8"></i></div></div>
+                        </div>
+                        <div><div class="flex items-center justify-between mb-6"><div class="flex items-center gap-3"><div class="h-6 w-1 bg-indigo-500 rounded-full"></div><h2 class="text-xl text-white font-bold tracking-wide">STATUS OPERACIONAL</h2></div><div class="text-xs text-slate-500 font-mono">LIVE FEED</div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" id="moegas-container"></div></div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col mb-10"><div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm"><i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Últimas Descargas Finalizadas</h3></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-4 border-b border-slate-700">Hora</th><th class="p-4 border-b border-slate-700">Romaneio</th><th class="p-4 border-b border-slate-700">Moega</th><th class="p-4 border-b border-slate-700">Placa</th><th class="p-4 border-b border-slate-700">Produto</th><th class="p-4 border-b border-slate-700">Cultivar</th><th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th><th class="p-4 border-b border-slate-700 text-center">Status</th></tr></thead><tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
+                    </div>
+                    <div id="view-detalhe-moega" class="hidden space-y-8 fade-in">
+                        <div class="flex items-center gap-4 mb-6"><button onclick="setTab('visao-geral')" class="p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-2xl font-bold text-white uppercase tracking-wide" id="detail-title">DETALHES MOEGA 00</h2><span id="detail-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">OFFLINE</span></div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg lg:col-span-2 relative overflow-hidden"><div class="flex justify-between items-start mb-6"><div><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Produto em Processamento</p><h3 class="text-3xl font-bold text-white flex items-center gap-3" id="detail-produto">---</h3><p class="text-sm text-indigo-400 font-mono mt-1" id="detail-cultivar">---</p></div><div class="text-right"><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Acumulado no Ciclo</p><h3 class="text-4xl font-mono font-bold text-white" id="detail-peso">0 <span class="text-lg text-slate-500">kg</span></h3></div></div><div class="mt-8"><div class="flex justify-between text-xs mb-2"><span class="text-slate-400 font-bold uppercase">Produtividade Atual</span><span class="text-white font-mono font-bold"><span id="detail-kpi">0</span> / <span id="detail-meta">0</span> t/h</span></div><div class="w-full bg-slate-900 h-4 rounded-full overflow-hidden border border-slate-700"><div id="detail-bar-kpi" class="h-full bg-emerald-500 transition-all duration-1000" style="width: 0%"></div></div></div></div>
+                            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg flex flex-col justify-center items-center text-center"><div class="bg-slate-900/50 p-4 rounded-full border border-slate-600 mb-4"><i data-lucide="clock" class="w-8 h-8 text-blue-400"></i></div><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Tempo de Operação</p><h3 class="text-4xl font-mono font-bold text-white mb-1" id="detail-timer">00:00:00</h3><p class="text-xs text-slate-500" id="detail-estimativa">Estimativa: --:--:--</p></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg"><div class="p-4 border-b border-slate-700 bg-slate-800/50"><h4 class="font-bold text-white text-sm uppercase tracking-wider">Histórico de Cargas - Ciclo Atual</h4></div><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-3">Horário</th><th class="p-3">Romaneio</th><th class="p-3">Placa</th><th class="p-3 text-right">Peso (Kg)</th></tr></thead><tbody id="detail-table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div>
+                    </div>
+                </main>
             </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Cargas / Dia</p>
-                    <h3 class="text-3xl font-bold text-white" id="kpi-cargas">0</h3>
+
+            <!-- 2. RASTREABILIDADE -->
+            <div id="view-main-rastreabilidade" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setTraceTab('rastre-geral')" id="tab-rastre-geral" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4"></i> Visão Geral</button>
+                    <button onclick="setTraceTab('rastre-m1')" id="tab-rastre-m1" class="dashboard-tab">M-01</button>
+                    <button onclick="setTraceTab('rastre-m2')" id="tab-rastre-m2" class="dashboard-tab">M-02</button>
+                    <button onclick="setTraceTab('rastre-m3')" id="tab-rastre-m3" class="dashboard-tab">M-03</button>
+                    <button onclick="setTraceTab('rastre-m4')" id="tab-rastre-m4" class="dashboard-tab">M-04</button>
                 </div>
-                <div class="bg-yellow-900/30 p-3 rounded-lg text-yellow-400"><i data-lucide="truck"></i></div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="rastre-view-geral" class="fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4"><div class="bg-indigo-500/20 p-3 rounded-full text-indigo-400"><i data-lucide="package-check" class="w-8 h-8"></i></div><div><p class="text-xs text-slate-400 font-bold uppercase">Volume Rastreado</p><h3 class="text-2xl font-bold text-white" id="trace-volume">0 t</h3></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4"><div class="bg-emerald-500/20 p-3 rounded-full text-emerald-400"><i data-lucide="file-check" class="w-8 h-8"></i></div><div><p class="text-xs text-slate-400 font-bold uppercase">Romaneios Baixados</p><h3 class="text-2xl font-bold text-white" id="trace-romaneios">0</h3></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4"><div class="bg-blue-500/20 p-3 rounded-full text-blue-400"><i data-lucide="tags" class="w-8 h-8"></i></div><div><p class="text-xs text-slate-400 font-bold uppercase">Produtos Distintos</p><h3 class="text-2xl font-bold text-white" id="trace-produtos">0</h3></div></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl"><div class="p-5 border-b border-slate-700 bg-slate-800/50"><h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm"><i data-lucide="table" class="w-4 h-4 text-slate-400"></i> Rastreabilidade Industrial (Turno Atual)</h3></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-4 border-b border-slate-700">Hora</th><th class="p-4 border-b border-slate-700">Romaneio</th><th class="p-4 border-b border-slate-700">Moega</th><th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="tractor" class="w-3 h-3 inline mr-1"></i> Fazenda</th><th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i> Zona</th><th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th><th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th></tr></thead><tbody id="trace-table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
+                    </div>
+                    <div id="rastre-view-moega" class="hidden fade-in">
+                        <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8 text-center"><h3 class="text-2xl font-bold text-white mb-2" id="trace-moega-title">MOEGA 00</h3><p class="text-slate-400">Origem atual do produto em processamento</p></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-indigo-500/30 shadow-lg text-center"><p class="text-xs text-indigo-400 uppercase font-bold mb-2">Fazenda Origem</p><h3 class="text-xl font-bold text-white" id="trace-moega-fazenda">---</h3></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-center"><p class="text-xs text-slate-400 uppercase font-bold mb-2">Zona</p><h3 class="text-xl font-bold text-white" id="trace-moega-zona">---</h3></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-center"><p class="text-xs text-slate-400 uppercase font-bold mb-2">Talhão</p><h3 class="text-xl font-bold text-white" id="trace-moega-talhao">---</h3></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden"><div class="p-4 bg-slate-900 border-b border-slate-700"><h4 class="text-sm font-bold text-white uppercase">Histórico de Origem desta Moega</h4></div><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-3">Romaneio</th><th class="p-3">Fazenda</th><th class="p-3">Zona</th><th class="p-3">Talhão</th><th class="p-3 text-right">Peso</th></tr></thead><tbody id="trace-moega-table" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div>
+                    </div>
+                </main>
             </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Umidade Média</p>
-                    <h3 class="text-3xl font-bold text-white" id="kpi-umidade">0%</h3>
+
+            <!-- 3. GESTÃO DE PARADAS -->
+            <div id="view-main-paradas" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setStopTab('paradas-geral')" id="tab-paradas-geral" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Visão Geral</button>
+                    <button onclick="setStopTab('paradas-m1')" id="tab-paradas-m1" class="dashboard-tab">M-01</button>
+                    <button onclick="setStopTab('paradas-m2')" id="tab-paradas-m2" class="dashboard-tab">M-02</button>
+                    <button onclick="setStopTab('paradas-m3')" id="tab-paradas-m3" class="dashboard-tab">M-03</button>
+                    <button onclick="setStopTab('paradas-m4')" id="tab-paradas-m4" class="dashboard-tab">M-04</button>
                 </div>
-                <div class="bg-purple-900/30 p-3 rounded-lg text-purple-400"><i data-lucide="droplets"></i></div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="paradas-view-geral" class="fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-red-500/30 shadow-lg"><div class="flex justify-between items-start"><div><p class="text-xs text-red-300 uppercase font-bold mb-1">Tempo Total Perdido</p><h3 class="text-3xl font-mono font-bold text-white" id="stop-total-time">00:00:00</h3></div><i data-lucide="clock" class="text-red-500 w-8 h-8"></i></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg"><div class="flex justify-between items-start"><div><p class="text-xs text-slate-400 uppercase font-bold mb-1">Disponibilidade Operacional</p><h3 class="text-3xl font-mono font-bold text-emerald-400" id="stop-availability">100%</h3></div><i data-lucide="activity" class="text-emerald-500 w-8 h-8"></i></div></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg"><div class="flex justify-between items-start"><div><p class="text-xs text-slate-400 uppercase font-bold mb-1">Vilão do Turno</p><h3 class="text-xl font-bold text-white truncate max-w-[200px]" id="stop-top-reason">---</h3></div><i data-lucide="alert-triangle" class="text-amber-500 w-8 h-8"></i></div></div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="text-sm font-bold text-white mb-4 uppercase">Distribuição por Categoria</h4><div class="h-64 relative"><canvas id="chart-stop-category"></canvas></div></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="text-sm font-bold text-white mb-4 uppercase">Tempo Perdido por Moega</h4><div class="h-64 relative"><canvas id="chart-stop-moega"></canvas></div></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg"><div class="p-4 border-b border-slate-700 bg-slate-800/50"><h4 class="font-bold text-white text-sm uppercase">Registro Detalhado de Paradas</h4></div><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-3">Início</th><th class="p-3">Duração</th><th class="p-3">Moega</th><th class="p-3">Categoria</th><th class="p-3">Motivo</th><th class="p-3 text-center">Status</th></tr></thead><tbody id="stop-table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div>
+                    </div>
+                    <div id="paradas-view-moega" class="hidden fade-in">
+                        <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8 flex justify-between items-center">
+                            <div><h3 class="text-2xl font-bold text-white mb-1" id="stop-moega-title">MOEGA 00</h3><p class="text-slate-400 text-sm">Análise individual de paradas e eficiência.</p></div>
+                            <div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase">Status Atual</p><div id="stop-moega-status" class="text-emerald-400 font-bold text-lg flex items-center justify-end gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Operando</div></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-red-500/20 shadow-lg"><p class="text-xs text-red-400 font-bold uppercase mb-2">Tempo Perdido (Moega)</p><h3 class="text-3xl font-mono font-bold text-white" id="stop-moega-time">00:00:00</h3></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 font-bold uppercase mb-2">Disponibilidade</p><h3 class="text-3xl font-mono font-bold text-blue-400" id="stop-moega-avail">100%</h3></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 font-bold uppercase mb-2">Última Parada</p><h3 class="text-lg font-bold text-white truncate" id="stop-moega-last">Nenhuma</h3><p class="text-xs text-slate-500 mt-1" id="stop-moega-last-time">-</p></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <div class="p-4 bg-slate-900 border-b border-slate-700"><h4 class="text-sm font-bold text-white uppercase">Histórico de Paradas desta Moega</h4></div>
+                            <table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-3">Início</th><th class="p-3">Duração</th><th class="p-3">Categoria</th><th class="p-3">Motivo</th><th class="p-3 text-center">Status</th></tr></thead><tbody id="stop-moega-table" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table>
+                        </div>
+                    </div>
+                </main>
             </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-1">Status Pátio</p>
-                    <h3 class="text-xl font-bold text-emerald-400">FLUIDO</h3>
+
+            <!-- 4. RELATÓRIOS -->
+            <div id="view-main-relatorios" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setReportTab('report-geral')" id="tab-report-geral" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4"></i> Visão Geral</button>
+                    <button onclick="setReportTab('report-m1')" id="tab-report-m1" class="dashboard-tab">M-01</button>
+                    <button onclick="setReportTab('report-m2')" id="tab-report-m2" class="dashboard-tab">M-02</button>
+                    <button onclick="setReportTab('report-m3')" id="tab-report-m3" class="dashboard-tab">M-03</button>
+                    <button onclick="setReportTab('report-m4')" id="tab-report-m4" class="dashboard-tab">M-04</button>
                 </div>
-                <div class="bg-emerald-900/30 p-3 rounded-lg text-emerald-400"><i data-lucide="activity"></i></div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="report-view-geral" class="fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">OEE Estimado</p><h3 class="text-3xl font-mono font-bold text-emerald-400 mt-1">87.5%</h3></div>
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">MTBF</p><h3 class="text-3xl font-mono font-bold text-blue-400 mt-1">4h 15m</h3></div>
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">MTTR</p><h3 class="text-3xl font-mono font-bold text-amber-400 mt-1">12m</h3></div>
+                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">Ritmo Médio</p><h3 class="text-3xl font-mono font-bold text-white mt-1">62 t/h</h3></div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="font-bold text-white text-sm uppercase mb-4">Evolução de Produtividade (Global)</h4><div class="h-64 relative w-full"><canvas id="chart-report-trend"></canvas></div></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="font-bold text-white text-sm uppercase mb-4">Pareto de Paradas (Global)</h4><div class="h-64 relative w-full"><canvas id="chart-report-pareto"></canvas></div></div>
+                        </div>
+                        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="font-bold text-white text-sm uppercase mb-4">Comparativo de Eficiência entre Moegas</h4><div class="h-64 relative w-full"><canvas id="chart-report-comp"></canvas></div></div>
+                    </div>
+                    
+                    <div id="report-view-moega" class="hidden fade-in">
+                         <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 flex justify-between items-center mb-8">
+                             <h3 class="text-2xl font-bold text-white" id="report-moega-title">MOEGA 00 - RELATÓRIO</h3>
+                             <span class="text-sm text-slate-400">Análise de Performance Individual</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">OEE Moega</p><h3 class="text-3xl font-mono font-bold text-emerald-400 mt-1" id="report-moega-oee">--%</h3></div>
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">Produtividade Média</p><h3 class="text-3xl font-mono font-bold text-white mt-1" id="report-moega-prod">-- t/h</h3></div>
+                            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg"><p class="text-xs text-slate-400 uppercase font-bold">Tempo Parado</p><h3 class="text-3xl font-mono font-bold text-red-400 mt-1" id="report-moega-stop">--:--</h3></div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="font-bold text-white text-sm uppercase mb-4">Tendência Individual</h4><div class="h-64 relative"><canvas id="chart-report-moega-trend"></canvas></div></div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg"><h4 class="font-bold text-white text-sm uppercase mb-4">Motivos de Parada (Esta Moega)</h4><div class="h-64 relative"><canvas id="chart-report-moega-pareto"></canvas></div></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- 5. CONFIG CULTURAS -->
+            <div id="view-main-config-culturas" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setConfigTab('config-lista')" id="tab-config-lista" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="list" class="w-4 h-4"></i> Lista & Metas</button>
+                    <button onclick="setConfigTab('config-novo')" id="tab-config-novo" class="dashboard-tab flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4"></i> Cadastrar Nova</button>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="config-view-lista" class="fade-in">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <div class="p-5 border-b border-slate-700 bg-slate-800/50"><h3 class="font-bold text-white text-sm uppercase">Culturas Ativas no Sistema</h3></div>
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-4">Nome da Cultura</th><th class="p-4">Meta (Ton/h)</th><th class="p-4 text-right">Ações</th></tr></thead>
+                                <tbody id="config-culturas-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="config-view-novo" class="hidden fade-in max-w-xl mx-auto">
+                        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
+                            <h3 class="text-xl font-bold text-white mb-6">Cadastrar Nova Cultura</h3>
+                            <div class="space-y-6">
+                                <div><label class="block text-xs text-slate-400 uppercase font-bold mb-2">Nome da Cultura</label><input type="text" id="new-culture-name" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-4 text-white uppercase focus:border-indigo-500 outline-none"></div>
+                                <div><label class="block text-xs text-slate-400 uppercase font-bold mb-2">Meta de Produtividade (t/h)</label><input type="number" id="new-culture-goal" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-4 text-white font-mono font-bold focus:border-indigo-500 outline-none"></div>
+                                <button onclick="addNewCulture()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex justify-center gap-2"><i data-lucide="save"></i> Salvar Cultura</button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- 6. CONFIG TURNOS -->
+            <div id="view-main-config-turnos" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setTurnoTab('turno-horarios')" id="tab-turno-horarios" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4"></i> Horários de Turno</button>
+                    <button onclick="setTurnoTab('turno-metas')" id="tab-turno-metas" class="dashboard-tab flex items-center gap-2"><i data-lucide="target" class="w-4 h-4"></i> Metas por Cultura</button>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="turno-view-horarios" class="fade-in max-w-4xl mx-auto space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-4"><div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">A</div><h3 class="font-bold text-white">Turno A</h3></div>
+                                <div class="space-y-4"><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Início</label><input type="time" id="turno-a-inicio" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fim</label><input type="time" id="turno-a-fim" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div></div>
+                            </div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-4"><div class="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-bold">B</div><h3 class="font-bold text-white">Turno B</h3></div>
+                                <div class="space-y-4"><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Início</label><input type="time" id="turno-b-inicio" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fim</label><input type="time" id="turno-b-fim" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div></div>
+                            </div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-4"><div class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">C</div><h3 class="font-bold text-white">Turno C</h3></div>
+                                <div class="space-y-4"><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Início</label><input type="time" id="turno-c-inicio" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div><div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fim</label><input type="time" id="turno-c-fim" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"></div></div>
+                            </div>
+                        </div>
+                        <button onclick="saveTurnoSchedule()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center gap-2"><i data-lucide="save"></i> Salvar Horários</button>
+                    </div>
+                    <div id="turno-view-metas" class="hidden fade-in">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white text-sm uppercase">Configuração de Metas Globais (t/h)</h3><p class="text-xs text-slate-400">As metas definidas aqui aplicam-se a todos os turnos.</p></div>
+                            <table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-4">Cultura</th><th class="p-4">Meta Atual</th><th class="p-4 text-right">Ação</th></tr></thead><tbody id="turno-metas-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            
+            <!-- 7. CENTRAL DADOS -->
+            <div id="view-main-central-dados" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setCentralTab('central-export')" id="tab-central-export" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Exportação</button>
+                    <button onclick="setCentralTab('central-backup')" id="tab-central-backup" class="dashboard-tab flex items-center gap-2"><i data-lucide="database-backup" class="w-4 h-4"></i> Backup e Restauração</button>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="central-view-export" class="fade-in max-w-4xl mx-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col gap-4"><div class="flex items-center gap-3 text-white font-bold"><i data-lucide="file-spreadsheet" class="text-emerald-500"></i> Exportar para Excel (CSV)</div><p class="text-sm text-slate-400">Baixe todo o histórico de descargas em formato CSV compatível com Excel.</p><button onclick="exportToCSV()" class="mt-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg flex justify-center gap-2"><i data-lucide="download"></i> Baixar CSV</button></div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col gap-4"><div class="flex items-center gap-3 text-white font-bold"><i data-lucide="file-text" class="text-red-500"></i> Relatório PDF</div><p class="text-sm text-slate-400">Gere um relatório formatado pronto para impressão ou salvar como PDF.</p><button onclick="printReport()" class="mt-auto bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg flex justify-center gap-2"><i data-lucide="printer"></i> Imprimir / PDF</button></div>
+                        </div>
+                    </div>
+                    <div id="central-view-backup" class="hidden fade-in max-w-4xl mx-auto space-y-8">
+                        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700"><h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="download-cloud" class="text-blue-400"></i> Fazer Backup</h3><p class="text-sm text-slate-400 mb-4">Salva todos os dados (logs, configurações, ciclos) em um arquivo JSON seguro.</p><button onclick="backupData()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2"><i data-lucide="save"></i> Baixar Backup Completo</button></div>
+                        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 border-l-4 border-l-amber-500"><h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="upload-cloud" class="text-amber-400"></i> Restaurar Dados</h3><p class="text-sm text-slate-400 mb-4">Carregue um arquivo de backup (.json) para restaurar o sistema. <strong>Cuidado: Isso substituirá os dados atuais.</strong></p><input type="file" id="backup-file-input" accept=".json" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600 mb-4"/><button onclick="restoreData()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2"><i data-lucide="refresh-cw"></i> Restaurar Sistema</button></div>
+                    </div>
+                </main>
+            </div>
+
+             <!-- 8. ZONA DE RESET (NOVO) -->
+             <div id="view-main-reset-zone" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center shrink-0">
+                     <h2 class="text-lg font-bold text-white py-2 flex gap-2"><i data-lucide="alert-octagon" class="text-red-500"></i> Zona de Perigo - Reset de Sistema</h2>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div class="max-w-4xl mx-auto space-y-8 fade-in">
+                        <!-- Soft Reset Card -->
+                        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-lg">
+                            <div class="flex items-start gap-6">
+                                <div class="bg-amber-500/10 p-4 rounded-full text-amber-500"><i data-lucide="refresh-ccw" class="w-10 h-10"></i></div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-2">Reiniciar Operação (Soft Reset)</h3>
+                                    <p class="text-slate-400 mb-6">Limpa o estado atual das moegas (libera todas), zera os acumulados temporários do painel e encerra ciclos abertos. <strong>O histórico de logs e configurações NÃO será apagado.</strong></p>
+                                    <button onclick="execSoftReset()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2">
+                                        <i data-lucide="refresh-cw"></i> Reiniciar Turno
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hard Reset Card -->
+                        <div class="bg-red-900/10 p-8 rounded-2xl border border-red-500/30 shadow-lg relative overflow-hidden">
+                            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-5"></div>
+                            <div class="relative z-10 flex items-start gap-6">
+                                <div class="bg-red-500/20 p-4 rounded-full text-red-500"><i data-lucide="trash-2" class="w-10 h-10"></i></div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-2">Formatar Sistema (Hard Reset)</h3>
+                                    <p class="text-red-200/80 mb-6">Atenção: Esta ação apagará <strong>TODOS</strong> os dados, incluindo logs históricos, usuários, configurações de turno e culturas. O sistema voltará ao estado original de fábrica.</p>
+                                    <button onclick="execHardReset()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2 border border-red-400/50">
+                                        <i data-lucide="alert-triangle"></i> Apagar Tudo e Reiniciar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            
+             <!-- 9. GESTÃO DE USUÁRIOS (NOVO) -->
+            <div id="view-main-config-usuarios" class="h-full flex flex-col hidden">
+                <div class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button onclick="setUserTab('user-gestao')" id="tab-user-gestao" class="dashboard-tab tab-active flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i> Gestão de Acesso</button>
+                    <button onclick="setUserTab('user-logins')" id="tab-user-logins" class="dashboard-tab flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Auditoria de Logins</button>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="user-view-gestao" class="fade-in max-w-5xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <div><h3 class="text-2xl font-bold text-white">Usuários do Sistema</h3><p class="text-slate-400 text-sm">Gerencie permissões e acesso à plataforma.</p></div>
+                            <button onclick="abrirModalUsuario()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg flex items-center gap-2 transition-all"><i data-lucide="user-plus" class="w-5 h-5"></i> Novo Usuário</button>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-4">Usuário</th><th class="p-4">Cargo / Função</th><th class="p-4">Status</th><th class="p-4">Último Acesso</th><th class="p-4 text-right">Ações</th></tr></thead><tbody id="user-list-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table>
+                        </div>
+                    </div>
+                    <div id="user-view-logins" class="hidden fade-in max-w-5xl mx-auto">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white text-sm uppercase flex items-center gap-2"><i data-lucide="eye" class="w-4 h-4 text-blue-400"></i> Histórico de Acessos</h3><div class="flex gap-2"><span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20">Sucesso</span><span class="text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded border border-red-500/20">Falha</span></div></div>
+                            <table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-4">Data/Hora</th><th class="p-4">Usuário Tentativa</th><th class="p-4">IP Origem</th><th class="p-4">Evento</th><th class="p-4 text-center">Status</th></tr></thead><tbody id="user-login-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table>
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
+    </div>
 
-        <!-- STATUS DAS MOEGAS EM TEMPO REAL -->
-        <div>
-            <h2 class="text-slate-300 font-bold mb-4 flex items-center gap-2">
-                <i data-lucide="layout-grid" class="w-4 h-4"></i> STATUS DAS MOEGAS
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6" id="moegas-container">
-                <!-- Preenchido via JS -->
+    <!-- MODAL NOVO USUÁRIO -->
+    <div id="modal-novo-usuario" class="hidden fixed inset-0 z-[60] modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-white">Adicionar Usuário</h3><button onclick="fecharModalUsuario()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button></div>
+            <div class="space-y-4">
+                <div><label class="block text-xs text-slate-400 uppercase font-bold mb-1">Nome Completo</label><input type="text" id="new-user-name" class="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white outline-none focus:border-indigo-500"></div>
+                <div><label class="block text-xs text-slate-400 uppercase font-bold mb-1">Cargo</label><select id="new-user-role" class="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white outline-none focus:border-indigo-500"><option value="Operador">Operador</option><option value="Supervisor">Supervisor</option><option value="Administrador">Administrador</option></select></div>
+                <button onclick="saveNewUser()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg mt-2">Salvar Acesso</button>
             </div>
         </div>
+    </div>
 
-        <!-- TABELA DE REGISTROS -->
-        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg flex flex-col">
-            <div class="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-                <h3 class="font-bold text-white flex items-center gap-2">
-                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Histórico de Recebimento
-                </h3>
-                <button onclick="limparDados()" class="text-xs text-red-400 hover:text-red-300 hover:underline">Limpar Base de Dados</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider">
-                        <tr>
-                            <th class="p-4">Hora</th>
-                            <th class="p-4">Moega</th>
-                            <th class="p-4">Placa</th>
-                            <th class="p-4">Produto</th>
-                            <th class="p-4 text-right">Peso (Kg)</th>
-                            <th class="p-4 text-right">Umid.</th>
-                            <th class="p-4 text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300">
-                        <!-- Linhas aqui -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+    <!-- TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[70] bg-slate-800 border border-slate-600 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <i data-lucide="info" class="text-blue-400"></i>
+        <span id="toast-msg">Mensagem</span>
+    </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { firebaseConfig } from './firebase_config.js';
+
         lucide.createIcons();
-
+        
+        let METAS_PRODUTIVIDADE = {};
+        const DEFAULTS = { 'BRAQUIARIA': 30, 'CROTALARIA': 40, 'FEIJAO_GUANDU': 70, 'FEIJAO_PORCO': 50, 'MILHETO': 40, 'SOJA': 80 };
         const moegasConfig = [1, 2, 3, 4];
+        let activeTab = 'visao-geral', activeMainView = 'dashboard';
+        
+        let ciclosAtivos = {};
+        let historicoDescargas = [];
+        let db;
+
+        function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing in firebase_config.js");
+                mostrarAlerta("Configuração do Firebase não encontrada. A aplicação não funcionará online.");
+                // Fallback to offline/mock data if needed
+                document.querySelector('#header-title + span').classList.replace('bg-emerald-500/10', 'bg-red-500/10');
+                document.querySelector('#header-title + span').classList.replace('text-emerald-500', 'text-red-500');
+                document.querySelector('#header-title + span').classList.replace('border-emerald-500/20', 'border-red-500/20');
+                document.querySelector('#header-title + span').textContent = "SISTEMA OFFLINE";
+                return;
+            }
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            const auth = getAuth(app);
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log("User is authenticated:", user.uid);
+                    initFirestoreListeners();
+                } else {
+                    console.log("User is signed out. Redirecting to login page.");
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        function initFirestoreListeners() {
+            // Listener for active cycles
+            const ciclosRef = collection(db, 'moega_ciclos_ativos');
+            onSnapshot(ciclosRef, (snapshot) => {
+                ciclosAtivos = {};
+                snapshot.forEach(doc => {
+                    ciclosAtivos[doc.id] = doc.data();
+                });
+                console.log("Active cycles updated:", ciclosAtivos);
+                atualizarDashboard();
+            });
+
+            // Listener for recent finished discharges
+            const historicoRef = collection(db, 'moega_historico_descargas');
+            const q = query(historicoRef, orderBy("fim", "desc"), limit(10));
+            onSnapshot(q, (snapshot) => {
+                historicoDescargas = [];
+                snapshot.forEach(doc => {
+                    historicoDescargas.push(doc.data());
+                });
+                console.log("Discharge history updated:", historicoDescargas);
+                atualizarDashboard();
+            });
+        }
+
 
         function atualizarDashboard() {
-            const logs = JSON.parse(localStorage.getItem('mes_dados_logs') || "[]");
-            const estadosAtuais = JSON.parse(localStorage.getItem('mes_estado_moegas') || "{}");
+            if(document.getElementById('last-update')) {
+                document.getElementById('last-update').innerText = new Date().toLocaleTimeString('pt-BR');
+            }
 
-            const totalPeso = logs.reduce((acc, curr) => acc + curr.peso, 0);
-            const mediaUmidade = logs.length > 0 
-                ? (logs.reduce((acc, curr) => acc + curr.umidade, 0) / logs.length).toFixed(1) 
-                : 0;
-            
-            document.getElementById('kpi-peso').innerText = (totalPeso / 1000).toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' t';
-            document.getElementById('kpi-cargas').innerText = logs.length;
-            document.getElementById('kpi-umidade').innerText = mediaUmidade + '%';
+             if (activeMainView !== 'dashboard') return;
 
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-            logs.slice(0, 15).forEach(log => {
-                const data = new Date(log.timestamp);
-                const hora = data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                
-                const tr = `
-                    <tr class="hover:bg-slate-750 transition">
-                        <td class="p-4 font-mono text-slate-400">${hora}</td>
-                        <td class="p-4"><span class="bg-slate-700 text-white px-2 py-1 rounded text-xs font-bold">M-0${log.moega}</span></td>
-                        <td class="p-4 font-bold text-white">${log.placa}</td>
-                        <td class="p-4 text-blue-300">${log.produto}</td>
-                        <td class="p-4 text-right font-mono text-emerald-400 font-bold">${log.peso.toLocaleString('pt-BR')}</td>
-                        <td class="p-4 text-right font-mono">${log.umidade}%</td>
-                        <td class="p-4 text-center"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-500 inline"></i></td>
-                    </tr>
-                `;
-                tbody.innerHTML += tr;
-            });
-            lucide.createIcons();
+             let totalPeso = 0;
+             let totalCargas = 0;
+             let totalUmidade = 0;
+             let cargasComUmidade = 0;
 
-            const moegasContainer = document.getElementById('moegas-container');
-            moegasContainer.innerHTML = '';
-
-            moegasConfig.forEach(id => {
-                const ocupada = estadosAtuais[id]; 
-                
-                let cardClass = 'border-slate-600 bg-slate-800';
-                let statusText = 'LIVRE';
-                let statusClass = 'text-slate-500 bg-slate-900';
-                let content = '<div class="h-10 flex items-center text-slate-500 text-sm">Aguardando...</div>';
-
-                if (ocupada) {
-                    cardClass = 'status-active bg-emerald-900/20 border-emerald-500';
-                    statusText = 'RECEBENDO';
-                    statusClass = 'text-white bg-emerald-600';
-                    content = `
-                        <div class="mt-2">
-                            <p class="text-2xl font-bold text-white">${ocupada.placa}</p>
-                            <p class="text-emerald-300 text-sm font-bold">${ocupada.produto}</p>
-                        </div>
-                    `;
+             Object.values(ciclosAtivos).forEach(ciclo => {
+                if (ciclo.cargas) {
+                    ciclo.cargas.forEach(carga => {
+                        totalPeso += Number(carga.peso) || 0;
+                        totalCargas++;
+                        if(carga.umidade && Number(carga.umidade) > 0) {
+                            totalUmidade += Number(carga.umidade);
+                            cargasComUmidade++;
+                        }
+                    });
                 }
+             });
+             
+             if(document.getElementById('kpi-peso')) document.getElementById('kpi-peso').innerHTML = `${(totalPeso/1000).toFixed(1)} <span class="text-lg text-slate-500">t</span>`;
+             if(document.getElementById('kpi-cargas')) document.getElementById('kpi-cargas').innerText = totalCargas;
+             if(document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = cargasComUmidade > 0 ? `${(totalUmidade/cargasComUmidade).toFixed(1)}<span class="text-lg text-slate-500">%</span>` : '0.0<span class="text-lg text-slate-500">%</span>';
+             if(document.getElementById('kpi-ativas')) document.getElementById('kpi-ativas').innerHTML = `${Object.keys(ciclosAtivos).length}<span class="text-lg text-slate-500">/4</span>`;
 
-                const cardHTML = `
-                    <div class="rounded-xl border ${cardClass} p-5 transition-all duration-500">
-                        <div class="flex justify-between items-start mb-4">
-                            <h4 class="text-xl font-bold text-slate-200">MOEGA 0${id}</h4>
-                            <span class="px-2 py-1 rounded text-xs font-bold ${statusClass}">${statusText}</span>
+             if(activeTab === 'visao-geral') { 
+                updateOverviewGrid(ciclosAtivos); 
+                updateRecentTable(historicoDescargas);
+             } else { 
+                renderMoegaDetail(parseInt(activeTab.split('-')[1])); 
+             }
+        }
+        
+        function updateOverviewGrid(ciclos) {
+            const container = document.getElementById('moegas-container');
+            if(!container) return;
+            
+            container.innerHTML = '';
+            moegasConfig.forEach(id => {
+                const ciclo = ciclos[id];
+                let status = 'LIVRE';
+                let statusColor = 'text-slate-400';
+                let borderColor = 'border-slate-700';
+                let pulseClass = '';
+                let produtoInfo = '<p class="text-xs text-slate-500">Aguardando carga...</p>';
+
+                if(ciclo) {
+                    if (ciclo.status === 'PAUSADO') {
+                        status = 'PAUSADO';
+                        statusColor = 'text-red-400';
+                        borderColor = 'border-red-500/50';
+                        pulseClass = 'status-paused';
+                    } else {
+                        status = 'OPERANDO';
+                        statusColor = 'text-emerald-400';
+                        borderColor = 'border-emerald-500/50';
+                        pulseClass = 'status-active';
+                    }
+                    const totalKg = ciclo.cargas.reduce((acc, carga) => acc + Number(carga.peso), 0);
+                    produtoInfo = `<p class="font-bold text-white truncate">${ciclo.cargas[0].produto}</p><p class="text-xs text-slate-400">${(totalKg / 1000).toFixed(1)} t</p>`;
+                }
+                
+                const moegaHTML = `
+                    <div class="bg-slate-800 p-5 rounded-2xl border ${borderColor} shadow-xl flex flex-col justify-between transition-all hover:border-blue-500 cursor-pointer" onclick="setTab('moega-${id}')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-lg font-bold text-white">Moega 0${id}</h4>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold uppercase ${statusColor}">${status}</span>
+                                <div class="w-2.5 h-2.5 rounded-full border-2 ${pulseClass} ${borderColor}"></div>
+                            </div>
                         </div>
-                        ${content}
-                        <div class="mt-4 h-1 w-full bg-slate-700 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500 transition-all duration-1000" style="width: ${ocupada ? '100%' : '0%'}"></div>
+                        <div class="mt-4">
+                            ${produtoInfo}
                         </div>
                     </div>
                 `;
-                moegasContainer.innerHTML += cardHTML;
+                container.innerHTML += moegaHTML;
             });
         }
+        
+        function updateRecentTable(logs) {
+             const tbody = document.getElementById('table-body');
+             if(!tbody) return;
+             tbody.innerHTML = '';
+             if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
+                return;
+             }
+             logs.forEach(log => {
+                const fim = new Date(log.fim);
+                const statusHtml = '<span class="px-2 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">Finalizado</span>';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-4 text-slate-400 font-mono">${fim.toLocaleTimeString('pt-BR')}</td>
+                        <td class="p-4 font-bold">${log.romaneio}</td>
+                        <td class="p-4 text-center">${log.moega}</td>
+                        <td class="p-4 text-slate-300">${log.placa}</td>
+                        <td class="p-4 font-semibold text-white">${log.produto}</td>
+                        <td class="p-4 text-slate-400">${log.cultivar || '---'}</td>
+                        <td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(log.peso).toLocaleString('pt-BR')}</td>
+                        <td class="p-4 text-center">${statusHtml}</td>
+                    </tr>
+                `;
+             });
+        }
+        
+        function renderMoegaDetail(id) {
+            const ciclo = ciclosAtivos[id];
 
-        function limparDados() {
-            if(confirm("Deseja apagar todo o histórico de recebimento?")) {
-                localStorage.removeItem('mes_dados_logs');
-                localStorage.removeItem('mes_estado_moegas');
+            document.getElementById('detail-title').innerText = `DETALHES MOEGA 0${id}`;
+            const badge = document.getElementById('detail-status-badge');
+            const tbody = document.getElementById('detail-table-body');
+            
+            if(!ciclo) {
+                badge.innerText = 'OFFLINE';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600';
+                document.getElementById('detail-produto').innerText = '---';
+                document.getElementById('detail-cultivar').innerText = '---';
+                document.getElementById('detail-peso').innerHTML = '0 <span class="text-lg text-slate-500">kg</span>';
+                document.getElementById('detail-timer').innerText = '00:00:00';
+                document.getElementById('detail-estimativa').innerText = 'Estimativa: --:--:--';
+                document.getElementById('detail-kpi').innerText = '0';
+                document.getElementById('detail-meta').innerText = '0';
+                document.getElementById('detail-bar-kpi').style.width = '0%';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-slate-500">Moega livre. Nenhum ciclo ativo.</td></tr>';
+                return;
+            }
+
+            // Update badge
+            if (ciclo.status === 'PAUSADO') {
+                badge.innerText = 'PAUSADO';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 animate-pulse';
+            } else {
+                badge.innerText = 'OPERANDO';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+            }
+
+            // Update main info
+            const totalKg = ciclo.cargas.reduce((acc, c) => acc + Number(c.peso), 0);
+            document.getElementById('detail-produto').innerText = ciclo.cargas[0].produto;
+            document.getElementById('detail-cultivar').innerText = ciclo.cargas[0].cultivar || 'N/A';
+            document.getElementById('detail-peso').innerHTML = `${totalKg.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
+
+            // Update table
+            tbody.innerHTML = '';
+            [...ciclo.cargas].reverse().forEach(c => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50">
+                        <td class="p-3 text-slate-400 font-mono">${new Date(c.timestamp).toLocaleTimeString('pt-BR')}</td>
+                        <td class="p-3 font-bold">${c.romaneio}</td>
+                        <td class="p-3">${c.placa}</td>
+                        <td class="p-3 text-right font-bold text-emerald-400">${Number(c.peso).toLocaleString('pt-BR')}</td>
+                    </tr>
+                `;
+            });
+            
+            // Timer and KPI logic needs to be called regularly
+            // This is just a snapshot render
+        }
+
+        // --- GLOBAL HELPER FUNCTIONS (can be called from HTML) ---
+        window.setTab = function(tabId) { 
+            activeTab = tabId;
+            document.querySelectorAll('#view-main-dashboard .dashboard-tab').forEach(btn => { 
+                if (btn.id === `tab-${tabId}`) btn.classList.add('tab-active'); 
+                else btn.classList.remove('tab-active'); 
+            }); 
+            
+            const viewGeral = document.getElementById('view-visao-geral'); 
+            const viewDetalhe = document.getElementById('view-detalhe-moega'); 
+            
+            if (tabId === 'visao-geral') { 
+                viewGeral.classList.remove('hidden'); 
+                viewDetalhe.classList.add('hidden'); 
+            } else { 
+                viewGeral.classList.add('hidden'); 
+                viewDetalhe.classList.remove('hidden'); 
+                renderMoegaDetail(parseInt(tabId.split('-')[1])); 
+            } 
+            atualizarDashboard(); 
+        }
+
+        window.switchMainView = function(viewName) {
+            activeMainView = viewName;
+            ['dashboard', 'rastreabilidade', 'paradas', 'relatorios', 'config-culturas', 'config-turnos', 'central-dados', 'config-usuarios', 'reset-zone'].forEach(v => {
+                const el = document.getElementById(`view-main-${v}`);
+                if (el) el.classList.add('hidden');
+            });
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            const mainViewEl = document.getElementById(`view-main-${viewName}`);
+            if(mainViewEl) mainViewEl.classList.remove('hidden');
+            
+            const menuEl = document.getElementById(`menu-${viewName}`);
+            if(menuEl) menuEl.classList.add('active');
+
+            // Header logic can be simplified or removed if not fully implemented
+            const headerTitle = document.getElementById('header-title');
+            if(headerTitle) {
+                const titles = {
+                    dashboard: 'Visão Geral',
+                    rastreabilidade: 'Rastreabilidade Industrial',
+                    paradas: 'Gestão de Paradas',
+                };
+                headerTitle.innerHTML = `<i data-lucide="bar-chart-3" class="text-indigo-500 w-5 h-5"></i> ${titles[viewName] || 'Dashboard'}`;
+            }
+            lucide.createIcons();
+
+            if (viewName === 'dashboard') {
                 atualizarDashboard();
             }
         }
-
-        setInterval(atualizarDashboard, 2000);
-        atualizarDashboard();
+        
+        window.mostrarAlerta = function(msg) { 
+            const toast = document.getElementById('toast'); 
+            const toastMsg = document.getElementById('toast-msg');
+            if (toast && toastMsg) {
+                toastMsg.innerText = msg; 
+                toast.classList.remove('translate-y-20', 'opacity-0'); 
+                setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000); 
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
+
+    <!-- BOTÃO: Voltar ao Menu (canto inferior esquerdo) -->
+    <a href="menu.html" class="back-to-menu-dashboard" title="Voltar ao Menu" aria-label="Voltar ao Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left-circle" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 8 12 12 16"></polyline><line x1="16" y1="12" x2="8" y2="12"></line></svg>
+    </a>
+    <style>
+        .back-to-menu-dashboard { position: fixed; left: 16px; bottom: 16px; z-index: 9999; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.9); border:1px solid rgba(100,116,139,0.15); border-radius:10px; color:#cbd5e1; text-decoration:none; box-shadow: 0 6px 18px rgba(2,6,23,0.6); transition: transform .12s ease, background .12s ease, color .12s ease; }
+        .back-to-menu-dashboard:hover { transform: translateY(-3px); background: rgba(30,41,59,0.95); color:#fff; }
+        .back-to-menu-dashboard svg { display:block; }
+    </style>
 </body>
 </html>

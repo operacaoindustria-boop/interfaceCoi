@@ -100,6 +100,40 @@
         .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Digit Token Styling */
+        .digit-token {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 24px;
+            height: 32px;
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            margin: 0 1px;
+            border-radius: 4px;
+        }
+        .digit-token:hover {
+            border-color: #3b82f6;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+        .digit-token.active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+        .text-token {
+            font-family: monospace;
+            color: #64748b;
+            padding: 0 2px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
@@ -214,6 +248,38 @@
     </div>
 
     <!-- MODAIS -->
+    <!-- MODAL EXIT LINE (NOVO) -->
+    <div id="modal-exit-line" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-600 mb-4">
+                <i data-lucide="log-out" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Sair da Linha?</h3>
+            <p class="text-sm text-slate-500 mb-6">Você será redirecionado para o menu de seleção de postos de trabalho.</p>
+            
+            <div class="flex gap-3">
+                <button onclick="app.closeModal('modal-exit-line')" class="flex-1 py-3 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">CANCELAR</button>
+                <button onclick="app.confirmExitLine()" class="flex-1 py-3 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">SAIR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DELETE RECORD (NOVO - CONFIRMAÇÃO DE EXCLUSÃO) -->
+    <div id="modal-delete-record" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Apagar Registro?</h3>
+            <p class="text-sm text-slate-500 mb-6">O registro será removido da lista de histórico local e a contagem será ajustada.</p>
+            
+            <div class="flex gap-3">
+                <button onclick="app.closeModal('modal-delete-record')" class="flex-1 py-3 rounded-lg font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition">CANCELAR</button>
+                <button onclick="app.confirmDeleteRecord()" class="flex-1 py-3 rounded-lg font-bold text-white bg-red-600 shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2">APAGAR</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL FINISH LOT -->
     <div id="modal-finish" class="modal-backdrop hidden">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl text-center">
@@ -287,25 +353,53 @@
                 <!-- LOTE -->
                 <div>
                     <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Digite o Número do Lote do 1º Bag</label>
-                    <input type="text" id="input-lot" class="w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: L-001">
-                    <p class="text-[9px] text-slate-400 mt-1">O sistema incrementará automaticamente (Ex: L-001 -> L-002)</p>
-                    <p id="error-lot" class="text-error hidden"><i data-lucide="alert-circle" class="w-3 h-3"></i> Informe o lote inicial</p>
+                    <input type="text" id="input-lot" class="w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: 2301001" oninput="app.handleLotInput(this)">
+                    
+                    <!-- TOKENIZER VISUAL (NOVA FUNCIONALIDADE - POR DÍGITO) -->
+                    <div id="lot-tokenizer-area" class="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200 hidden">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="mouse-pointer-click" class="w-3 h-3 text-blue-500"></i>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Clique no último dígito que deve mudar:</span>
+                        </div>
+                        <div id="lot-tokens" class="flex flex-wrap items-center justify-center font-mono text-lg bg-white p-2 rounded border border-slate-100 shadow-inner"></div>
+                        <p class="text-[9px] text-slate-400 mt-2 italic">* O sistema incrementará o número terminando no dígito selecionado.</p>
+                    </div>
+
+                    <p id="error-lot" class="text-error hidden mt-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Informe o lote inicial</p>
                 </div>
                 <!-- PESO E META -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Peso Bag (kg)</label>
                         <input type="number" id="input-weight" class="w-full p-3 border border-slate-200 rounded font-semibold text-center text-slate-700 outline-none focus:border-blue-500">
-                        <p id="error-weight" class="text-error hidden"><i data-lucide="alert-circle" class="w-3 h-3"></i> Peso inválido</p>
+                        <p id="error-weight" class="text-error hidden"><i data-lucide="alert-circle" class="w-3 h-3"></i> Peso Precisa Ser > 100 KG</p>
                     </div>
                     <div>
                         <label class="text-xs font-bold text-blue-600 uppercase block mb-1">Qtd. Bags Lote</label>
                         <input type="number" id="input-target" class="w-full p-3 border border-blue-100 bg-blue-50/50 rounded font-semibold text-center text-blue-700 outline-none focus:border-blue-500">
-                        <p id="error-target" class="text-error hidden"><i data-lucide="alert-circle" class="w-3 h-3"></i> Informe a qtd.</p>
+                        <p id="error-target" class="text-error hidden"><i data-lucide="alert-circle" class="w-3 h-3"></i> Mínimo 2 Bags</p>
                     </div>
                 </div>
             </div>
             <div class="flex gap-3 mt-8 pt-4 border-t border-slate-100"><button onclick="app.closeModal('modal-setup')" class="flex-1 py-3 rounded font-bold text-slate-500 bg-white border border-slate-200 hover:bg-slate-50">Cancelar</button><button onclick="app.saveSetup()" class="flex-1 py-3 rounded font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700">SALVAR</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR ITEM (CULTURA/CULTIVAR) -->
+    <div id="modal-add-item" class="modal-backdrop hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 m-4 shadow-2xl flex flex-col transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="add-item-title" class="text-lg font-black text-slate-800 uppercase flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Adicionar Item</h3>
+                <button onclick="app.closeModal('modal-add-item')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <p id="add-item-desc" class="text-xs text-slate-500 font-bold mb-2 uppercase">Nome do novo item:</p>
+            <input type="text" id="add-item-input" class="w-full p-3 border border-slate-300 rounded-lg font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 uppercase mb-6" placeholder="DIGITE AQUI..." onkeypress="if(event.key === 'Enter') app.confirmAddItem()">
+            
+            <div class="flex gap-3">
+                <button onclick="app.closeModal('modal-add-item')" class="flex-1 py-3 rounded-lg font-bold text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition">CANCELAR</button>
+                <button onclick="app.confirmAddItem()" class="flex-1 py-3 rounded-lg font-bold text-white bg-blue-600 shadow-md hover:bg-blue-700 transition flex justify-center items-center gap-2">CONFIRMAR</button>
+            </div>
         </div>
     </div>
 
@@ -478,8 +572,8 @@
         </div>
     </div>
 
-    <!-- TOAST (Com ícone dinâmico) -->
-    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded shadow-2xl font-bold transition-all duration-300 -translate-y-32 opacity-0 z-50 border text-sm flex items-center gap-3">
+    <!-- TOAST (Com ícone dinâmico) - Z-INDEX AUMENTADO PARA 1005 -->
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded shadow-2xl font-bold transition-all duration-300 -translate-y-32 opacity-0 z-[1005] border text-sm flex items-center gap-3">
         <div class="rounded-full p-0.5"><i class="w-3 h-3"></i></div>
         <span id="toast-msg">Sucesso!</span>
     </div>
@@ -489,7 +583,11 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // CONFIGURAÇÃO ORIGINAL FORNECIDA PELO USUÁRIO (INTEGRAÇÃO COI)
         const firebaseConfig = { apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ", authDomain: "integracaocoi.firebaseapp.com", projectId: "integracaocoi", storageBucket: "integracaocoi.firebasestorage.app", messagingSenderId: "177203745489", appId: "1:177203745489:web:4c7ebd68e7b03819032bf0" };
+        
+        // CONFIGURAÇÃO DO CANVAS (Opcional - caso queira testar sem usar seu banco real, descomente abaixo)
+        // const firebaseConfig = JSON.parse(__firebase_config || '{}');
         
         const firebaseApp = initializeApp(firebaseConfig);
         const auth = getAuth(firebaseApp);
@@ -539,12 +637,15 @@
             state: {
                 lineId: null,
                 lineName: '',
-                setup: { culture: '', cultivar: '', lot: '', weight: 0, count: 0, target: 0, storage: null },
+                setup: { culture: '', cultivar: '', lot: '', weight: 0, count: 0, target: 0, storage: null, incrementIndex: -1 },
                 sessionCount: 0,
                 tempCulture: null,
                 tempCultivar: null, 
                 retroTab: 'production',
-                lineStatus: { text: 'OPERANDO', color: 'emerald' }
+                lineStatus: { text: 'OPERANDO', color: 'emerald' },
+                tempIncrementIndex: -1, 
+                addItemParams: { type: null, context: null },
+                recordToDeleteId: null // Armazena o ID do registro a ser excluído
             },
             
             toastTimer: null,
@@ -554,6 +655,16 @@
                 this.loadCultures();
                 this.initClock();
                 window.authSystem.init();
+            },
+
+            // --- HELPER: ATUALIZAÇÃO SEGURA DE TEXTO (CORREÇÃO DO ERRO) ---
+            setText: function(id, text) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = text;
+                } else {
+                    console.warn(`Elemento não encontrado: ${id}`);
+                }
             },
 
             // --- MÁSCARA E VALIDAÇÃO DE DATA/HORA ---
@@ -608,7 +719,6 @@
                 return defaults[cultureName] || null;
             },
             
-            // --- NOVA FUNÇÃO PARA COMBINAR CULTIVARES DEFAULT E CUSTOMIZADOS ---
             getCombinedCultivars: function(cultureName) {
                 const defaults = this.getCultivarsFor(cultureName) || [];
                 const storageKey = 'custom_cultivars_' + cultureName.replace(/\s+/g, '_');
@@ -617,11 +727,111 @@
             },
 
             incrementLotCode: function(code) {
-                return code.replace(/(\d+)$/, (match) => {
-                    const length = match.length;
-                    const nextVal = parseInt(match, 10) + 1;
-                    return String(nextVal).padStart(length, '0');
-                });
+                const targetIndex = this.state.setup.incrementIndex; 
+                
+                if (targetIndex === -1 || targetIndex >= code.length) {
+                    return code.replace(/(\d+)(?!.*\d)/, (match) => {
+                        const nextVal = (parseInt(match, 10) + 1).toString();
+                        return nextVal.padStart(match.length, '0');
+                    });
+                }
+
+                if (!/\d/.test(code[targetIndex])) return code;
+
+                let startIndex = targetIndex;
+                while (startIndex > 0 && /\d/.test(code[startIndex - 1])) {
+                    startIndex--;
+                }
+
+                const numberStr = code.substring(startIndex, targetIndex + 1);
+                const suffix = code.substring(targetIndex + 1);
+                const prefix = code.substring(0, startIndex);
+
+                const nextVal = (parseInt(numberStr, 10) + 1).toString();
+                
+                const paddedVal = nextVal.padStart(numberStr.length, '0');
+
+                return prefix + paddedVal + suffix;
+            },
+
+            handleLotInput: function(input) {
+                const val = input.value;
+                const errorLot = document.getElementById('error-lot');
+                
+                if (val.length > 0 && val.length < 6) {
+                    errorLot.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i> Mínimo 6 caracteres';
+                    errorLot.classList.remove('hidden');
+                    input.classList.add('input-error');
+                } else {
+                    errorLot.classList.add('hidden');
+                    input.classList.remove('input-error');
+                }
+
+                this.renderLotTokens(val);
+            },
+
+            renderLotTokens: function(val) {
+                const container = document.getElementById('lot-tokenizer-area');
+                const tokensDiv = document.getElementById('lot-tokens');
+                tokensDiv.innerHTML = '';
+
+                if (!val || val.length < 2) {
+                    container.classList.add('hidden');
+                    return;
+                }
+
+                let hasNumbers = false;
+
+                for (let i = 0; i < val.length; i++) {
+                    const char = val[i];
+                    const isDigit = /\d/.test(char);
+                    
+                    const span = document.createElement('span');
+                    
+                    if (isDigit) {
+                        hasNumbers = true;
+                        span.className = 'digit-token';
+                        span.textContent = char;
+                        
+                        let isActive = false;
+                        
+                        if (this.state.tempIncrementIndex !== -1) {
+                            if (i === this.state.tempIncrementIndex) isActive = true;
+                        } 
+                        else {
+                            let lastDigitIndex = -1;
+                            for (let j = val.length - 1; j >= 0; j--) {
+                                if (/\d/.test(val[j])) {
+                                    lastDigitIndex = j;
+                                    break;
+                                }
+                            }
+                            if (i === lastDigitIndex) isActive = true;
+                        }
+
+                        if (isActive) {
+                            span.classList.add('active');
+                            if (this.state.tempIncrementIndex === -1) this.state.tempIncrementIndex = i;
+                        }
+
+                        span.onclick = () => {
+                            this.state.tempIncrementIndex = i;
+                            this.renderLotTokens(val); 
+                        };
+
+                    } else {
+                        span.className = 'text-token';
+                        span.textContent = char;
+                    }
+                    
+                    tokensDiv.appendChild(span);
+                }
+
+                if (hasNumbers) {
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
             },
 
             selectLine: async function(id, name) {
@@ -636,27 +846,30 @@
                     }
                 } catch(e) { console.log("Offline or first run"); }
 
-                document.getElementById('header-line-name').textContent = name.toUpperCase();
+                this.setText('header-line-name', name.toUpperCase());
+                
                 document.getElementById('screen-select').classList.add('hidden');
                 document.getElementById('screen-select').classList.remove('flex');
                 document.getElementById('screen-operation').classList.remove('hidden');
                 document.getElementById('screen-operation').classList.add('flex');
                 
                 this.updateSetupDisplay();
+                // ADICIONADO: Renderiza o histórico e atualiza o contador assim que entra na linha
+                this.renderHistory();
+                
                 setTimeout(() => lucide.createIcons(), 100);
 
-                // Force open setup modal
                 this.openSetup(); 
             },
 
             checkFinishLot: function() {
                 if (this.state.setup.culture === '--' && this.state.setup.count === 0) {
-                    return alert("Não há sequência ativa para encerrar.");
+                    return this.showToast("Sem Dados Para Encerrar a Sequência", 3000, 'warning');
                 }
                 
-                document.getElementById('finish-culture').textContent = this.state.setup.culture;
-                document.getElementById('finish-lot').textContent = this.state.setup.lot;
-                document.getElementById('finish-total').textContent = this.state.setup.count + " Bags";
+                this.setText('finish-culture', this.state.setup.culture);
+                this.setText('finish-lot', this.state.setup.lot);
+                this.setText('finish-total', this.state.setup.count + " Bags");
                 
                 const current = this.state.setup.count;
                 const target = this.state.setup.target;
@@ -665,21 +878,25 @@
                 const iconContainer = document.getElementById('finish-icon-container');
                 
                 if (target > 0 && current < target) {
-                    warningBox.classList.remove('hidden');
-                    document.getElementById('warn-current').textContent = current;
-                    document.getElementById('warn-target').textContent = target;
+                    if(warningBox) warningBox.classList.remove('hidden');
+                    this.setText('warn-current', current);
+                    this.setText('warn-target', target);
                     
-                    title.textContent = "Meta Incompleta!";
-                    title.classList.add('text-amber-600');
-                    title.classList.remove('text-slate-800');
-                    iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-4";
+                    if(title) {
+                        title.textContent = "Meta Incompleta!";
+                        title.classList.add('text-amber-600');
+                        title.classList.remove('text-slate-800');
+                    }
+                    if(iconContainer) iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-4";
                     
                 } else {
-                    warningBox.classList.add('hidden');
-                    title.textContent = "Encerrar Sequência?";
-                    title.classList.remove('text-amber-600');
-                    title.classList.add('text-slate-800');
-                    iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-4";
+                    if(warningBox) warningBox.classList.add('hidden');
+                    if(title) {
+                        title.textContent = "Encerrar Sequência?";
+                        title.classList.remove('text-amber-600');
+                        title.classList.add('text-slate-800');
+                    }
+                    if(iconContainer) iconContainer.className = "inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-4";
                 }
                 
                 document.getElementById('modal-finish').classList.remove('hidden');
@@ -738,7 +955,7 @@
                 this.state.setup.cultivar = '--';
                 this.state.setup.culture = '--';
                 this.state.setup.weight = 0;
-                this.state.setup.storage = null; // Limpa o local
+                this.state.setup.storage = null; 
                 this.state.tempCulture = null;
                 this.state.tempCultivar = null;
 
@@ -756,24 +973,28 @@
                     return; 
                 }
 
-                if(this.state.setup.weight === 0) return this.openSetup();
+                if(this.state.setup.weight === 0) {
+                    this.showToast("Preencha o Setup Para Registrar Bag", 3000, 'warning');
+                    return this.openSetup();
+                }
 
                 const btn = document.getElementById('btn-produce');
-                btn.disabled = true;
+                if(btn) btn.disabled = true;
                 
                 const previousCount = this.state.setup.count;
-                const previousSessionCount = this.state.sessionCount;
+                // REMOVIDO: const previousSessionCount = this.state.sessionCount; (Não gerenciamos mais manualmente)
                 
                 try {
                     this.state.setup.count++;
-                    this.state.sessionCount++;
+                    // REMOVIDO: this.state.sessionCount++; (O renderHistory fará isso)
                     
                     this.updateSetupDisplay();
-                    document.getElementById('session-count').textContent = this.state.sessionCount;
+                    // REMOVIDO: this.setText('session-count', this.state.sessionCount);
 
                     const currentLot = this.state.setup.lot;
                     
                     const record = {
+                        id: Date.now(), 
                         createdAt: new Date(),
                         lineId: this.state.lineId,
                         lineName: this.state.lineName,
@@ -792,7 +1013,7 @@
                     
                     this.saveState(); 
                     this.saveRecord(record); 
-                    this.renderHistory(); 
+                    this.renderHistory(); // Isso atualizará o contador automaticamente
                     
                     this.updateSetupDisplay();
                     
@@ -802,11 +1023,11 @@
                     console.error(error);
                     alert("Erro ao salvar: " + error.message);
                     this.state.setup.count = previousCount;
-                    this.state.sessionCount = previousSessionCount;
+                    // REMOVIDO restauração manual do sessionCount
                     this.updateSetupDisplay();
-                    document.getElementById('session-count').textContent = this.state.sessionCount;
+                    this.renderHistory(); // Garante que o contador volte ao real em caso de erro
                 } finally {
-                    btn.disabled = false;
+                    if(btn) btn.disabled = false;
                 }
             },
 
@@ -841,9 +1062,13 @@
                 const colorMap = { 'emerald': 'bg-emerald-500 text-emerald-600', 'amber': 'bg-amber-500 text-amber-600', 'blue': 'bg-blue-500 text-blue-600', 'red': 'bg-red-500 text-red-600' };
                 const styles = colorMap[color].split(' ');
                 
-                textEl.textContent = status;
-                textEl.className = `${styles[1]} uppercase`;
-                dotEl.className = `w-2 h-2 rounded-full ${styles[0]} animate-pulse`;
+                if(textEl) {
+                    textEl.textContent = status;
+                    textEl.className = `${styles[1]} uppercase`;
+                }
+                if(dotEl) {
+                    dotEl.className = `w-2 h-2 rounded-full ${styles[0]} animate-pulse`;
+                }
             },
 
             saveRetro: async function() {
@@ -851,7 +1076,6 @@
                 this.closeModal('modal-retro');
             },
             
-            // --- NOVA FUNÇÃO SAVE STOP INTELIGENTE (COM PARSER DE DATA E CÁLCULO DE DURAÇÃO) ---
             saveStop: async function() {
                 const reasonSelect = document.getElementById('retro-stop-reason');
                 let reason = reasonSelect.value;
@@ -860,13 +1084,11 @@
                 const startStr = document.getElementById('retro-stop-start').value;
                 const endStr = document.getElementById('retro-stop-end').value;
 
-                // 1. Validação Básica
                 if (!startStr || !endStr) {
-                     this.showToast("Preencha o início e fim da parada!", 3000, 'warning');
-                     return;
+                      this.showToast("Preencha o início e fim da parada!", 3000, 'warning');
+                      return;
                 }
 
-                // 2. Parser de Data (DD/MM/AAAA HH:MM -> Date Object)
                 const parseDate = (str) => {
                     const [d, t] = str.split(' ');
                     const [day, month, year] = d.split('/');
@@ -877,22 +1099,19 @@
                 const startDate = parseDate(startStr);
                 const endDate = parseDate(endStr);
 
-                // 3. Validação de Lógica de Data
                 if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                     this.showToast("Datas inválidas!", 3000, 'warning');
                     return;
                 }
 
                 if (endDate < startDate) {
-                     this.showToast("O fim não pode ser antes do início!", 3000, 'warning');
-                     return;
+                      this.showToast("O fim não pode ser antes do início!", 3000, 'warning');
+                      return;
                 }
 
-                // 4. Cálculo de Duração
                 const durationMs = endDate - startDate;
                 const durationMinutes = Math.floor(durationMs / 1000 / 60);
 
-                // 5. Validação de Motivo
                 if (reason === 'Outros') {
                     if (!otherDesc) {
                         this.showToast("Descreva o motivo!", 3000, 'warning');
@@ -911,16 +1130,15 @@
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> SALVANDO...`;
-                lucide.createIcons(); // Atualiza ícone do loading
+                lucide.createIcons(); 
 
                 try {
-                    // 6. Envio para Firestore
-                     await addDoc(collection(db, 'ensaque_paradas'), {
+                      await addDoc(collection(db, 'ensaque_paradas'), {
                         lineId: this.state.lineId,
                         lineName: this.state.lineName,
                         reason: reason,
-                        time: startDate,     // Data inicial (Firestore Timestamp)
-                        end_time: endDate,   // Data final (Firestore Timestamp)
+                        time: startDate,     
+                        end_time: endDate,   
                         duration_minutes: durationMinutes,
                         type: 'stop',
                         shift: document.getElementById('shift-select').value,
@@ -931,7 +1149,6 @@
                     this.showToast("Parada Registrada com Sucesso!", 2500, 'warning');
                     this.closeModal('modal-stops-point');
                     
-                    // Limpar campos
                     document.getElementById('retro-stop-start').value = "";
                     document.getElementById('retro-stop-end').value = "";
                     reasonSelect.value = "";
@@ -948,7 +1165,6 @@
                 }
             },
             
-            // --- DETECTOR DE OPÇÃO OUTROS ---
             checkOtherReason: function(select) {
                 const container = document.getElementById('retro-stop-other-container');
                 if(select.value === 'Outros') {
@@ -958,15 +1174,101 @@
                 }
             },
 
+            openAddModal: function(type, context = null) {
+                this.state.addItemParams = { type, context };
+                const titleEl = document.getElementById('add-item-title');
+                const descEl = document.getElementById('add-item-desc');
+                const inputEl = document.getElementById('add-item-input');
+                
+                inputEl.value = ''; 
+                inputEl.classList.remove('input-error', 'border-red-500', 'ring-1', 'ring-red-500'); 
+                
+                if (type === 'culture') {
+                    titleEl.textContent = 'NOVA CULTURA';
+                    descEl.textContent = 'DIGITE O NOME DA CULTURA:';
+                } else if (type === 'cultivar') {
+                    titleEl.textContent = 'NOVO CULTIVAR';
+                    descEl.textContent = `NOVO CULTIVAR PARA ${context}:`;
+                }
+                
+                document.getElementById('modal-add-item').classList.remove('hidden');
+                setTimeout(() => inputEl.focus(), 100); 
+            },
+
+            confirmAddItem: function() {
+                const { type, context } = this.state.addItemParams;
+                const inputEl = document.getElementById('add-item-input');
+                const newName = inputEl.value.trim();
+
+                if (!newName) {
+                    this.showToast("O nome não pode ser vazio!", 2000, 'warning');
+                    inputEl.classList.add('input-error');
+                    inputEl.focus();
+                    return; 
+                }
+
+                const upperName = newName.toUpperCase();
+
+                if (type === 'culture') {
+                    let custom = JSON.parse(localStorage.getItem('custom_cultures') || '[]');
+                    const defaults = this.getCulturesList();
+                    
+                    if (!custom.includes(upperName) && !defaults.includes(upperName)) {
+                        custom.push(upperName);
+                        localStorage.setItem('custom_cultures', JSON.stringify(custom));
+                        
+                        this.loadCultures(); 
+                        
+                        setTimeout(() => {
+                            this.selectCultureBtn(null, upperName);
+                        }, 50);
+                        
+                        this.showToast("Cultura adicionada!");
+                    } else {
+                        this.showToast("Esta cultura já existe.", 3000, 'warning');
+                        inputEl.classList.add('input-error');
+                        return;
+                    }
+                } else if (type === 'cultivar') {
+                    const storageKey = 'custom_cultivars_' + context.replace(/\s+/g, '_');
+                    let custom = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    
+                    if (!custom.includes(upperName)) {
+                        custom.push(upperName);
+                        localStorage.setItem(storageKey, JSON.stringify(custom));
+                        
+                        this.renderCultivarInput(context); 
+                        
+                        setTimeout(() => {
+                            const container = document.getElementById('cultivar-area');
+                            const buttons = Array.from(container.querySelectorAll('button'));
+                            const newBtn = buttons.find(b => b.textContent === upperName);
+                            if(newBtn) newBtn.click();
+                        }, 50);
+                        
+                        this.showToast("Cultivar adicionado!");
+                    } else {
+                        this.showToast("Este cultivar já existe.", 3000, 'warning');
+                        inputEl.classList.add('input-error');
+                        return;
+                    }
+                }
+
+                this.closeModal('modal-add-item');
+            },
+
             loadCultures: function() {
-                const cultures = this.getCulturesList();
+                const defaults = this.getCulturesList();
+                const custom = JSON.parse(localStorage.getItem('custom_cultures') || '[]');
+                const cultures = [...new Set([...defaults, ...custom])].sort();
+
                 const container = document.getElementById('culture-options');
                 container.innerHTML = '';
                 
                 const btnAdd = document.createElement('button');
-                btnAdd.className = 'p-2 rounded text-[10px] font-bold transition border-2 border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500 w-full uppercase flex flex-col items-center justify-center gap-0.5 min-h-[40px]';
+                btnAdd.className = 'p-2 rounded text-[10px] font-bold transition border-2 border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500 w-full uppercase flex flex-col items-center justify-center gap-0.5 min-h-[40px] hover:bg-blue-50';
                 btnAdd.innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i> <span class="text-[9px]">Nova</span>';
-                btnAdd.onclick = () => this.addCustomCulture();
+                btnAdd.onclick = () => this.openAddModal('culture');
 
                 cultures.forEach(c => {
                     const btn = document.createElement('button');
@@ -980,32 +1282,12 @@
                 lucide.createIcons();
             },
 
-            addCustomCulture: function() {
-                const newName = prompt("Digite o nome da nova cultura:");
-                if (newName && newName.trim() !== "") {
-                    const upperName = newName.trim().toUpperCase();
-                    let custom = JSON.parse(localStorage.getItem('custom_cultures') || '[]');
-                    const defaults = ['BRAQUIÁRIA', 'CROTALÁRIA', 'FEIJÃO GUANDÚ', 'MILHETO', 'SOJA'];
-                    
-                    if (!custom.includes(upperName) && !defaults.includes(upperName)) {
-                        custom.push(upperName);
-                        localStorage.setItem('custom_cultures', JSON.stringify(custom));
-                        this.loadCultures();
-                        this.selectCultureBtn(null, upperName); // Seleciona automaticamente
-                        this.showToast("Cultura adicionada!");
-                    } else {
-                        alert("Esta cultura já existe na lista.");
-                    }
-                }
-            },
-
             selectCultureBtn: function(btn, cultureName) {
                 document.querySelectorAll('.select-btn').forEach(b => { 
                     b.classList.remove('selected', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'ring-1', 'ring-blue-200'); 
                     b.classList.add('border-slate-200', 'text-slate-600'); 
                 });
                 
-                // Se o botão foi passado (clique), destaca ele. Se for null (auto-seleção), procura no DOM
                 let targetBtn = btn;
                 if (!targetBtn) {
                     const buttons = Array.from(document.querySelectorAll('.select-btn'));
@@ -1025,37 +1307,17 @@
                 const container = document.getElementById('cultivar-area');
                 container.innerHTML = ''; 
 
-                const cultivars = this.getCultivarsFor(cultureName);
+                const cultivars = this.getCombinedCultivars(cultureName);
 
-                if (cultivars) {
+                if (Array.isArray(cultivars)) {
                     const grid = document.createElement('div');
                     grid.className = 'grid grid-cols-2 gap-2';
                     
-                    // Botão Nova Variedade (para culturas específicas)
                     const btnAddCultivar = document.createElement('button');
-                    btnAddCultivar.className = 'p-2 rounded text-[10px] font-bold transition border-2 border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500 w-full uppercase flex flex-col items-center justify-center gap-0.5 min-h-[40px]';
+                    btnAddCultivar.className = 'p-2 rounded text-[10px] font-bold transition border-2 border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500 w-full uppercase flex flex-col items-center justify-center gap-0.5 min-h-[40px] hover:bg-blue-50';
                     btnAddCultivar.innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i> <span class="text-[9px]">Nova</span>';
-                    btnAddCultivar.onclick = () => {
-                         const newC = prompt(`Novo Cultivar de ${cultureName}:`);
-                         if(newC && newC.trim() !== "") {
-                             const upperC = newC.trim().toUpperCase();
-                             const storageKey = 'custom_cultivars_' + cultureName.replace(/\s+/g, '_');
-                             let custom = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                             
-                             if(!custom.includes(upperC)) {
-                                 custom.push(upperC);
-                                 localStorage.setItem(storageKey, JSON.stringify(custom));
-                                 this.renderCultivarInput(cultureName); 
-                                 // Pequeno delay para garantir renderização antes de selecionar
-                                 setTimeout(() => {
-                                     const buttons = Array.from(grid.querySelectorAll('button'));
-                                     const newBtn = buttons.find(b => b.textContent === upperC);
-                                     if(newBtn) newBtn.click();
-                                 }, 100);
-                                 this.showToast("Cultivar adicionado!");
-                             }
-                         }
-                    };
+                    
+                    btnAddCultivar.onclick = () => this.openAddModal('cultivar', cultureName);
 
                     cultivars.forEach(cultivar => {
                         const btn = document.createElement('button');
@@ -1065,7 +1327,6 @@
                         
                         if(isSelected) {
                             btnClass += 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-200';
-                            // Garante que o input hidden tenha valor se já estiver selecionado
                             if (!this.state.tempCultivar) this.state.tempCultivar = cultivar;
                         } else {
                             btnClass += 'border-slate-200 text-slate-600 hover:border-blue-300 bg-white';
@@ -1108,7 +1369,6 @@
                     input.placeholder = 'Ex: NOME DO CULTIVAR';
                     input.value = (this.state.setup.culture === cultureName) ? this.state.setup.cultivar : '';
                     
-                    // Update state on typing
                     input.oninput = (e) => {
                         this.state.tempCultivar = e.target.value.toUpperCase();
                     };
@@ -1119,30 +1379,29 @@
             },
 
             openSetup: function() { 
-                // Limpar variáveis temporárias de seleção
                 this.state.tempCulture = null;
                 this.state.tempCultivar = null;
+                
+                this.state.tempIncrementIndex = this.state.setup.incrementIndex !== undefined ? this.state.setup.incrementIndex : -1;
 
-                // Limpar campos de input
                 const inputs = ['input-lot', 'input-weight', 'input-target', 'input-cultivar'];
                 inputs.forEach(id => {
                     const el = document.getElementById(id);
                     if(el) el.value = '';
                 });
 
-                // Resetar botões de cultura visualmente
                 document.querySelectorAll('.select-btn').forEach(b => { 
                     b.classList.remove('selected', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'ring-1', 'ring-blue-200'); 
                     b.classList.add('border-slate-200', 'text-slate-600'); 
                 });
 
-                // Resetar área de cultivar para input padrão
                 const cultivarArea = document.getElementById('cultivar-area');
                 if(cultivarArea) {
                     cultivarArea.innerHTML = '<input type="text" id="input-cultivar" class="w-full p-3 border border-slate-200 rounded font-semibold text-slate-700 outline-none focus:border-blue-500 uppercase" placeholder="Ex: BRS 1001">';
                 }
+                
+                document.getElementById('lot-tokenizer-area').classList.add('hidden');
 
-                // Esconder erros
                 document.querySelectorAll('.text-error').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
 
@@ -1158,28 +1417,59 @@
 
                 const culture = this.state.tempCulture;
                 const lotInput = document.getElementById('input-lot');
-                const lot = lotInput.value;
+                const lot = lotInput ? lotInput.value.trim() : '';
                 const weightInput = document.getElementById('input-weight');
-                const weight = parseFloat(weightInput.value);
+                const weight = weightInput ? parseFloat(weightInput.value) : 0;
                 const targetInput = document.getElementById('input-target');
-                const target = parseInt(targetInput.value);
+                const target = targetInput ? parseInt(targetInput.value) : 0;
                 
                 const cultivarInput = document.getElementById('input-cultivar');
                 const cultivar = cultivarInput ? cultivarInput.value : '';
 
                 if (!culture) { document.getElementById('error-culture').classList.remove('hidden'); hasError = true; }
                 if (!cultivar) { document.getElementById('error-cultivar').classList.remove('hidden'); if(cultivarInput && cultivarInput.type === 'text') cultivarInput.classList.add('input-error'); hasError = true; }
-                if (!lot) { document.getElementById('error-lot').classList.remove('hidden'); lotInput.classList.add('input-error'); hasError = true; }
-                if (isNaN(weight) || weight <= 0) { document.getElementById('error-weight').classList.remove('hidden'); weightInput.classList.add('input-error'); hasError = true; }
-                if (isNaN(target) || target <= 0) { document.getElementById('error-target').classList.remove('hidden'); targetInput.classList.add('input-error'); hasError = true; }
+                
+                const errorLot = document.getElementById('error-lot');
+                if (!lot) { 
+                    errorLot.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i> Informe o lote inicial';
+                    errorLot.classList.remove('hidden'); 
+                    if(lotInput) lotInput.classList.add('input-error'); 
+                    hasError = true; 
+                } else if (lot.length < 6) {
+                    errorLot.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i> Mínimo 6 caracteres';
+                    errorLot.classList.remove('hidden');
+                    if(lotInput) lotInput.classList.add('input-error');
+                    hasError = true;
+                }
+                
+                if (isNaN(weight) || weight < 100) { 
+                    document.getElementById('error-weight').classList.remove('hidden'); 
+                    if(weightInput) weightInput.classList.add('input-error'); 
+                    hasError = true; 
+                }
+                
+                if (isNaN(target) || target < 2) { 
+                    document.getElementById('error-target').classList.remove('hidden'); 
+                    if(targetInput) targetInput.classList.add('input-error'); 
+                    hasError = true; 
+                }
 
                 if (hasError) {
-                    this.showToast("⚠️ Verifique os campos obrigatórios.");
+                    this.showToast("⚠️ Verifique os campos obrigatórios.", 3000, 'warning');
                     lucide.createIcons(); 
                     return;
                 }
 
-                this.state.setup = { ...this.state.setup, culture, cultivar, lot, weight, target };
+                this.state.setup = { 
+                    ...this.state.setup, 
+                    culture, 
+                    cultivar, 
+                    lot, 
+                    weight, 
+                    target,
+                    incrementIndex: this.state.tempIncrementIndex 
+                };
+                
                 this.updateSetupDisplay();
                 this.closeModal('modal-setup');
                 this.saveState(); 
@@ -1188,20 +1478,24 @@
             
             updateSetupDisplay: function() {
                 const s = this.state.setup;
-                document.getElementById('info-culture').textContent = s.culture || '--';
-                document.getElementById('info-cultivar').textContent = s.cultivar || '--';
-                document.getElementById('info-lot').textContent = s.lot || '--';
-                document.getElementById('info-weight').textContent = s.weight || '0';
-                document.getElementById('info-count').textContent = s.count || '0';
+                this.setText('info-culture', s.culture || '--');
+                this.setText('info-cultivar', s.cultivar || '--');
+                this.setText('info-lot', s.lot || '--');
+                this.setText('info-weight', s.weight || '0');
+                this.setText('info-count', s.count || '0');
                 
                 const storageDisplay = document.getElementById('storage-display');
                 const storageValue = document.getElementById('storage-value');
                 
                 if(s.storage && s.storage.chamber) {
-                    storageDisplay.classList.remove('hidden');
-                    storageValue.textContent = `${s.storage.chamber.split(' ')[0]} ${s.storage.chamber.split(' ')[1]} ${s.storage.chamber.split(' ')[2] || ''} • ${s.storage.street || '-'} • ${s.storage.position || '-'}`;
+                    if(storageDisplay) storageDisplay.classList.remove('hidden');
+                    if(storageValue) {
+                        const parts = s.storage.chamber.split(' ');
+                        const chamberName = `${parts[0] || ''} ${parts[1] || ''} ${parts[2] || ''}`;
+                        storageValue.textContent = `${chamberName} • ${s.storage.street || '-'} • ${s.storage.position || '-'}`;
+                    }
                 } else {
-                    storageDisplay.classList.add('hidden');
+                    if(storageDisplay) storageDisplay.classList.add('hidden');
                 }
             },
 
@@ -1225,16 +1519,13 @@
             openRetroModal: function() { 
                 document.getElementById('modal-retro').classList.remove('hidden'); 
                 
-                // Lógica para popular o select de culturas
                 const select = document.getElementById('retro-prod-culture');
                 if (select) {
-                    // Limpa opções existentes
                     select.innerHTML = '<option value="">SELECIONE A CULTURA...</option>';
                     
                     const defaults = this.getCulturesList();
                     const custom = JSON.parse(localStorage.getItem('custom_cultures') || '[]');
                     
-                    // Combina e remove duplicatas, depois ordena
                     const allCultures = [...new Set([...defaults, ...custom])].sort();
                     
                     allCultures.forEach(c => {
@@ -1244,67 +1535,15 @@
                         select.appendChild(opt);
                     });
 
-                    // Adiciona evento de troca para renderizar o cultivar correto
                     select.onchange = (e) => {
                         this.renderRetroCultivarInput(e.target.value);
                     };
                 }
                 
-                // Reseta o campo cultivar ao abrir
                 this.renderRetroCultivarInput(null);
             },
             
-            // --- NOVA FUNÇÃO PARA GERENCIAR CULTIVAR NO MODO RETROATIVO ---
-            renderRetroCultivarInput: function(cultureName) {
-                const container = document.getElementById('retro-cultivar-container');
-                container.innerHTML = ''; // Limpa
-
-                if (!cultureName) {
-                    // Estado padrão: Input desabilitado
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.id = 'retro-prod-cultivar';
-                    input.className = 'w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500 uppercase bg-slate-50 cursor-not-allowed';
-                    input.placeholder = 'SELECIONE A CULTURA PRIMEIRO';
-                    input.disabled = true;
-                    container.appendChild(input);
-                    return;
-                }
-
-                const cultivars = this.getCombinedCultivars(cultureName);
-
-                if (cultivars && cultivars.length > 0) {
-                    // Se tiver cultivares, cria SELECT
-                    const select = document.createElement('select');
-                    select.id = 'retro-prod-cultivar';
-                    select.className = 'w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500 bg-white uppercase';
-                    
-                    const defaultOpt = document.createElement('option');
-                    defaultOpt.value = "";
-                    defaultOpt.textContent = "SELECIONE O CULTIVAR...";
-                    select.appendChild(defaultOpt);
-
-                    cultivars.forEach(c => {
-                        const opt = document.createElement('option');
-                        opt.value = c;
-                        opt.textContent = c;
-                        select.appendChild(opt);
-                    });
-                    
-                    container.appendChild(select);
-                } else {
-                    // Se não tiver, cria INPUT TEXTO LIVRE
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.id = 'retro-prod-cultivar';
-                    input.className = 'w-full p-3 border border-slate-200 rounded font-bold text-slate-700 outline-none focus:border-blue-500 uppercase';
-                    input.placeholder = 'DIGITE O CULTIVAR';
-                    container.appendChild(input);
-                }
-            },
-
             openStopsModal: function() { 
-                // Resetar o select e o campo "outros" ao abrir o modal
                 const reasonSelect = document.getElementById('retro-stop-reason');
                 if (reasonSelect) {
                     reasonSelect.value = "";
@@ -1318,12 +1557,15 @@
             },
 
             exitLine: function() {
-                if(confirm("Sair da linha?")) {
-                    document.getElementById('screen-operation').classList.add('hidden');
-                    document.getElementById('screen-operation').classList.remove('flex');
-                    document.getElementById('screen-select').classList.remove('hidden');
-                    document.getElementById('screen-select').classList.add('flex');
-                }
+                document.getElementById('modal-exit-line').classList.remove('hidden');
+            },
+
+            confirmExitLine: function() {
+                document.getElementById('modal-exit-line').classList.add('hidden');
+                document.getElementById('screen-operation').classList.add('hidden');
+                document.getElementById('screen-operation').classList.remove('flex');
+                document.getElementById('screen-select').classList.remove('hidden');
+                document.getElementById('screen-select').classList.add('flex');
             },
 
             showToast: function(msg, duration = 2500, type = 'success') {
@@ -1331,24 +1573,20 @@
                 const msgEl = document.getElementById('toast-msg');
                 const iconContainer = t.querySelector('div');
                 
-                // FIX: Reset inner HTML to ensure <i> tag exists (Lucide replaces it with SVG)
                 iconContainer.innerHTML = '<i class="w-3 h-3"></i>';
                 const icon = iconContainer.querySelector('i');
 
                 msgEl.textContent = msg;
 
-                // Reset de estilos base para evitar acúmulo de classes
-                t.className = 'fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded shadow-2xl font-bold transition-all duration-300 z-50 border text-sm flex items-center gap-3';
+                t.className = 'fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded shadow-2xl font-bold transition-all duration-300 z-[1005] border text-sm flex items-center gap-3';
                 
                 if (type === 'warning') {
-                    // Estilo de Alerta/Aviso (Laranja/Ambar)
                     t.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300'); 
                     iconContainer.className = 'bg-amber-500 rounded-full p-0.5';
                     icon.setAttribute('data-lucide', 'alert-triangle');
                     icon.classList.remove('text-slate-900');
                     icon.classList.add('text-white');
                 } else {
-                    // Estilo de Sucesso Padrão (Escuro/Verde)
                     t.classList.add('bg-slate-800', 'text-white', 'border-slate-600');
                     iconContainer.className = 'bg-green-500 rounded-full p-0.5';
                     icon.setAttribute('data-lucide', 'check');
@@ -1356,18 +1594,15 @@
                     icon.classList.remove('text-white');
                 }
 
-                // Mostrar o toast
                 t.classList.remove('-translate-y-32', 'opacity-0');
                 
-                // Limpar timer anterior se existir para não fechar prematuramente
                 if (this.toastTimer) clearTimeout(this.toastTimer);
                 
-                // Agendar fechamento
                 this.toastTimer = setTimeout(() => {
                     t.classList.add('-translate-y-32', 'opacity-0');
                 }, duration);
                 
-                lucide.createIcons(); // Atualizar ícone
+                lucide.createIcons(); 
             },
             
             initClock: function() { setInterval(() => { document.getElementById('clock-display').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }, 1000); },
@@ -1376,7 +1611,6 @@
                 this.openRetroModal('stop');
             },
 
-            // Persistência Local para Histórico (Evita leituras excessivas no Firestore)
             saveState: function() {
                 localStorage.setItem('setup_' + this.state.lineId, JSON.stringify(this.state.setup));
             },
@@ -1392,6 +1626,10 @@
                 const list = document.getElementById('history-list'); 
                 const history = JSON.parse(localStorage.getItem('history_' + this.state.lineId) || '[]');
                 
+                // NOVO: Atualiza a contagem da sessão baseada no tamanho real da lista
+                this.state.sessionCount = history.length;
+                this.updateSessionStats();
+
                 if(history.length === 0) {
                     list.innerHTML = `
                         <div class="text-center py-10 text-slate-300 text-xs italic flex flex-col items-center gap-3">
@@ -1428,6 +1666,7 @@
                             </div>
                         `;
                     } else if (rec.type === 'retro_production') {
+                        // ... existing retro_production code ...
                         itemClass = 'bg-blue-50 border-blue-200';
                         itemHTML = `
                             <div>
@@ -1447,6 +1686,7 @@
                             </div>
                         `;
                     } else {
+                        // ... existing default code ...
                         const isRetroOld = rec.type === 'retro';
                         itemClass = isRetroOld ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100 hover:border-blue-200';
                         
@@ -1484,25 +1724,36 @@
                 lucide.createIcons();
             },
 
+            // --- NOVA LÓGICA DE EXCLUSÃO COM MODAL ---
             deleteRecord: function(id) {
-                if(!confirm("Tem certeza que deseja apagar este registro?")) return;
+                this.state.recordToDeleteId = id;
+                document.getElementById('modal-delete-record').classList.remove('hidden');
+            },
+
+            confirmDeleteRecord: function() {
+                const id = this.state.recordToDeleteId;
+                if (!id) return;
+
                 let history = JSON.parse(localStorage.getItem('history_' + this.state.lineId) || '[]');
                 
                 const recordToDelete = history.find(r => r.id === id);
                 if (recordToDelete && recordToDelete.type === 'real' && this.state.setup.count > 0) {
-                     this.state.setup.count--;
-                     this.saveState();
-                     this.updateSetupDisplay();
+                      this.state.setup.count--;
+                      this.saveState();
+                      this.updateSetupDisplay();
                 }
 
                 history = history.filter(r => r.id !== id);
                 localStorage.setItem('history_' + this.state.lineId, JSON.stringify(history));
                 
                 this.renderHistory();
+                this.closeModal('modal-delete-record');
+                this.showToast("Registro apagado.", 2000, 'warning');
+                this.state.recordToDeleteId = null;
             },
 
             updateSessionStats: function() {
-                document.getElementById('session-count').textContent = this.state.sessionCount;
+                this.setText('session-count', this.state.sessionCount);
             }
         };
 
