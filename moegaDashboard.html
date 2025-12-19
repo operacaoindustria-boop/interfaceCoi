@@ -109,7 +109,7 @@
                             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Moegas Ativas</p><h3 class="text-4xl font-mono font-bold text-emerald-400" id="kpi-ativas">0<span class="text-lg text-slate-500">/4</span></h3></div><div class="bg-emerald-500/10 p-4 rounded-full text-emerald-400"><i data-lucide="activity" class="w-8 h-8"></i></div></div>
                         </div>
                         <div><div class="flex items-center justify-between mb-6"><div class="flex items-center gap-3"><div class="h-6 w-1 bg-indigo-500 rounded-full"></div><h2 class="text-xl text-white font-bold tracking-wide">STATUS OPERACIONAL</h2></div><div class="text-xs text-slate-500 font-mono">LIVE FEED</div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" id="moegas-container"></div></div>
-                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col mb-10"><div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm"><i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Últimas Descargas Finalizadas</h3></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-4 border-b border-slate-700">Hora</th><th class="p-4 border-b border-slate-700">Romaneio</th><th class="p-4 border-b border-slate-700">Moega</th><th class="p-4 border-b border-slate-700">Placa</th><th class="p-4 border-b border-slate-700">Produto</th><th class="p-4 border-b border-slate-700">Cultivar</th><th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th><th class="p-4 border-b border-slate-700 text-center">Status</th></tr></thead><tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col mb-10"><div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm"><i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Últimas Descargas Finalizadas</h3></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-4 border-b border-slate-700">Início</th><th class="p-4 border-b border-slate-700">Término</th><th class="p-4 border-b border-slate-700">Romaneio</th><th class="p-4 border-b border-slate-700">Moega</th><th class="p-4 border-b border-slate-700">Produto</th><th class="p-4 border-b border-slate-700">Pureza</th><th class="p-4 border-b border-slate-700">Umidade</th><th class="p-4 border-b border-slate-700">Fazenda</th><th class="p-4 border-b border-slate-700">Zona</th><th class="p-4 border-b border-slate-700">Talhão</th><th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th><th class="p-4 border-b border-slate-700 text-center">Ações</th></tr></thead><tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
                     </div>
                     <div id="view-detalhe-moega" class="hidden space-y-8 fade-in">
                         <div class="flex items-center gap-4 mb-6"><button onclick="setTab('visao-geral')" class="p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-2xl font-bold text-white uppercase tracking-wide" id="detail-title">DETALHES MOEGA 00</h2><span id="detail-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">OFFLINE</span></div>
@@ -402,7 +402,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, limit, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { firebaseConfig } from './firebase_config.js';
 
@@ -458,11 +458,11 @@
 
             // Listener for recent finished discharges
             const historicoRef = collection(db, 'moega_historico_descargas');
-            const q = query(historicoRef, orderBy("fim", "desc"), limit(10));
+            const q = query(historicoRef, orderBy("fim", "desc"), limit(50));
             onSnapshot(q, (snapshot) => {
                 historicoDescargas = [];
-                snapshot.forEach(doc => {
-                    historicoDescargas.push(doc.data());
+                snapshot.forEach(d => {
+                    historicoDescargas.push(Object.assign({ id: d.id }, d.data()));
                 });
                 console.log("Discharge history updated:", historicoDescargas);
                 atualizarDashboard();
@@ -479,25 +479,57 @@
 
              let totalPeso = 0;
              let totalCargas = 0;
-             let totalUmidade = 0;
+             let totalUmidade = 0; // fallback sum for simple average
              let cargasComUmidade = 0;
+             let umidadePesoSum = 0; // sum of umidade * peso for weighted average
+             let pesoForUmidadeSum = 0; // sum of pesos used in weighted average
 
+             // Sumariza cargas de ciclos ativos
              Object.values(ciclosAtivos).forEach(ciclo => {
                 if (ciclo.cargas) {
                     ciclo.cargas.forEach(carga => {
-                        totalPeso += Number(carga.peso) || 0;
+                        const p = Number(carga.peso) || 0;
+                        totalPeso += p;
                         totalCargas++;
-                        if(carga.umidade && Number(carga.umidade) > 0) {
-                            totalUmidade += Number(carga.umidade);
+                        if (carga.umidade && Number(carga.umidade) > 0) {
+                            const u = Number(carga.umidade);
+                            totalUmidade += u;
                             cargasComUmidade++;
+                            if (p > 0) { umidadePesoSum += u * p; pesoForUmidadeSum += p; }
                         }
                     });
+                }
+             });
+
+             // Também inclui dados do histórico de descargas recentes (por turno ou período)
+             historicoDescargas.forEach(log => {
+                // `log.peso` pode ser total do resumo; se existir, soma direta
+                if (log.peso) {
+                    totalPeso += Number(log.peso) || 0;
+                }
+                // Conta veiculos: se houver array `cargas`, soma o comprimento; senão conta 1 registro
+                if (Array.isArray(log.cargas)) {
+                    totalCargas += log.cargas.length;
+                    log.cargas.forEach(c => {
+                        if (c && c.umidade && Number(c.umidade) > 0) {
+                            const u = Number(c.umidade);
+                            totalUmidade += u; cargasComUmidade++;
+                            const p = Number(c.peso) || 0;
+                            if (p > 0) { umidadePesoSum += u * p; pesoForUmidadeSum += p; }
+                        }
+                    });
+                } else {
+                    totalCargas += 1;
                 }
              });
              
              if(document.getElementById('kpi-peso')) document.getElementById('kpi-peso').innerHTML = `${(totalPeso/1000).toFixed(1)} <span class="text-lg text-slate-500">t</span>`;
              if(document.getElementById('kpi-cargas')) document.getElementById('kpi-cargas').innerText = totalCargas;
-             if(document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = cargasComUmidade > 0 ? `${(totalUmidade/cargasComUmidade).toFixed(1)}<span class="text-lg text-slate-500">%</span>` : '0.0<span class="text-lg text-slate-500">%</span>';
+             // Calcula média ponderada por peso quando possível
+             let umidadeExibida = 0.0;
+             if (pesoForUmidadeSum > 0) umidadeExibida = umidadePesoSum / pesoForUmidadeSum;
+             else if (cargasComUmidade > 0) umidadeExibida = totalUmidade / cargasComUmidade;
+             if(document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = `${umidadeExibida.toFixed(1)}<span class="text-lg text-slate-500">%</span>`;
              if(document.getElementById('kpi-ativas')) document.getElementById('kpi-ativas').innerHTML = `${Object.keys(ciclosAtivos).length}<span class="text-lg text-slate-500">/4</span>`;
 
              if(activeTab === 'visao-geral') { 
@@ -506,6 +538,75 @@
              } else { 
                 renderMoegaDetail(parseInt(activeTab.split('-')[1])); 
              }
+        }
+
+        // --- KPI CLICK HANDLERS ---
+        function registerKpiHandlers() {
+            const scrollToTable = () => {
+                const tb = document.getElementById('table-body');
+                if (tb) tb.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+
+            const kpiPeso = document.getElementById('kpi-peso');
+            const kpiCargas = document.getElementById('kpi-cargas');
+            const kpiUmidade = document.getElementById('kpi-umidade');
+            const kpiAtivas = document.getElementById('kpi-ativas');
+
+            if (kpiPeso) { kpiPeso.style.cursor = 'pointer'; kpiPeso.addEventListener('click', () => { setTab('visao-geral'); scrollToTable(); }); }
+            if (kpiCargas) { kpiCargas.style.cursor = 'pointer'; kpiCargas.addEventListener('click', () => { showVehiclesModal(); }); }
+            if (kpiUmidade) { kpiUmidade.style.cursor = 'pointer'; kpiUmidade.addEventListener('click', () => { switchMainView('rastreabilidade'); const el = document.getElementById('rastre-view-geral'); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }
+            if (kpiAtivas) { kpiAtivas.style.cursor = 'pointer'; kpiAtivas.addEventListener('click', () => { setTab('visao-geral'); const el = document.getElementById('moegas-container'); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }); }
+        }
+
+        // Register handlers after DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try { registerKpiHandlers(); } catch(e) { console.warn('KPI handlers failed to register', e); }
+        });
+
+        // --- Highlight (flash) helper for KPI target sections ---
+        function flashElement(el, duration = 2000) {
+            if (!el) return;
+            el.classList.add('kpi-highlight');
+            setTimeout(() => { el.classList.remove('kpi-highlight'); }, duration);
+        }
+
+        // --- Vehicles modal (plates & romaneio list) ---
+        function getAllCargasList() {
+            const list = [];
+            // from active cycles
+            Object.values(ciclosAtivos).forEach(ciclo => {
+                if (Array.isArray(ciclo.cargas)) ciclo.cargas.forEach(c => { list.push(Object.assign({ moega: ciclo.moega || ciclo.moega }, c)); });
+            });
+            // from historic
+            historicoDescargas.forEach(h => {
+                if (Array.isArray(h.cargas)) h.cargas.forEach(c => { list.push(Object.assign({ moega: h.moega || h.moega }, c)); });
+                else {
+                    // if historic record is summary, add its romaneio/placa as single
+                    list.push({ romaneio: h.romaneio, placa: h.placa, timestamp: h.fim, moega: h.moega });
+                }
+            });
+            // sort by timestamp (newest first)
+            list.sort((a,b) => { const ta = a.timestamp?new Date(a.timestamp).getTime():0; const tb = b.timestamp?new Date(b.timestamp).getTime():0; return tb - ta; });
+            return list;
+        }
+
+        function showVehiclesModal() {
+            const list = getAllCargasList();
+            const modalId = 'modal-vehicles';
+            let modal = document.getElementById(modalId);
+            if (!modal) {
+                modal = document.createElement('div'); modal.id = modalId; modal.className = 'fixed inset-0 z-60 modal-backdrop flex items-center justify-center p-4';
+                modal.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-xl p-6 overflow-auto"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Veículos Lançados</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button></div><div id="vehicles-list" class="space-y-2 text-sm text-slate-300"></div></div>`;
+                document.body.appendChild(modal);
+            }
+            const container = modal.querySelector('#vehicles-list');
+            container.innerHTML = '';
+            if (list.length === 0) container.innerHTML = '<p class="text-slate-500">Nenhum veículo registrado.</p>';
+            list.forEach(item => {
+                const time = item.timestamp ? (new Date(item.timestamp).toLocaleString('pt-BR')) : '-';
+                container.innerHTML += `<div class="p-2 bg-slate-900/40 rounded border border-slate-700 flex justify-between items-center"><div><div class="font-bold text-white">${item.placa || '-'} <span class="text-slate-400 text-xs">· ${item.romaneio || '-'}</span></div><div class="text-xs text-slate-400">Moega: ${item.moega || '-' } · ${time}</div></div></div>`;
+            });
+            lucide.createIcons();
         }
         
         function updateOverviewGrid(ciclos) {
@@ -559,26 +660,51 @@
              const tbody = document.getElementById('table-body');
              if(!tbody) return;
              tbody.innerHTML = '';
-             if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
+                 if (logs.length === 0) {
+                     tbody.innerHTML = '<tr><td colspan="12" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
                 return;
              }
+             // Render more detailed table with delete action
              logs.forEach(log => {
-                const fim = new Date(log.fim);
+                const inicio = log.inicio ? new Date(log.inicio) : null;
+                const fim = log.fim ? new Date(log.fim) : null;
                 const statusHtml = '<span class="px-2 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">Finalizado</span>';
+                const produtoText = log.produto ? `${log.produto} ${log.cultivar?(' - '+log.cultivar):''}` : '---';
+
+                // Fonte preferencial: campos de nível superior no documento de histórico.
+                // Fallback: usar a primeira carga em `log.cargas[0]` quando disponível (compatibilidade com registros antigos).
+                const src = (Array.isArray(log.cargas) && log.cargas.length > 0) ? log.cargas[0] : {};
+
+                const purezaVal = (log.pureza !== undefined && log.pureza !== null) ? log.pureza : ((log.impureza !== undefined && log.impureza !== null) ? log.impureza : (src.pureza !== undefined && src.pureza !== null ? src.pureza : (src.impureza !== undefined && src.impureza !== null ? src.impureza : '-')));
+                const umidadeVal = (log.umidade !== undefined && log.umidade !== null) ? log.umidade : (src.umidade !== undefined && src.umidade !== null ? src.umidade : '-');
+                const fazendaVal = (log.fazenda !== undefined && log.fazenda !== null) ? log.fazenda : (src.fazenda !== undefined && src.fazenda !== null ? src.fazenda : '-');
+                const zonaVal = (log.zona !== undefined && log.zona !== null) ? log.zona : (src.zona !== undefined && src.zona !== null ? src.zona : '-');
+                const talhaoVal = (log.talhao !== undefined && log.talhao !== null) ? log.talhao : (src.talhao !== undefined && src.talhao !== null ? src.talhao : '-');
+
+                // Peso: preferir log.peso (resumo); se inexistente e houver cargas, somar
+                let pesoDisplay = Number(log.peso || 0);
+                if ((!pesoDisplay || pesoDisplay === 0) && Array.isArray(log.cargas) && log.cargas.length > 0) {
+                    pesoDisplay = log.cargas.reduce((s, c) => s + (Number(c.peso) || 0), 0);
+                }
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/50">
-                        <td class="p-4 text-slate-400 font-mono">${fim.toLocaleTimeString('pt-BR')}</td>
-                        <td class="p-4 font-bold">${log.romaneio}</td>
-                        <td class="p-4 text-center">${log.moega}</td>
-                        <td class="p-4 text-slate-300">${log.placa}</td>
-                        <td class="p-4 font-semibold text-white">${log.produto}</td>
-                        <td class="p-4 text-slate-400">${log.cultivar || '---'}</td>
-                        <td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(log.peso).toLocaleString('pt-BR')}</td>
-                        <td class="p-4 text-center">${statusHtml}</td>
+                        <td class="p-4 text-slate-400 font-mono">${inicio?inicio.toLocaleTimeString('pt-BR'):'--:--'}</td>
+                        <td class="p-4 text-slate-400 font-mono">${fim?fim.toLocaleTimeString('pt-BR'):'--:--'}</td>
+                        <td class="p-4 font-bold">${log.romaneio || src.romaneio || '---'}</td>
+                        <td class="p-4 text-center">${log.moega || src.moega || '---'}</td>
+                        <td class="p-4 font-semibold text-white">${produtoText}</td>
+                        <td class="p-4 text-slate-400">${purezaVal}</td>
+                        <td class="p-4 text-slate-400">${umidadeVal}</td>
+                        <td class="p-4 text-slate-300">${fazendaVal}</td>
+                        <td class="p-4 text-slate-300">${zonaVal}</td>
+                        <td class="p-4 text-slate-300">${talhaoVal}</td>
+                        <td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(pesoDisplay || 0).toLocaleString('pt-BR')}</td>
+                        <td class="p-4 text-center"><button onclick="deleteHistoricRecord('${log.id}')" title="Apagar" class="text-red-400 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
                     </tr>
                 `;
              });
+             lucide.createIcons();
         }
         
         function renderMoegaDetail(id) {
@@ -618,21 +744,55 @@
             document.getElementById('detail-cultivar').innerText = ciclo.cargas[0].cultivar || 'N/A';
             document.getElementById('detail-peso').innerHTML = `${totalKg.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
 
-            // Update table
+            // Combine cargas ativas + histórico desta moega e ordenar (mais novo -> mais velho)
+            const combined = [];
+            if (Array.isArray(ciclo.cargas)) ciclo.cargas.forEach(c => { combined.push({ timestamp: c.timestamp || c._time || new Date().toISOString(), romaneio: c.romaneio, placa: c.placa, peso: c.peso }); });
+            historicoDescargas.forEach(h => {
+                // aceitar moega como número ou string
+                if (String(h.moega) === String(id)) {
+                    if (Array.isArray(h.cargas)) {
+                        h.cargas.forEach(c => { combined.push({ timestamp: c.timestamp || h.fim || c._time || new Date().toISOString(), romaneio: c.romaneio, placa: c.placa, peso: c.peso }); });
+                    } else {
+                        combined.push({ timestamp: h.fim || h.inicio || new Date().toISOString(), romaneio: h.romaneio, placa: h.placa, peso: h.peso });
+                    }
+                }
+            });
+
+            combined.sort((a,b) => { const ta = a.timestamp?new Date(a.timestamp).getTime():0; const tb = b.timestamp?new Date(b.timestamp).getTime():0; return tb - ta; });
+
             tbody.innerHTML = '';
-            [...ciclo.cargas].reverse().forEach(c => {
+            combined.forEach(item => {
+                const t = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('pt-BR') : '--:--';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-900/50">
-                        <td class="p-3 text-slate-400 font-mono">${new Date(c.timestamp).toLocaleTimeString('pt-BR')}</td>
-                        <td class="p-3 font-bold">${c.romaneio}</td>
-                        <td class="p-3">${c.placa}</td>
-                        <td class="p-3 text-right font-bold text-emerald-400">${Number(c.peso).toLocaleString('pt-BR')}</td>
+                        <td class="p-3 text-slate-400 font-mono">${t}</td>
+                        <td class="p-3 font-bold">${item.romaneio || '---'}</td>
+                        <td class="p-3">${item.placa || '---'}</td>
+                        <td class="p-3 text-right font-bold text-emerald-400">${Number(item.peso||0).toLocaleString('pt-BR')}</td>
                     </tr>
                 `;
             });
+            lucide.createIcons();
             
             // Timer and KPI logic needs to be called regularly
             // This is just a snapshot render
+        }
+
+        // --- Delete historic record ---
+        window.deleteHistoricRecord = async function(id) {
+            if (!id) return;
+            if (!confirm('Confirma exclusão deste registro histórico?')) return;
+            try {
+                const docRef = doc(db, 'moega_historico_descargas', id);
+                await deleteDoc(docRef);
+                // remove from local cache
+                historicoDescargas = historicoDescargas.filter(h => h.id !== id);
+                atualizarDashboard();
+                mostrarAlerta('Registro removido com sucesso');
+            } catch (e) {
+                console.error('Erro ao apagar registro:', e);
+                mostrarAlerta('Erro ao apagar registro');
+            }
         }
 
         // --- GLOBAL HELPER FUNCTIONS (can be called from HTML) ---
@@ -709,6 +869,13 @@
         .back-to-menu-dashboard { position: fixed; left: 16px; bottom: 16px; z-index: 9999; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.9); border:1px solid rgba(100,116,139,0.15); border-radius:10px; color:#cbd5e1; text-decoration:none; box-shadow: 0 6px 18px rgba(2,6,23,0.6); transition: transform .12s ease, background .12s ease, color .12s ease; }
         .back-to-menu-dashboard:hover { transform: translateY(-3px); background: rgba(30,41,59,0.95); color:#fff; }
         .back-to-menu-dashboard svg { display:block; }
+        /* KPI highlight animation */
+        @keyframes kpiFlash {
+            0% { box-shadow: 0 0 0 0 rgba(96,165,250,0.3); }
+            50% { box-shadow: 0 0 0 12px rgba(96,165,250,0); }
+            100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); }
+        }
+        .kpi-highlight { animation: kpiFlash 1.6s ease-in-out; border-radius: 8px; }
     </style>
 </body>
 </html>

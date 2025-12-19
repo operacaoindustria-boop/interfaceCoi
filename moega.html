@@ -627,6 +627,26 @@
             try {
                 // Prepara objeto consolidado para histórico (Summary)
                 const totalPeso = ciclo.cargas.reduce((a,b) => a + Number(b.peso), 0);
+                // Calcular médias ponderadas (umidade/pureza) a partir das cargas
+                let umidadePesoSum = 0, impurezaPesoSum = 0, pesoForQualidade = 0;
+                let fazenda = '-', zona = '-', talhao = '-';
+                ciclo.cargas.forEach(c => {
+                    const p = Number(c.peso) || 0;
+                    const u = (c.umidade !== undefined && c.umidade !== null) ? Number(c.umidade) : NaN;
+                    const imp = (c.impureza !== undefined && c.impureza !== null) ? Number(c.impureza) : NaN;
+                    if (p > 0) {
+                        if (!isNaN(u)) { umidadePesoSum += u * p; }
+                        if (!isNaN(imp)) { impurezaPesoSum += imp * p; }
+                        pesoForQualidade += p;
+                    }
+                    if (fazenda === '-' && c.fazenda) fazenda = c.fazenda;
+                    if (zona === '-' && c.zona) zona = c.zona;
+                    if (talhao === '-' && c.talhao) talhao = c.talhao;
+                });
+
+                const umidadeMedia = pesoForQualidade > 0 ? (umidadePesoSum / pesoForQualidade) : (ciclo.cargas[0].umidade || null);
+                const impurezaMedia = pesoForQualidade > 0 ? (impurezaPesoSum / pesoForQualidade) : (ciclo.cargas[0].impureza || null);
+
                 const resumo = {
                     moega: id,
                     produto: ciclo.cargas[0].produto,
@@ -638,7 +658,12 @@
                     romaneio: ciclo.cargas.length > 1 ? 'Múltiplos' : ciclo.cargas[0].romaneio,
                     placa: ciclo.cargas.length > 1 ? 'Múltiplos' : ciclo.cargas[0].placa,
                     cargas: ciclo.cargas, // Mantém detalhe
-                    pausas: ciclo.pausas
+                    pausas: ciclo.pausas,
+                    fazenda: fazenda,
+                    zona: zona,
+                    talhao: talhao,
+                    umidade: (umidadeMedia !== null && umidadeMedia !== undefined) ? Number(umidadeMedia.toFixed(2)) : undefined,
+                    pureza: (impurezaMedia !== null && impurezaMedia !== undefined) ? Number(impurezaMedia.toFixed(2)) : undefined
                 };
 
                 const colLogs = collection(db, 'moega_historico_descargas');
