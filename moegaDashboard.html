@@ -36,7 +36,8 @@
         .dashboard-tab.tab-active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(37, 99, 235, 0.1); }
         
         /* Modal */
-        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(2px); }
+        html { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; text-size-adjust: 100%; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -84,7 +85,7 @@
             <div class="flex items-center gap-6">
                 <div class="text-right hidden md:block"><p class="text-[10px] text-slate-500 uppercase font-bold">Última Atualização</p><p id="last-update" class="text-sm font-mono text-emerald-400 font-bold">--:--:--</p></div>
                 <div class="h-8 w-px bg-slate-700 hidden md:block"></div>
-                <a href="operacao_moega.html" class="group bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i> Painel Operacional</a>
+                <a href="moega.html" class="group bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i> Painel Operacional</a>
             </div>
         </header>
 
@@ -109,15 +110,106 @@
                             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex items-center justify-between relative overflow-hidden"><div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div><div><p class="text-slate-400 text-xs font-bold uppercase mb-1 tracking-wider">Moegas Ativas</p><h3 class="text-4xl font-mono font-bold text-emerald-400" id="kpi-ativas">0<span class="text-lg text-slate-500">/4</span></h3></div><div class="bg-emerald-500/10 p-4 rounded-full text-emerald-400"><i data-lucide="activity" class="w-8 h-8"></i></div></div>
                         </div>
                         <div><div class="flex items-center justify-between mb-6"><div class="flex items-center gap-3"><div class="h-6 w-1 bg-indigo-500 rounded-full"></div><h2 class="text-xl text-white font-bold tracking-wide">STATUS OPERACIONAL</h2></div><div class="text-xs text-slate-500 font-mono">LIVE FEED</div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" id="moegas-container"></div></div>
+                        <!-- Filtro: data inicial, data final, turno (Visão Geral) -->
+                        <div class="flex items-center gap-3 mt-4 mb-4">
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Data Início</label>
+                                <input type="date" id="filter-start" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Data Fim</label>
+                                <input type="date" id="filter-end" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Turno</label>
+                                <select id="filter-turno" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"><option value="ALL">Todos</option><option value="A">Turno A</option><option value="B">Turno B</option><option value="C">Turno C</option></select>
+                            </div>
+                            <div>
+                                <button id="filter-search" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded flex items-center gap-2"><i data-lucide="search"></i><span class="text-sm font-bold">Pesquisar</span></button>
+                            </div>
+                        </div>
+                        <!-- New overview charts: Volume/Tendência, Eficiência (gauge), Ritmo por Produto, Dispersão Ritmo vs Meta -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg relative">
+                                <h4 class="font-bold text-white text-sm uppercase mb-4">Volume & Tendência (Últimos registros)</h4>
+                                <div class="absolute right-4 top-6 text-sm text-slate-400">Total: <span id="vol-total" class="font-mono font-bold text-white">0 t</span></div>
+                                <div class="h-56 relative"><canvas id="chart-volume-trend"></canvas></div>
+                            </div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg relative">
+                                <h4 class="font-bold text-white text-sm uppercase mb-4">Eficiência Média (Meta vs Real)</h4>
+                                <div class="h-56 relative flex items-center justify-center">
+                                    <canvas id="chart-efficiency-gauge" width="220" height="220"></canvas>
+                                    <div id="eff-overview-value" class="gauge-center text-white font-mono font-bold text-2xl"></div>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2">Média ponderada por tonelagem dos últimos registros.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <h4 class="font-bold text-white text-sm uppercase mb-4">Ritmo Médio por Produto</h4>
+                                <div class="h-48 relative"><canvas id="chart-ritmo-produto"></canvas></div>
+                                <p id="ritmo-prod-note" class="text-xs text-slate-400 mt-2">Ritmos calculados por registro (t/h) e média por produto.</p>
+                            </div>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                                <h4 class="font-bold text-white text-sm uppercase mb-4">Dispersão: Ritmo vs Meta</h4>
+                                <div class="h-48 relative"><canvas id="chart-dispersion"></canvas></div>
+                                <p class="text-xs text-slate-400 mt-2">Cada ponto = um registro (meta no eixo X, ritmo real no eixo Y).</p>
+                            </div>
+                        </div>
                         <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col mb-10"><div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center"><h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm"><i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Últimas Descargas Finalizadas</h3></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-4 border-b border-slate-700">Início</th><th class="p-4 border-b border-slate-700">Término</th><th class="p-4 border-b border-slate-700">Romaneio</th><th class="p-4 border-b border-slate-700">Moega</th><th class="p-4 border-b border-slate-700">Produto</th><th class="p-4 border-b border-slate-700">Pureza</th><th class="p-4 border-b border-slate-700">Umidade</th><th class="p-4 border-b border-slate-700">Fazenda</th><th class="p-4 border-b border-slate-700">Zona</th><th class="p-4 border-b border-slate-700">Talhão</th><th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th><th class="p-4 border-b border-slate-700 text-center">Ações</th></tr></thead><tbody id="table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
                     </div>
                     <div id="view-detalhe-moega" class="hidden space-y-8 fade-in">
                         <div class="flex items-center gap-4 mb-6"><button onclick="setTab('visao-geral')" class="p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-2xl font-bold text-white uppercase tracking-wide" id="detail-title">DETALHES MOEGA 00</h2><span id="detail-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">OFFLINE</span></div>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg lg:col-span-2 relative overflow-hidden"><div class="flex justify-between items-start mb-6"><div><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Produto em Processamento</p><h3 class="text-3xl font-bold text-white flex items-center gap-3" id="detail-produto">---</h3><p class="text-sm text-indigo-400 font-mono mt-1" id="detail-cultivar">---</p></div><div class="text-right"><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Acumulado no Ciclo</p><h3 class="text-4xl font-mono font-bold text-white" id="detail-peso">0 <span class="text-lg text-slate-500">kg</span></h3></div></div><div class="mt-8"><div class="flex justify-between text-xs mb-2"><span class="text-slate-400 font-bold uppercase">Produtividade Atual</span><span class="text-white font-mono font-bold"><span id="detail-kpi">0</span> / <span id="detail-meta">0</span> t/h</span></div><div class="w-full bg-slate-900 h-4 rounded-full overflow-hidden border border-slate-700"><div id="detail-bar-kpi" class="h-full bg-emerald-500 transition-all duration-1000" style="width: 0%"></div></div></div></div>
+                            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg lg:col-span-2 relative overflow-hidden">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div></div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Acumulado no Ciclo</p>
+                                        <h3 class="text-4xl font-mono font-bold text-white" id="detail-peso">0 <span class="text-lg text-slate-500">kg</span></h3>
+                                    </div>
+                                </div>
+                                <div class="mt-8">
+                                    <div class="flex justify-between text-xs mb-2"><span class="text-slate-400 font-bold uppercase">Produtividade Atual</span><span class="text-white font-mono font-bold"><span id="detail-kpi">0</span> / <span id="detail-meta">0</span> t/h</span></div>
+                                    <div class="w-full bg-slate-900 h-4 rounded-full overflow-hidden border border-slate-700"><div id="detail-bar-kpi" class="h-full bg-emerald-500 transition-all duration-1000" style="width: 0%"></div></div>
+                                </div>
+                            </div>
                             <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg flex flex-col justify-center items-center text-center"><div class="bg-slate-900/50 p-4 rounded-full border border-slate-600 mb-4"><i data-lucide="clock" class="w-8 h-8 text-blue-400"></i></div><p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Tempo de Operação</p><h3 class="text-4xl font-mono font-bold text-white mb-1" id="detail-timer">00:00:00</h3><p class="text-xs text-slate-500" id="detail-estimativa">Estimativa: --:--:--</p></div>
                         </div>
-                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg"><div class="p-4 border-b border-slate-700 bg-slate-800/50"><h4 class="font-bold text-white text-sm uppercase tracking-wider">Histórico de Cargas - Ciclo Atual</h4></div><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold"><tr><th class="p-3">Horário</th><th class="p-3">Romaneio</th><th class="p-3">Placa</th><th class="p-3 text-right">Peso (Kg)</th></tr></thead><tbody id="detail-table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div>
+                        <!-- Moega specific charts -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg lg:col-span-2">
+                                <h4 class="font-bold text-white text-sm uppercase mb-3">Tendência de Produção (Moega)</h4>
+                                <div class="h-44 relative"><canvas id="chart-moega-trend"></canvas></div>
+                            </div>
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                                <h4 class="font-bold text-white text-sm uppercase mb-3">Eficiência (Meta vs Real)</h4>
+                                <div class="h-44 relative flex items-center justify-center">
+                                    <canvas id="chart-moega-efficiency" width="160" height="160"></canvas>
+                                    <div id="moega-eff-value" class="gauge-center text-white font-mono font-bold text-xl"></div>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2">Eficiência média ponderada desta moega.</p>
+                            </div>
+                        </div>
+                        <!-- Filtro (Moega detalhe): data inicial, data final, turno -->
+                        <div class="flex items-center gap-3 mt-4 mb-4">
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Data Início</label>
+                                <input type="date" id="filter-start-moega" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Data Fim</label>
+                                <input type="date" id="filter-end-moega" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400">Turno</label>
+                                <select id="filter-turno-moega" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"><option value="ALL">Todos</option><option value="A">Turno A</option><option value="B">Turno B</option><option value="C">Turno C</option></select>
+                            </div>
+                            <div>
+                                <button id="filter-search-moega" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded flex items-center gap-2"><i data-lucide="search"></i><span class="text-sm font-bold">Pesquisar</span></button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg"><div class="p-4 border-b border-slate-700 bg-slate-800/50"><h4 class="font-bold text-white text-sm uppercase tracking-wider">Histórico de Cargas - Ciclo Atual</h4></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider"><tr><th class="p-3">Início</th><th class="p-3">Término</th><th class="p-3">Romaneio</th><th class="p-3">Placa</th><th class="p-3">Produto</th><th class="p-3">Pureza</th><th class="p-3">Umidade</th><th class="p-3">Fazenda</th><th class="p-3">Zona</th><th class="p-3">Talhão</th><th class="p-3 text-right">Peso (Kg)</th></tr></thead><tbody id="detail-table-body" class="text-sm divide-y divide-slate-700 text-slate-300"></tbody></table></div></div>
                     </div>
                 </main>
             </div>
@@ -400,15 +492,45 @@
         <span id="toast-msg">Mensagem</span>
     </div>
 
+    <!-- LOGIN MODAL (simples, permite autenticação dentro do dashboard) -->
+    <div id="login-modal" class="hidden fixed inset-0 z-[100] modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <div class="flex flex-col items-center mb-4">
+                <div class="bg-indigo-600 p-3 rounded-lg mb-3"><i data-lucide="shield" class="text-white h-8 w-8"></i></div>
+                <h3 class="text-lg font-bold text-white">Entrar - Dashboard</h3>
+                <p class="text-xs text-slate-400">Autentique-se para visualizar dados em tempo real</p>
+            </div>
+            <div class="space-y-3">
+                <div><label for="login-email" class="text-xs text-slate-400 uppercase font-bold mb-1 block">Email</label><input id="login-email" type="email" class="w-full h-11 bg-slate-900 border border-slate-600 rounded px-3 text-white" placeholder="usuario@email.com"></div>
+                <div><label for="login-password" class="text-xs text-slate-400 uppercase font-bold mb-1 block">Senha</label><input id="login-password" type="password" class="w-full h-11 bg-slate-900 border border-slate-600 rounded px-3 text-white" placeholder="••••••••"></div>
+                <p id="login-error" class="text-red-400 text-sm hidden"></p>
+                <div class="flex gap-2"><button id="login-submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded font-bold">Entrar</button><button onclick="document.getElementById('login-modal').classList.add('hidden')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded font-bold">Cancelar</button></div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, limit, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { firebaseConfig } from './firebase_config.js';
 
         lucide.createIcons();
         
         let METAS_PRODUTIVIDADE = {};
+        // Chart instances
+        let chartTrend = null;
+        let chartStopCategory = null;
+        let chartStopMoega = null;
+        let chartReportComp = null;
+        // New charts
+        let chartVolumeTrend = null;
+        let chartEfficiencyGauge = null;
+        let chartRitmoProduto = null;
+        let chartDispersion = null;
+        // Moega specific
+        let chartMoegaTrend = null;
+        let chartMoegaEfficiency = null;
         const DEFAULTS = { 'BRAQUIARIA': 30, 'CROTALARIA': 40, 'FEIJAO_GUANDU': 70, 'FEIJAO_PORCO': 50, 'MILHETO': 40, 'SOJA': 80 };
         const moegasConfig = [1, 2, 3, 4];
         let activeTab = 'visao-geral', activeMainView = 'dashboard';
@@ -416,6 +538,8 @@
         let ciclosAtivos = {};
         let historicoDescargas = [];
         let db;
+        // filtros ativos aplicados globalmente (sincroniza entre visões)
+        let activeFilters = { start: null, end: null, turno: 'ALL' };
 
         function initFirebase() {
             if (!firebaseConfig) {
@@ -436,10 +560,12 @@
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     console.log("User is authenticated:", user.uid);
+                    document.getElementById('login-modal')?.classList.add('hidden');
                     initFirestoreListeners();
                 } else {
-                    console.log("User is signed out. Redirecting to login page.");
-                    window.location.href = 'index.html';
+                    console.log("User is not authenticated. Showing login modal.");
+                    // Show a lightweight login modal instead of redirecting
+                    document.getElementById('login-modal')?.classList.remove('hidden');
                 }
             });
         }
@@ -532,12 +658,18 @@
              if(document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = `${umidadeExibida.toFixed(1)}<span class="text-lg text-slate-500">%</span>`;
              if(document.getElementById('kpi-ativas')) document.getElementById('kpi-ativas').innerHTML = `${Object.keys(ciclosAtivos).length}<span class="text-lg text-slate-500">/4</span>`;
 
-             if(activeTab === 'visao-geral') { 
-                updateOverviewGrid(ciclosAtivos); 
-                updateRecentTable(historicoDescargas);
-             } else { 
-                renderMoegaDetail(parseInt(activeTab.split('-')[1])); 
-             }
+                 if(activeTab === 'visao-geral') {
+                     updateOverviewGrid(ciclosAtivos);
+                     // garante que activeFilters esteja sincronizado com os inputs gerais
+                     syncFiltersFromInputs('geral');
+                     const filteredLogs = applyFiltersToLogs(historicoDescargas, activeFilters);
+                     updateRecentTable(filteredLogs);
+                 } else {
+                     // passar filtros do detalhe da moega
+                     const mId = parseInt(activeTab.split('-')[1]);
+                     renderMoegaDetail(mId);
+                 }
+                 try { updateCharts(); } catch(e) { console.warn('updateCharts failed', e); }
         }
 
         // --- KPI CLICK HANDLERS ---
@@ -560,7 +692,60 @@
 
         // Register handlers after DOM ready
         document.addEventListener('DOMContentLoaded', () => {
-            try { registerKpiHandlers(); } catch(e) { console.warn('KPI handlers failed to register', e); }
+                    try { registerKpiHandlers(); initCharts(); } catch(e) { console.warn('KPI handlers / charts failed to register', e); }
+                    // attach filter buttons and sync listeners
+                    try {
+                        const fBtn = document.getElementById('filter-search');
+                        const fBtnMo = document.getElementById('filter-search-moega');
+
+                        // Quando qualquer input de filtro mudar, sincroniza e atualiza as views
+                        ['filter-start','filter-end','filter-turno'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (!el) return;
+                            el.addEventListener('change', () => { syncFiltersFromInputs('geral'); atualizarDashboard(); });
+                        });
+                        ['filter-start-moega','filter-end-moega','filter-turno-moega'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (!el) return;
+                            el.addEventListener('change', () => {
+                                syncFiltersFromInputs('moega');
+                                if (activeTab && activeTab.startsWith('moega')) renderMoegaDetail(parseInt(activeTab.split('-')[1] || 1));
+                                else atualizarDashboard();
+                            });
+                        });
+
+                        if (fBtn) fBtn.addEventListener('click', () => { syncFiltersFromInputs('geral'); atualizarDashboard(); });
+                        if (fBtnMo) fBtnMo.addEventListener('click', () => { syncFiltersFromInputs('moega'); renderMoegaDetail(parseInt(activeTab.split('-')[1] || 1)); });
+
+                        // Inicializa filtros a partir dos inputs gerais existentes
+                        syncFiltersFromInputs('geral');
+                    } catch(e) { console.warn('filter handlers failed', e); }
+        });
+
+        // Initialize firebase when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try { initFirebase(); } catch(e) { console.error('initFirebase failed', e); }
+        });
+
+        // Login submit handler for dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginBtn = document.getElementById('login-submit');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', async () => {
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    const errEl = document.getElementById('login-error');
+                    if (errEl) errEl.classList.add('hidden');
+                    try {
+                        const auth = getAuth();
+                        await signInWithEmailAndPassword(auth, email, password);
+                        document.getElementById('login-modal')?.classList.add('hidden');
+                    } catch (err) {
+                        console.error('Login failed', err);
+                        if (errEl) { errEl.innerText = err.message || 'Erro no login'; errEl.classList.remove('hidden'); }
+                    }
+                });
+            }
         });
 
         // --- Highlight (flash) helper for KPI target sections ---
@@ -596,16 +781,45 @@
             let modal = document.getElementById(modalId);
             if (!modal) {
                 modal = document.createElement('div'); modal.id = modalId; modal.className = 'fixed inset-0 z-60 modal-backdrop flex items-center justify-center p-4';
-                modal.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-xl p-6 overflow-auto"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Veículos Lançados</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button></div><div id="vehicles-list" class="space-y-2 text-sm text-slate-300"></div></div>`;
+                modal.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-xl p-6 overflow-auto"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Veículos Lançados</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Veículos"><i data-lucide="x"></i></button></div><div id="vehicles-list" class="space-y-2 text-sm text-slate-300"></div></div>`;
                 document.body.appendChild(modal);
             }
             const container = modal.querySelector('#vehicles-list');
             container.innerHTML = '';
-            if (list.length === 0) container.innerHTML = '<p class="text-slate-500">Nenhum veículo registrado.</p>';
-            list.forEach(item => {
-                const time = item.timestamp ? (new Date(item.timestamp).toLocaleString('pt-BR')) : '-';
-                container.innerHTML += `<div class="p-2 bg-slate-900/40 rounded border border-slate-700 flex justify-between items-center"><div><div class="font-bold text-white">${item.placa || '-'} <span class="text-slate-400 text-xs">· ${item.romaneio || '-'}</span></div><div class="text-xs text-slate-400">Moega: ${item.moega || '-' } · ${time}</div></div></div>`;
-            });
+            if (list.length === 0) {
+                container.innerHTML = '<p class="text-slate-500">Nenhum veículo registrado.</p>';
+            } else {
+                // Agrupar por romaneio -> placas
+                const groups = {};
+                list.forEach(item => {
+                    const rom = item.romaneio || 'SEM_ROMANEIO';
+                    if (!groups[rom]) groups[rom] = { romaneio: rom === 'SEM_ROMANEIO' ? '-' : rom, placas: new Set(), moegas: new Set(), times: [] };
+                    if (item.placa) groups[rom].placas.add(item.placa);
+                    if (item.moega) groups[rom].moegas.add(String(item.moega));
+                    if (item.timestamp) groups[rom].times.push(new Date(item.timestamp).getTime());
+                });
+
+                // Ordenar romaneios mais recentes primeiro (pelo último timestamp registrado)
+                const groupedList = Object.values(groups).map(g => ({ ...g, last: g.times.length? Math.max(...g.times):0 }));
+                groupedList.sort((a,b)=> b.last - a.last);
+
+                groupedList.forEach(g => {
+                    const placasArr = Array.from(g.placas);
+                    const moegasArr = Array.from(g.moegas);
+                    const timeText = g.last ? new Date(g.last).toLocaleString('pt-BR') : '-';
+                    container.innerHTML += `
+                        <div class="p-3 bg-slate-900/30 rounded border border-slate-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-sm font-bold text-white">Romaneio: ${g.romaneio}</div>
+                                <div class="text-xs text-slate-400">${placasArr.length} placa(s) · Moega(s): ${moegasArr.join(', ') || '-'} · ${timeText}</div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${placasArr.map(p => `<span class="text-xs px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">${p}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
             lucide.createIcons();
         }
         
@@ -639,7 +853,7 @@
                 }
                 
                 const moegaHTML = `
-                    <div class="bg-slate-800 p-5 rounded-2xl border ${borderColor} shadow-xl flex flex-col justify-between transition-all hover:border-blue-500 cursor-pointer" onclick="setTab('moega-${id}')">
+                    <div title="Abrir detalhes Moega 0${id}" role="button" tabindex="0" class="bg-slate-800 p-5 rounded-2xl border ${borderColor} shadow-xl flex flex-col justify-between transition-all hover:border-blue-500 cursor-pointer" onclick="setTab('moega-${id}')">
                         <div class="flex justify-between items-center">
                             <h4 class="text-lg font-bold text-white">Moega 0${id}</h4>
                             <div class="flex items-center gap-2">
@@ -654,6 +868,26 @@
                 `;
                 container.innerHTML += moegaHTML;
             });
+        }
+        
+        // Tab handler to switch between overview and per-moega detail
+        function setTab(tab) {
+            activeTab = tab;
+            // update tab classes
+            document.querySelectorAll('.dashboard-tab').forEach(b => b.classList.remove('tab-active'));
+            const btn = document.getElementById(`tab-${tab}`);
+            if (btn) btn.classList.add('tab-active');
+
+            if (tab === 'visao-geral') {
+                document.getElementById('view-visao-geral').classList.remove('hidden');
+                document.getElementById('view-detalhe-moega').classList.add('hidden');
+                atualizarDashboard();
+            } else if (tab.startsWith('moega-')) {
+                const id = parseInt(tab.split('-')[1]);
+                document.getElementById('view-visao-geral').classList.add('hidden');
+                document.getElementById('view-detalhe-moega').classList.remove('hidden');
+                renderMoegaDetail(id);
+            }
         }
         
         function updateRecentTable(logs) {
@@ -706,76 +940,757 @@
              });
              lucide.createIcons();
         }
+
+        // --- Helpers: format time and sum pauses durations ---
+        function sumPausesDuration(pausas, fallbackEndMs) {
+            if (!Array.isArray(pausas) || pausas.length === 0) return 0;
+            let total = 0;
+            const now = Date.now();
+            pausas.forEach(p => {
+                try {
+                    const inicio = p.inicio ? new Date(p.inicio).getTime() : null;
+                    let fim = p.fim ? new Date(p.fim).getTime() : null;
+                    if (!inicio && !fim) return;
+                    if (!fim) fim = fallbackEndMs || now;
+                    if (!inicio) inicio = fim; // zero
+                    total += Math.max(0, fim - inicio);
+                } catch (e) {
+                    // ignore malformed pause
+                }
+            });
+            return total;
+        }
+
+        function formatMs(ms) {
+            if (!ms || ms <= 0) return '00:00:00';
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+        }
+
+        // --- Filter helpers ---
+        function readFilters(area) {
+            try {
+                if (area === 'geral') {
+                    const s = document.getElementById('filter-start')?.value || null;
+                    const e = document.getElementById('filter-end')?.value || null;
+                    const t = document.getElementById('filter-turno')?.value || 'ALL';
+                    return { start: s, end: e, turno: t };
+                } else if (area === 'moega') {
+                    const s = document.getElementById('filter-start-moega')?.value || null;
+                    const e = document.getElementById('filter-end-moega')?.value || null;
+                    const t = document.getElementById('filter-turno-moega')?.value || 'ALL';
+                    return { start: s, end: e, turno: t };
+                }
+            } catch (e) { console.warn('readFilters error', e); }
+            return { start: null, end: null, turno: 'ALL' };
+        }
+
+        function applyFiltersToLogs(logs, filters) {
+            if (!filters) return logs;
+            const out = logs.filter(l => {
+                try {
+                    // determine timestamp to compare: prefer fim then inicio
+                    const ts = l.fim ? new Date(l.fim).getTime() : (l.inicio ? new Date(l.inicio).getTime() : null);
+                    if (!ts) return false;
+                    if (filters.start) {
+                        const sMs = new Date(filters.start + 'T00:00:00').getTime();
+                        if (ts < sMs) return false;
+                    }
+                    if (filters.end) {
+                        const eMs = new Date(filters.end + 'T23:59:59').getTime();
+                        if (ts > eMs) return false;
+                    }
+                    if (filters.turno && filters.turno !== 'ALL') {
+                        // if the log has a `turno` property, compare; otherwise keep
+                        if (l.turno && String(l.turno).toUpperCase() !== String(filters.turno).toUpperCase()) return false;
+                    }
+                    return true;
+                } catch (e) { return false; }
+            });
+            return out;
+        }
+
+        // Sincroniza os inputs de filtro entre as áreas (geral <-> moega)
+        function syncFiltersFromInputs(source) {
+            try {
+                if (source === 'moega') {
+                    activeFilters.start = document.getElementById('filter-start-moega')?.value || null;
+                    activeFilters.end = document.getElementById('filter-end-moega')?.value || null;
+                    activeFilters.turno = document.getElementById('filter-turno-moega')?.value || 'ALL';
+                } else {
+                    activeFilters.start = document.getElementById('filter-start')?.value || null;
+                    activeFilters.end = document.getElementById('filter-end')?.value || null;
+                    activeFilters.turno = document.getElementById('filter-turno')?.value || 'ALL';
+                }
+
+                // atualiza os outros inputs para refletir a escolha
+                const s = activeFilters.start || '';
+                const e = activeFilters.end || '';
+                const t = activeFilters.turno || 'ALL';
+                const inputs = ['filter-start','filter-end','filter-turno','filter-start-moega','filter-end-moega','filter-turno-moega'];
+                inputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (el.tagName === 'SELECT') el.value = t;
+                    else el.value = (id.includes('start')? s : (id.includes('end')? e : el.value));
+                });
+            } catch (e) { console.warn('syncFiltersFromInputs error', e); }
+        }
         
         function renderMoegaDetail(id) {
             const ciclo = ciclosAtivos[id];
+            console.log('renderMoegaDetail called for id=', id, 'cicloKeyExists=', !!ciclosAtivos[id]);
+            console.log('ciclosAtivos keys sample:', Object.keys(ciclosAtivos).slice(0,10));
+            console.log('historicoDescargas length:', historicoDescargas.length);
 
             document.getElementById('detail-title').innerText = `DETALHES MOEGA 0${id}`;
             const badge = document.getElementById('detail-status-badge');
             const tbody = document.getElementById('detail-table-body');
-            
-            if(!ciclo) {
+
+            // If ciclo exists, show operating status; otherwise still render history but mark OFFLINE
+            if (ciclo) {
+                if (ciclo.status === 'PAUSADO') {
+                    badge.innerText = 'PAUSADO';
+                    badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 animate-pulse';
+                } else {
+                    badge.innerText = 'OPERANDO';
+                    badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+                }
+
+                // Update accumulated weight from active ciclo
+                const totalKg = Array.isArray(ciclo.cargas) ? ciclo.cargas.reduce((acc, c) => acc + Number(c.peso || 0), 0) : 0;
+                document.getElementById('detail-peso').innerHTML = `${totalKg.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
+            } else {
                 badge.innerText = 'OFFLINE';
                 badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600';
-                document.getElementById('detail-produto').innerText = '---';
-                document.getElementById('detail-cultivar').innerText = '---';
                 document.getElementById('detail-peso').innerHTML = '0 <span class="text-lg text-slate-500">kg</span>';
-                document.getElementById('detail-timer').innerText = '00:00:00';
-                document.getElementById('detail-estimativa').innerText = 'Estimativa: --:--:--';
-                document.getElementById('detail-kpi').innerText = '0';
-                document.getElementById('detail-meta').innerText = '0';
-                document.getElementById('detail-bar-kpi').style.width = '0%';
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-slate-500">Moega livre. Nenhum ciclo ativo.</td></tr>';
-                return;
             }
 
-            // Update badge
-            if (ciclo.status === 'PAUSADO') {
-                badge.innerText = 'PAUSADO';
-                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 animate-pulse';
-            } else {
-                badge.innerText = 'OPERANDO';
-                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
-            }
-
-            // Update main info
-            const totalKg = ciclo.cargas.reduce((acc, c) => acc + Number(c.peso), 0);
-            document.getElementById('detail-produto').innerText = ciclo.cargas[0].produto;
-            document.getElementById('detail-cultivar').innerText = ciclo.cargas[0].cultivar || 'N/A';
-            document.getElementById('detail-peso').innerHTML = `${totalKg.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
-
-            // Combine cargas ativas + histórico desta moega e ordenar (mais novo -> mais velho)
+            // Combine cargas ativas (if any) + histórico desta moega and render
             const combined = [];
-            if (Array.isArray(ciclo.cargas)) ciclo.cargas.forEach(c => { combined.push({ timestamp: c.timestamp || c._time || new Date().toISOString(), romaneio: c.romaneio, placa: c.placa, peso: c.peso }); });
-            historicoDescargas.forEach(h => {
-                // aceitar moega como número ou string
+            if (ciclo && Array.isArray(ciclo.cargas)) {
+                ciclosAtivos[id].cargas.forEach(c => {
+                    combined.push({
+                        inicio: c.timestamp || c._time || ciclo.inicio || new Date().toISOString(),
+                        fim: c.timestamp || c._time || ciclo.inicio || new Date().toISOString(),
+                        romaneio: c.romaneio || '-',
+                        placa: c.placa || '-',
+                        produto: c.produto || (ciclo.cargas[0] && ciclo.cargas[0].produto) || '-',
+                        cultivar: c.cultivar || (ciclo.cargas[0] && ciclo.cargas[0].cultivar) || '-',
+                        pureza: (c.pureza !== undefined && c.pureza !== null) ? c.pureza : (c.impureza !== undefined && c.impureza !== null ? c.impureza : '-'),
+                        umidade: (c.umidade !== undefined && c.umidade !== null) ? c.umidade : '-',
+                        fazenda: c.fazenda || '-',
+                        zona: c.zona || '-',
+                        talhao: c.talhao || '-',
+                        peso: Number(c.peso || 0)
+                    });
+                });
+            }
+
+            // Aplica filtros ao histórico antes de montar a lista combinada
+            const histFiltered = applyFiltersToLogs(historicoDescargas, activeFilters);
+            histFiltered.forEach(h => {
                 if (String(h.moega) === String(id)) {
-                    if (Array.isArray(h.cargas)) {
-                        h.cargas.forEach(c => { combined.push({ timestamp: c.timestamp || h.fim || c._time || new Date().toISOString(), romaneio: c.romaneio, placa: c.placa, peso: c.peso }); });
+                    if (Array.isArray(h.cargas) && h.cargas.length > 0) {
+                        h.cargas.forEach(c => {
+                            combined.push({
+                                inicio: c.timestamp || h.inicio || h.fim || new Date().toISOString(),
+                                fim: c.timestamp || h.fim || h.inicio || new Date().toISOString(),
+                                romaneio: c.romaneio || h.romaneio || '-',
+                                placa: c.placa || h.placa || '-',
+                                produto: c.produto || h.produto || '-',
+                                cultivar: c.cultivar || h.cultivar || '-',
+                                pureza: (c.pureza !== undefined && c.pureza !== null) ? c.pureza : ((c.impureza !== undefined && c.impureza !== null) ? c.impureza : (h.pureza || h.impureza || '-')),
+                                umidade: (c.umidade !== undefined && c.umidade !== null) ? c.umidade : (h.umidade !== undefined && h.umidade !== null ? h.umidade : '-'),
+                                fazenda: c.fazenda || h.fazenda || '-',
+                                zona: c.zona || h.zona || '-',
+                                talhao: c.talhao || h.talhao || '-',
+                                peso: Number(c.peso || 0)
+                            });
+                        });
                     } else {
-                        combined.push({ timestamp: h.fim || h.inicio || new Date().toISOString(), romaneio: h.romaneio, placa: h.placa, peso: h.peso });
+                        combined.push({
+                            inicio: h.inicio || h.fim || new Date().toISOString(),
+                            fim: h.fim || h.inicio || new Date().toISOString(),
+                            romaneio: h.romaneio || '-',
+                            placa: h.placa || '-',
+                            produto: h.produto || '-',
+                            cultivar: h.cultivar || '-',
+                            pureza: (h.pureza !== undefined && h.pureza !== null) ? h.pureza : (h.impureza !== undefined && h.impureza !== null ? h.impureza : '-'),
+                            umidade: (h.umidade !== undefined && h.umidade !== null) ? h.umidade : '-',
+                            fazenda: h.fazenda || '-',
+                            zona: h.zona || '-',
+                            talhao: h.talhao || '-',
+                            peso: Number(h.peso || 0)
+                        });
                     }
                 }
             });
 
-            combined.sort((a,b) => { const ta = a.timestamp?new Date(a.timestamp).getTime():0; const tb = b.timestamp?new Date(b.timestamp).getTime():0; return tb - ta; });
+            combined.sort((a,b) => { const ta = a.fim?new Date(a.fim).getTime():0; const tb = b.fim?new Date(b.fim).getTime():0; return tb - ta; });
 
             tbody.innerHTML = '';
-            combined.forEach(item => {
-                const t = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('pt-BR') : '--:--';
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-900/50">
-                        <td class="p-3 text-slate-400 font-mono">${t}</td>
-                        <td class="p-3 font-bold">${item.romaneio || '---'}</td>
-                        <td class="p-3">${item.placa || '---'}</td>
-                        <td class="p-3 text-right font-bold text-emerald-400">${Number(item.peso||0).toLocaleString('pt-BR')}</td>
-                    </tr>
-                `;
-            });
+            if (combined.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-slate-500">Nenhuma descarga para esta moega.</td></tr>';
+            } else {
+                combined.forEach(item => {
+                    const inicioText = item.inicio ? new Date(item.inicio).toLocaleTimeString('pt-BR') : '--:--';
+                    const fimText = item.fim ? new Date(item.fim).toLocaleTimeString('pt-BR') : '--:--';
+                    const produtoText = item.produto ? `${item.produto} ${item.cultivar?(' - '+item.cultivar):''}` : '---';
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-900/50">
+                            <td class="p-3 text-slate-400 font-mono">${inicioText}</td>
+                            <td class="p-3 text-slate-400 font-mono">${fimText}</td>
+                            <td class="p-3 font-bold">${item.romaneio || '---'}</td>
+                            <td class="p-3 text-center">${item.placa || '---'}</td>
+                            <td class="p-3 font-semibold text-white">${produtoText}</td>
+                            <td class="p-3 text-slate-400">${item.pureza}</td>
+                            <td class="p-3 text-slate-400">${item.umidade}</td>
+                            <td class="p-3 text-slate-300">${item.fazenda}</td>
+                            <td class="p-3 text-slate-300">${item.zona}</td>
+                            <td class="p-3 text-slate-300">${item.talhao}</td>
+                            <td class="p-3 text-right font-bold text-emerald-400">${Number(item.peso || 0).toLocaleString('pt-BR')}</td>
+                        </tr>
+                    `;
+                });
+            }
             lucide.createIcons();
-            
-            // Timer and KPI logic needs to be called regularly
-            // This is just a snapshot render
+
+            // --- Calcular tempo total de operação desta moega (histórico + ciclo ativo) descontando pausas ---
+            try {
+                let totalMs = 0;
+                let counted = 0;
+
+                historicoDescargas.forEach(h => {
+                    if (String(h.moega) !== String(id)) return;
+                    const inicio = h.inicio ? new Date(h.inicio).getTime() : null;
+                    const fim = h.fim ? new Date(h.fim).getTime() : null;
+                    if (inicio && fim) {
+                        let dur = Math.max(0, fim - inicio);
+                        dur -= sumPausesDuration(h.pausas, fim);
+                        totalMs += Math.max(0, dur);
+                        counted++;
+                    } else if (Array.isArray(h.cargas)) {
+                        h.cargas.forEach(c => {
+                            const ci = c.timestamp ? new Date(c.timestamp).getTime() : null;
+                            const cf = c.fim ? new Date(c.fim).getTime() : null;
+                            if (ci && cf) {
+                                totalMs += Math.max(0, cf - ci);
+                                counted++;
+                            }
+                        });
+                    }
+                });
+
+                if (ciclo && ciclo.inicio) {
+                    const inicio = new Date(ciclo.inicio).getTime();
+                    const fim = ciclo.fim ? new Date(ciclo.fim).getTime() : Date.now();
+                    let dur = Math.max(0, fim - inicio);
+                    dur -= sumPausesDuration(ciclo.pausas, fim);
+                    totalMs += Math.max(0, dur);
+                    counted++;
+                }
+
+                const timerEl = document.getElementById('detail-timer');
+                const estEl = document.getElementById('detail-estimativa');
+                if (timerEl) timerEl.innerText = formatMs(totalMs);
+                if (estEl) estEl.innerText = `Registros contabilizados: ${counted}`;
+            } catch (e) { console.warn('Erro calculando tempo de operação:', e); }
+        }
+
+        // --- Charts: init and update using Chart.js ---
+        function initCharts() {
+            try {
+                const ctxTrend = document.getElementById('chart-report-trend');
+                if (ctxTrend && !chartTrend) {
+                    chartTrend = new Chart(ctxTrend.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: [], datasets: [{ label: 'Produtividade (t/h)', data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)', tension: 0.25 }] },
+                        options: { responsive:true, plugins:{legend:{display:true}}, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                const ctxStopCat = document.getElementById('chart-stop-category');
+                if (ctxStopCat && !chartStopCategory) {
+                    chartStopCategory = new Chart(ctxStopCat.getContext('2d'), {
+                        type: 'doughnut',
+                        data: { labels: [], datasets: [{ label: 'Paradas', data: [], backgroundColor: ['#ef4444','#f59e0b','#10b981','#60a5fa','#8b5cf6'] }] },
+                        options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+                    });
+                }
+
+                const ctxStopMoega = document.getElementById('chart-stop-moega');
+                if (ctxStopMoega && !chartStopMoega) {
+                    chartStopMoega = new Chart(ctxStopMoega.getContext('2d'), {
+                        type: 'bar',
+                        data: { labels: [], datasets: [{ label: 'Tempo Parado (min)', data: [], backgroundColor: '#f97316' }] },
+                        options: { responsive:true, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                const ctxComp = document.getElementById('chart-report-comp');
+                if (ctxComp && !chartReportComp) {
+                    chartReportComp = new Chart(ctxComp.getContext('2d'), {
+                        type: 'bar',
+                        data: { labels: [], datasets: [{ label: 'Toneladas', data: [], backgroundColor: ['#10b981','#60a5fa','#f59e0b','#ef4444'] }] },
+                        options: { responsive:true, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                // Volume / Trend overview
+                const ctxVolume = document.getElementById('chart-volume-trend');
+                if (ctxVolume && !chartVolumeTrend) {
+                    chartVolumeTrend = new Chart(ctxVolume.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: [], datasets: [{ label: 'Volume (t)', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', tension: 0.25 }] },
+                        options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                // Efficiency gauge (simulated with doughnut)
+                const ctxGauge = document.getElementById('chart-efficiency-gauge');
+                if (ctxGauge && !chartEfficiencyGauge) {
+                    chartEfficiencyGauge = new Chart(ctxGauge.getContext('2d'), {
+                        type: 'doughnut',
+                        data: { labels: ['Eficiência','Resto'], datasets: [{ data: [0,100], backgroundColor: ['#60a5fa','#1f2937'], hoverBackgroundColor: ['#60a5fa','#1f2937'], borderWidth: 0 }] },
+                        options: { cutout: '75%', responsive:true, plugins:{legend:{display:false}, tooltip:{enabled:false}} }
+                    });
+                }
+
+                // Ritmo médio por produto (bar)
+                const ctxRitmoProd = document.getElementById('chart-ritmo-produto');
+                if (ctxRitmoProd && !chartRitmoProduto) {
+                    chartRitmoProduto = new Chart(ctxRitmoProd.getContext('2d'), {
+                        type: 'bar',
+                        data: { labels: [], datasets: [{ label: 'Ritmo (t/h)', data: [], backgroundColor: '#60a5fa' }] },
+                        options: { responsive:true, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                // Dispersion (scatter) Ritmo vs Meta
+                const ctxDisp = document.getElementById('chart-dispersion');
+                if (ctxDisp && !chartDispersion) {
+                    chartDispersion = new Chart(ctxDisp.getContext('2d'), {
+                        type: 'scatter',
+                        data: { datasets: [{ label: 'Ritmo vs Meta', data: [], backgroundColor: '#f97316' }] },
+                        options: { responsive:true, scales:{ x: { title: { display:true, text:'Meta (t/h)' } }, y: { title: { display:true, text:'Ritmo Real (t/h)' } } }, plugins:{legend:{display:false}} }
+                    });
+                }
+
+                // Moega-specific charts
+                const ctxMoegaTrend = document.getElementById('chart-moega-trend');
+                if (ctxMoegaTrend && !chartMoegaTrend) {
+                    chartMoegaTrend = new Chart(ctxMoegaTrend.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: [], datasets: [{ label: 'Ritmo (t/h)', data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.06)', tension: 0.25 }] },
+                        options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+                    });
+                }
+
+                const ctxMoegaGauge = document.getElementById('chart-moega-efficiency');
+                if (ctxMoegaGauge && !chartMoegaEfficiency) {
+                    chartMoegaEfficiency = new Chart(ctxMoegaGauge.getContext('2d'), {
+                        type: 'doughnut',
+                        data: { labels: ['Eficiência','Resto'], datasets: [{ data: [0,100], backgroundColor: ['#34d399','#1f2937'], borderWidth: 0 }] },
+                        options: { cutout: '75%', responsive:true, plugins:{legend:{display:false}, tooltip:{enabled:false}} }
+                    });
+                }
+            } catch(e) { console.warn('initCharts error', e); }
+        }
+
+        function updateCharts() {
+            try {
+                // Aplica filtros ativos globalmente enquanto gera os gráficos.
+                const originalHistorico = historicoDescargas;
+                try {
+                    historicoDescargas = applyFiltersToLogs(originalHistorico, activeFilters);
+
+                    // Trend
+                    const trend = buildTrendData();
+                    if (chartTrend && trend.labels.length) {
+                        chartTrend.data.labels = trend.labels;
+                        chartTrend.data.datasets[0].data = trend.data;
+                        chartTrend.update();
+                    }
+
+                    // Stop categories
+                    const stopCat = buildStopCategoryData();
+                    if (chartStopCategory) {
+                        chartStopCategory.data.labels = stopCat.labels;
+                        chartStopCategory.data.datasets[0].data = stopCat.data;
+                        chartStopCategory.update();
+                    }
+
+                    // Stop per moega
+                    const stopMo = buildStopMoegaData();
+                    if (chartStopMoega) {
+                        chartStopMoega.data.labels = stopMo.labels;
+                        chartStopMoega.data.datasets[0].data = stopMo.data;
+                        chartStopMoega.update();
+                    }
+
+                    // Comparison tonnage
+                    const comp = buildReportCompData();
+                    if (chartReportComp) {
+                        chartReportComp.data.labels = comp.labels;
+                        chartReportComp.data.datasets[0].data = comp.data;
+                        chartReportComp.update();
+                    }
+
+                    // Volume / Trend overview
+                    const vol = buildVolumeTrendData();
+                    if (chartVolumeTrend && vol.labels.length) {
+                        chartVolumeTrend.data.labels = vol.labels;
+                        chartVolumeTrend.data.datasets[0].data = vol.data;
+                        chartVolumeTrend.update();
+                    }
+
+                    // Efficiency gauge (overview)
+                    const eff = buildEfficiencyGaugeData();
+                    if (chartEfficiencyGauge) {
+                        const v = Math.max(0, Math.min(100, Math.round((eff.value||0)*100)));
+                        chartEfficiencyGauge.data.datasets[0].data = [v, 100 - v];
+                        chartEfficiencyGauge.update();
+                        const el = document.getElementById('eff-overview-value');
+                        if (el) el.innerText = `${v}%`;
+                    }
+
+                    // Ritmo por produto
+                    const rp = buildRitmoProdutoData();
+                    if (chartRitmoProduto) {
+                        chartRitmoProduto.data.labels = rp.labels;
+                        chartRitmoProduto.data.datasets[0].data = rp.data;
+                        chartRitmoProduto.update();
+                    }
+
+                    // show total volume in overview
+                    try {
+                        const volTotalEl = document.getElementById('vol-total');
+                        if (volTotalEl) {
+                            const volData = buildVolumeTrendData();
+                            const total = volData.data.reduce((s,v)=>s+Number(v||0),0);
+                            volTotalEl.innerText = `${Number(total.toFixed(2))} t`;
+                        }
+                    } catch(e) { console.warn('vol total update failed', e); }
+
+                    // Dispersion (scatter)
+                    const disp = buildDispersionData();
+                    if (chartDispersion) {
+                        chartDispersion.data.datasets[0].data = disp.data;
+                        chartDispersion.update();
+                    }
+
+                    // Moega specific updates when a moega tab is active
+                    if (activeTab && activeTab.startsWith('moega-')) {
+                        const mId = parseInt(activeTab.split('-')[1]);
+                        const mt = buildMoegaTrendData(mId);
+                        if (chartMoegaTrend) {
+                            chartMoegaTrend.data.labels = mt.labels;
+                            chartMoegaTrend.data.datasets[0].data = mt.data;
+                            chartMoegaTrend.update();
+                        }
+                        const me = buildMoegaEfficiencyData(mId);
+                        if (chartMoegaEfficiency) {
+                            const vv = Math.max(0, Math.min(100, Math.round((me.value||0)*100)));
+                            chartMoegaEfficiency.data.datasets[0].data = [vv, 100 - vv];
+                            chartMoegaEfficiency.update();
+                            const mel = document.getElementById('moega-eff-value');
+                            if (mel) mel.innerText = `${vv}%`;
+                        }
+                    }
+
+                } finally {
+                    // restaura o histórico original
+                    historicoDescargas = originalHistorico;
+                }
+            } catch(e) { console.warn('updateCharts error', e); }
+        }
+
+        // --- Data builders ---
+        function buildTrendData() {
+            const maxPoints = 20;
+            const logs = historicoDescargas.slice(0, maxPoints);
+            const labels = [];
+            const data = [];
+            logs.forEach(l => {
+                const fim = l.fim ? new Date(l.fim) : null;
+                const inicio = l.inicio ? new Date(l.inicio) : null;
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas) ? l.cargas.reduce((s,c)=>s+Number(c.peso||0),0) : 0);
+                const tons = pesoKg/1000;
+                let hours = 0.000001;
+                if (inicio && fim) hours = Math.max( (fim.getTime()-inicio.getTime())/3600000, 0.000001 );
+                const ritmo = tons / hours;
+                labels.push(fim ? fim.toLocaleDateString('pt-BR') : '-');
+                data.push(Number(ritmo.toFixed(2)));
+            });
+            return { labels: labels.reverse(), data: data.reverse() };
+        }
+
+        function buildStopCategoryData() {
+            const counts = {};
+            // collect pausas from historico
+            historicoDescargas.forEach(h => {
+                if (Array.isArray(h.pausas)) h.pausas.forEach(p => {
+                    const key = (p.motivo || 'Outros').split(':')[0];
+                    counts[key] = (counts[key] || 0) + 1;
+                });
+            });
+            // also include active cycles pausas
+            Object.values(ciclosAtivos).forEach(c => { if (Array.isArray(c.pausas)) c.pausas.forEach(p => { const key = (p.motivo || 'Outros').split(':')[0]; counts[key] = (counts[key] || 0) + 1; }); });
+            const labels = Object.keys(counts);
+            const data = labels.map(l => counts[l]);
+            return { labels, data };
+        }
+
+        function buildStopMoegaData() {
+            const labels = moegasConfig.map(n => `Moega 0${n}`);
+            const map = {};
+            moegasConfig.forEach(n => map[String(n)] = 0);
+            const now = Date.now();
+            // historico
+            historicoDescargas.forEach(h => {
+                const id = String(h.moega || '0');
+                if (!map[id]) map[id] = 0;
+                if (Array.isArray(h.pausas)) h.pausas.forEach(p => {
+                    const inicio = p.inicio ? new Date(p.inicio).getTime() : null;
+                    const fim = p.fim ? new Date(p.fim).getTime() : inicio;
+                    if (inicio && fim) map[id] += Math.max(0, (fim - inicio))/60000; // minutes
+                });
+            });
+            // active cycles
+            Object.keys(ciclosAtivos).forEach(k => {
+                const c = ciclosAtivos[k];
+                if (Array.isArray(c.pausas)) c.pausas.forEach(p => {
+                    const inicio = p.inicio ? new Date(p.inicio).getTime() : null;
+                    const fim = p.fim ? new Date(p.fim).getTime() : now;
+                    if (inicio && fim) map[String(k)] = (map[String(k)] || 0) + Math.max(0, (fim - inicio))/60000;
+                });
+            });
+            const data = moegasConfig.map(n => Number((map[String(n)]||0).toFixed(1)));
+            return { labels, data };
+        }
+
+        function buildReportCompData() {
+            const map = {};
+            moegasConfig.forEach(n => map[String(n)] = 0);
+            historicoDescargas.forEach(h => {
+                const id = String(h.moega || '0');
+                let peso = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas) ? h.cargas.reduce((s,c)=>s+Number(c.peso||0),0) : 0);
+                map[id] = (map[id] || 0) + (peso/1000);
+            });
+            Object.keys(ciclosAtivos).forEach(k => {
+                const c = ciclosAtivos[k];
+                if (Array.isArray(c.cargas)) {
+                    const peso = c.cargas.reduce((s,x)=>s+Number(x.peso||0),0);
+                    map[String(k)] = (map[String(k)] || 0) + (peso/1000);
+                }
+            });
+            const labels = moegasConfig.map(n => `Moega 0${n}`);
+            const data = moegasConfig.map(n => Number((map[String(n)]||0).toFixed(2)));
+            return { labels, data };
+        }
+
+        // --- New data builders for requested charts ---
+        function getMetaForProduct(prodName) {
+            if (!prodName) return null;
+            const key = productKey(prodName);
+            return METAS_PRODUTIVIDADE[key] || DEFAULTS[key] || null;
+        }
+
+        function productKey(name) {
+            return String(name || '').toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+        }
+
+        function buildVolumeTrendData() {
+            const map = {};
+            const maxPoints = 14;
+            historicoDescargas.forEach(h => {
+                const d = h.fim ? new Date(h.fim).toLocaleDateString('pt-BR') : (h.inicio?new Date(h.inicio).toLocaleDateString('pt-BR'):'-');
+                const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                map[d] = (map[d] || 0) + (pesoKg/1000);
+            });
+            const entries = Object.entries(map).sort((a,b)=> new Date(b[0]) - new Date(a[0])).slice(0,maxPoints).reverse();
+            const labels = entries.map(e=>e[0]);
+            const data = entries.map(e=>Number(e[1].toFixed(2)));
+            return { labels, data };
+        }
+
+        function buildEfficiencyGaugeData() {
+            // efficiency = ritmo_real / meta (clamped 0..1) averaged across recent records weighted by tonnage
+            let weightedRatioSum = 0; let weightSum = 0;
+            historicoDescargas.forEach(h => {
+                const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                const tons = pesoKg/1000;
+                const inicio = h.inicio?new Date(h.inicio):null; const fim = h.fim?new Date(h.fim):null;
+                if (!inicio || !fim || tons<=0) return;
+                const hours = Math.max((fim.getTime()-inicio.getTime())/3600000, 0.000001);
+                const ritmo = tons / hours;
+                const meta = getMetaForProduct(h.produto) || 1;
+                const ratio = ritmo / meta;
+                weightedRatioSum += Math.max(0, ratio) * tons;
+                weightSum += tons;
+            });
+            const avgRatio = weightSum>0 ? weightedRatioSum / weightSum : 0;
+            return { value: Math.min(1, avgRatio) };
+        }
+
+        function buildRitmoProdutoData() {
+            const map = {};
+            historicoDescargas.forEach(h => {
+                const produto = h.produto || (Array.isArray(h.cargas) && h.cargas[0] && h.cargas[0].produto) || 'DESCONHECIDO';
+                const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                const inicio = h.inicio?new Date(h.inicio):null; const fim = h.fim?new Date(h.fim):null;
+                if (!inicio || !fim || pesoKg<=0) return;
+                const hours = Math.max((fim.getTime()-inicio.getTime())/3600000, 0.000001);
+                const ritmo = (pesoKg/1000) / hours;
+                if (!map[produto]) map[produto] = { sum:0, count:0 };
+                map[produto].sum += ritmo; map[produto].count += 1;
+            });
+            const entries = Object.keys(map).map(k=>({ prod:k, val: map[k].sum / map[k].count }));
+            entries.sort((a,b)=>b.val - a.val);
+            const labels = entries.map(e=>e.prod);
+            const data = entries.map(e=>Number(e.val.toFixed(2)));
+            return { labels, data };
+        }
+
+        function buildDispersionData() {
+            const points = [];
+            historicoDescargas.forEach(h => {
+                const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                const inicio = h.inicio?new Date(h.inicio):null; const fim = h.fim?new Date(h.fim):null;
+                if (!inicio || !fim || pesoKg<=0) return;
+                const hours = Math.max((fim.getTime()-inicio.getTime())/3600000, 0.000001);
+                const ritmo = (pesoKg/1000) / hours;
+                const produto = h.produto || (Array.isArray(h.cargas)&&h.cargas[0]&&h.cargas[0].produto) || 'DESCONHECIDO';
+                const meta = getMetaForProduct(produto) || 0;
+                if (meta>0) points.push({ x: meta, y: Number(ritmo.toFixed(2)), produto });
+            });
+            return { data: points };
+        }
+
+        function buildMoegaTrendData(moegaId) {
+            const logs = historicoDescargas.filter(h => String(h.moega) === String(moegaId)).slice(0,20);
+            const labels = []; const data = [];
+            logs.forEach(l => {
+                const fim = l.fim ? new Date(l.fim) : (l.inicio?new Date(l.inicio):null);
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas)?l.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                const tons = pesoKg/1000; const inicio = l.inicio?new Date(l.inicio):null;
+                let hours = 0.000001;
+                if (inicio && fim) hours = Math.max((fim.getTime()-inicio.getTime())/3600000, 0.000001);
+                const ritmo = tons / hours;
+                labels.push(fim?fim.toLocaleDateString('pt-BR'):'-'); data.push(Number(ritmo.toFixed(2)));
+            });
+            return { labels: labels.reverse(), data: data.reverse() };
+        }
+
+        function buildMoegaEfficiencyData(moegaId) {
+            let weighted = 0; let w = 0;
+            historicoDescargas.filter(h=>String(h.moega)===String(moegaId)).forEach(h => {
+                const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((s,c)=>s+Number(c.peso||0),0):0);
+                const inicio = h.inicio?new Date(h.inicio):null; const fim = h.fim?new Date(h.fim):null;
+                if (!inicio || !fim || pesoKg<=0) return;
+                const hours = Math.max((fim.getTime()-inicio.getTime())/3600000, 0.000001);
+                const ritmo = (pesoKg/1000) / hours;
+                const meta = getMetaForProduct(h.produto) || 1;
+                weighted += (ritmo/meta) * (pesoKg/1000);
+                w += (pesoKg/1000);
+            });
+            const val = w>0 ? weighted / w : 0;
+            return { value: Math.min(1, val) };
+        }
+
+        // --- Rastreabilidade view updater (respeita activeFilters) ---
+        function updateRastreabilidadeView() {
+            try {
+                const tbody = document.getElementById('trace-table-body');
+                if (!tbody) return;
+                // aplica filtros
+                const logs = applyFiltersToLogs(historicoDescargas, activeFilters);
+                // métricas
+                const totalTons = logs.reduce((s,h) => {
+                    const pesoKg = h.peso && Number(h.peso) ? Number(h.peso) : (Array.isArray(h.cargas)?h.cargas.reduce((ss,c)=>ss+Number(c.peso||0),0):0);
+                    return s + (pesoKg/1000);
+                }, 0);
+                const romaneios = new Set(logs.map(l => l.romaneio || (Array.isArray(l.cargas)&&l.cargas[0]&&l.cargas[0].romaneio) || 'SEM'));
+                const produtos = new Set();
+                logs.forEach(l => { if (l.produto) produtos.add(l.produto); else if (Array.isArray(l.cargas)&&l.cargas[0]&&l.cargas[0].produto) produtos.add(l.cargas[0].produto); });
+
+                const volEl = document.getElementById('trace-volume'); if (volEl) volEl.innerText = `${Number(totalTons.toFixed(2))} t`;
+                const romEl = document.getElementById('trace-romaneios'); if (romEl) romEl.innerText = `${romaneios.size}`;
+                const prodEl = document.getElementById('trace-produtos'); if (prodEl) prodEl.innerText = `${produtos.size}`;
+
+                // Preencher tabela com entradas recentes (hora, romaneio, moega, fazenda, zona, talhao, peso)
+                const rows = [];
+                logs.slice(0, 100).forEach(l => {
+                    if (Array.isArray(l.cargas) && l.cargas.length>0) {
+                        l.cargas.forEach(c => {
+                            const ts = c.timestamp || l.fim || l.inicio;
+                            rows.push({ hora: ts ? new Date(ts).toLocaleTimeString('pt-BR') : '--:--', romaneio: c.romaneio||l.romaneio||'-', moega: l.moega||c.moega||'-', fazenda: c.fazenda||l.fazenda||'-', zona: c.zona||l.zona||'-', talhao: c.talhao||l.talhao||'-', peso: Number(c.peso||0) });
+                        });
+                    } else {
+                        const ts = l.fim || l.inicio;
+                        rows.push({ hora: ts?new Date(ts).toLocaleTimeString('pt-BR'):'--:--', romaneio: l.romaneio||'-', moega: l.moega||'-', fazenda: l.fazenda||'-', zona: l.zona||'-', talhao: l.talhao||'-', peso: Number(l.peso||0) });
+                    }
+                });
+                tbody.innerHTML = '';
+                if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="7" class="text-center p-6 text-slate-500">Nenhum registro para o período.</td></tr>';
+                else rows.forEach(r=>{ tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso||0).toLocaleString('pt-BR')}</td></tr>` });
+            } catch(e) { console.warn('updateRastreabilidadeView error', e); }
+        }
+
+        // --- Paradas view updater (respeita activeFilters) ---
+        function updateParadasView() {
+            try {
+                const tbody = document.getElementById('stop-table-body');
+                if (!tbody) return;
+                // coletar pausas do histórico e ciclos ativos dentro do filtro
+                const pausas = [];
+                const logs = applyFiltersToLogs(historicoDescargas, activeFilters);
+                logs.forEach(h => { if (Array.isArray(h.pausas)) h.pausas.forEach(p => pausas.push(Object.assign({ source:'historico', moega: h.moega }, p))); });
+                Object.keys(ciclosAtivos).forEach(k => { const c = ciclosAtivos[k]; if (Array.isArray(c.pausas)) c.pausas.forEach(p => pausas.push(Object.assign({ source:'ciclo', moega: k }, p))); });
+
+                // filtrar pausas por janela de tempo (start/end)
+                const filteredPauses = pausas.filter(p => {
+                    try {
+                        const tsStart = p.inicio ? new Date(p.inicio).getTime() : (p.fim?new Date(p.fim).getTime():null);
+                        if (!tsStart) return false;
+                        if (activeFilters.start) {
+                            const sMs = new Date(activeFilters.start + 'T00:00:00').getTime(); if (tsStart < sMs) return false;
+                        }
+                        if (activeFilters.end) {
+                            const eMs = new Date(activeFilters.end + 'T23:59:59').getTime(); if (tsStart > eMs) return false;
+                        }
+                        return true;
+                    } catch(e) { return false; }
+                });
+
+                // calcular tempo total perdido e top reason
+                let totalLostMs = 0; const reasons = {};
+                filteredPauses.forEach(p => {
+                    try { const inicio = p.inicio?new Date(p.inicio).getTime():null; const fim = p.fim?new Date(p.fim).getTime():Date.now(); if (inicio) { const dur = Math.max(0, (fim - inicio)); totalLostMs += dur; } if (p.motivo) { const key = p.motivo.split(':')[0]; reasons[key] = (reasons[key]||0) + 1; } } catch(e){}
+                });
+                const topReason = Object.keys(reasons).sort((a,b)=>reasons[b]-reasons[a])[0] || '---';
+
+                const totalTimeEl = document.getElementById('stop-total-time'); if (totalTimeEl) totalTimeEl.innerText = formatMs(totalLostMs);
+                const topEl = document.getElementById('stop-top-reason'); if (topEl) topEl.innerText = topReason;
+
+                // preencher tabela
+                tbody.innerHTML = '';
+                if (filteredPauses.length === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-slate-500">Nenhuma parada no período.</td></tr>';
+                else filteredPauses.forEach(p => {
+                    const inicioText = p.inicio? new Date(p.inicio).toLocaleString('pt-BR') : '-';
+                    const durMs = p.inicio ? ((p.fim?new Date(p.fim).getTime():Date.now()) - new Date(p.inicio).getTime()) : 0;
+                    const durText = formatMs(durMs);
+                    const moega = p.moega || '-';
+                    const categoria = (p.motivo||'Outros').split(':')[0];
+                    const motivo = p.motivo || '-';
+                    const status = p.fim ? 'Encerrada' : 'Em Andamento';
+                    tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-3">${inicioText}</td><td class="p-3 font-mono">${durText}</td><td class="p-3">${moega}</td><td class="p-3">${categoria}</td><td class="p-3">${motivo}</td><td class="p-3 text-center">${status}</td></tr>`;
+                });
+            } catch(e) { console.warn('updateParadasView error', e); }
         }
 
         // --- Delete historic record ---
@@ -845,6 +1760,12 @@
 
             if (viewName === 'dashboard') {
                 atualizarDashboard();
+            } else if (viewName === 'rastreabilidade') {
+                syncFiltersFromInputs('geral');
+                updateRastreabilidadeView();
+            } else if (viewName === 'paradas') {
+                syncFiltersFromInputs('geral');
+                updateParadasView();
             }
         }
         
@@ -876,6 +1797,8 @@
             100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); }
         }
         .kpi-highlight { animation: kpiFlash 1.6s ease-in-out; border-radius: 8px; }
+        /* Gauge center label */
+        .gauge-center { position: absolute; pointer-events: none; display:flex; align-items:center; justify-content:center; width:120px; height:120px; text-align:center; }
     </style>
 </body>
 </html>

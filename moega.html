@@ -25,7 +25,8 @@
         .nav-tab-inactive { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
         .sub-pill-active { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.5); }
         .sub-pill-inactive { background-color: transparent; color: #64748b; border: 1px solid transparent; }
-        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(2px); }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -155,6 +156,15 @@
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Produto</label><select id="retro-produto" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"><option value="" disabled selected>Selecione...</option></select></div>
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><input type="text" id="retro-cultivar" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"></div>
                         </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fazenda</label><input type="text" id="retro-fazenda" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Nome da fazenda"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Zona</label><input type="text" id="retro-zona" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Zona"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Talhão</label><input type="text" id="retro-talhao" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Talhão"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Umidade (%)</label><input type="number" id="retro-umidade" step="0.1" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" placeholder="Ex: 13.5"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Pureza (%)</label><input type="number" id="retro-pureza" step="0.1" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" placeholder="Ex: 99.5"></div>
+                        </div>
                         <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="check-pausa-retro" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-indigo-500 focus:ring-offset-slate-900" onchange="togglePausaRetro()"><span class="text-sm font-bold text-slate-300 uppercase tracking-wider">Houve Pausas no Período?</span></label>
@@ -177,27 +187,27 @@
             <div id="aviso-trava-qualidade" class="hidden mb-4 bg-blue-900/30 border border-blue-800 p-3 rounded text-xs text-blue-200 flex items-center gap-2">
                 <i data-lucide="lock" class="w-4 h-4"></i><span><b>Controle de Qualidade Ativo:</b> Produto e cultivar travados pelo ciclo atual.</span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Nº Romaneio</label><input type="text" id="tpl_input-romaneio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"></div>
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa</label><input type="text" id="tpl_input-placa" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div><label for="tpl_input-romaneio" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Nº Romaneio</label><input type="text" id="tpl_input-romaneio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono" placeholder="00000"></div>
+                <div><label for="tpl_input-placa" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa</label><input type="text" id="tpl_input-placa" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono" placeholder="ABC-1234"></div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select id="tpl_input-produto" onchange="toggleCultivar()" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none"><option value="" disabled selected>Selecione...</option></select></div>
-                <div id="tpl_container-cultivar" class="hidden"><label class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input type="text" id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase"></div>
+                <div><label for="tpl_input-produto" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select id="tpl_input-produto" onchange="toggleCultivar()" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none" aria-label="Produto"><option value="" disabled selected>Selecione...</option></select></div>
+                <div id="tpl_container-cultivar" class="hidden"><label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input type="text" id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase"></div>
             </div>
             <!-- Rastreabilidade -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input type="text" id="tpl_input-fazenda" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"></div>
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input type="text" id="tpl_input-zona" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"></div>
-                <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input type="text" id="tpl_input-talhao" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"></div>
+                <div><label for="tpl_input-fazenda" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input type="text" id="tpl_input-fazenda" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Nome da fazenda"></div>
+                <div><label for="tpl_input-zona" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input type="text" id="tpl_input-zona" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Zona"></div>
+                <div><label for="tpl_input-talhao" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input type="text" id="tpl_input-talhao" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Talhão"></div>
             </div>
             <!-- Qualidade -->
             <div class="grid grid-cols-2 gap-4 mb-4">
-                 <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input type="number" id="tpl_input-umidade" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"></div>
-                 <div><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input type="number" id="tpl_input-impureza" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"></div>
+                 <div><label for="tpl_input-umidade" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input type="number" id="tpl_input-umidade" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none" placeholder="Ex: 13.5"></div>
+                 <div><label for="tpl_input-impureza" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input type="number" id="tpl_input-impureza" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none" placeholder="Ex: 0.5"></div>
             </div>
-            <div class="mb-4"><label class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label><div class="relative"><input type="number" id="tpl_input-peso" class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">KG</span></div></div>
-            <div class="mb-6"><label class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de Armazenagem</label><select id="tpl_input-destino" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"><option value="" disabled selected>Selecione o silo...</option></select></div>
+            <div class="mb-4"><label for="tpl_input-peso" class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label><div class="relative"><input type="number" id="tpl_input-peso" class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all" placeholder="Kg"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">KG</span></div></div>
+            <div class="mb-6"><label for="tpl_input-destino" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de Armazenagem</label><select id="tpl_input-destino" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" aria-label="Destino de Armazenagem"><option value="" disabled selected>Selecione o silo...</option></select></div>
             <div class="flex gap-3"><button onclick="enviarDados()" class="flex-1 btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Lançar Carga</button></div>
         </div>
 
@@ -319,7 +329,7 @@
     <!-- MODAL PAUSA -->
     <div id="modal-motivo-pausa" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center p-6 border-b border-slate-700 bg-slate-900"><h3 class="text-xl font-bold text-white">Pausar Operação</h3><button onclick="fecharModalPausa()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <div class="flex justify-between items-center p-6 border-b border-slate-700 bg-slate-900"><h3 class="text-xl font-bold text-white">Pausar Operação</h3><button onclick="fecharModalPausa()" class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Pausar Operação"><i data-lucide="x" class="w-6 h-6"></i></button></div>
             <div class="p-4 bg-slate-900/50 border-b border-slate-700">
                 <input type="text" id="busca-motivo" placeholder="Buscar..." class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white mb-4" onkeyup="filtrarMotivos()">
                 <div class="flex gap-2"><button onclick="filtrarCategoria('Operacional')" class="text-xs bg-blue-600 text-white px-3 py-1 rounded">Operacional</button><button onclick="filtrarCategoria('Manutenção')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Manutenção</button><button onclick="filtrarCategoria('Gestão')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Gestão</button><button onclick="filtrarCategoria('Todos')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Todos</button></div>
@@ -347,6 +357,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        console.log('moega.html: script loaded, firebase initialized');
+
         // Identificadores usados para caminhos alternativos (modo dev/offline)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const IS_PROD = true;
@@ -361,12 +373,184 @@
         let pendingData = null; // Store data for confirmation
 
         const MOTIVOS_PAUSA = [
-            { cat: 'Operacional', nome: 'Outros' }, { cat: 'Operacional', nome: 'DDS' }, { cat: 'Operacional', nome: 'Almoço/Jantar' }, { cat: 'Manutenção', nome: 'Manutenção Mecânica' }, { cat: 'Manutenção', nome: 'Manutenção Elétrica' }, { cat: 'Operacional', nome: 'Limpeza' }, { cat: 'Operacional', nome: 'Troca de Produto' }, { cat: 'Gestão', nome: 'Falta de Ordem de Serviço' }, { cat: 'Operacional', nome: 'Aguardando Caminhão' }, { cat: 'Manutenção', nome: 'Queda de Energia' }
+            { cat: 'Operacional', nome: 'Outros' },
+            { cat: 'Operacional', nome: 'DDS' },
+            { cat: 'Operacional', nome: 'Almoço/Jantar' },
+            { cat: 'Operacional', nome: 'Café' },
+            { cat: 'Operacional', nome: 'Processo subsequente(descontinuidade do processo)' },
+            { cat: 'Manutenção', nome: 'Manutenção' },
+            { cat: 'Operacional', nome: 'Falta de mão de obra' },
+            { cat: 'Operacional', nome: 'Falta de matéria prima' },
+            { cat: 'Operacional', nome: 'Treinamento' },
+            { cat: 'Manutenção', nome: 'Queda de energia' },
+            { cat: 'Operacional', nome: 'Limpeza' },
+            { cat: 'Operacional', nome: 'Ações de segurança do trabalho' },
+            { cat: 'Operacional', nome: 'Troca de gestor' },
+            { cat: 'Operacional', nome: 'Troca de turno' },
+            { cat: 'Operacional', nome: 'Regulagem de equipamento' },
+            { cat: 'Operacional', nome: 'Equipamento embuchado' },
+            { cat: 'Operacional', nome: 'Troca de peneira' },
+            { cat: 'Operacional', nome: 'Falta de caminhão' },
+            { cat: 'Operacional', nome: 'Problemas climáticos' },
+            { cat: 'Operacional', nome: 'Troca de posicionamento de carrinho tripper (sem limpeza na CT)' },
+            { cat: 'Operacional', nome: 'Aferição de equipamento' },
+            { cat: 'Operacional', nome: 'Falta de máquina (Empilhadeira/Pá Carregadeira/Trator)' },
+            { cat: 'Operacional', nome: 'Vestindo/Retirando EPI' },
+            { cat: 'Operacional', nome: 'Troca de lote' },
+            { cat: 'Operacional', nome: 'Aguardando Liberação de Lotes' },
+            { cat: 'Manutenção', nome: 'Queda de bloco' },
+            { cat: 'Operacional', nome: 'Troca de Big Bag Rasgado' },
+            { cat: 'Operacional', nome: 'Intervalo obrigatório câmara fria' },
+            { cat: 'Operacional', nome: 'Troca de embalagem' },
+            { cat: 'Operacional', nome: 'Troca de linha' },
+            { cat: 'Operacional', nome: 'Rodízio de secador' },
+            { cat: 'Operacional', nome: 'Acertando o peso do caminhão' },
+            { cat: 'Operacional', nome: 'Aguardando Pesagem' },
+            { cat: 'Operacional', nome: 'Aguardando caminhão' },
+            { cat: 'Operacional', nome: 'Enchendo a caixa' },
+            { cat: 'Operacional', nome: 'Problemas com Etiquetas' },
+            { cat: 'Operacional', nome: 'Mistura de Peneiras' },
+            { cat: 'Operacional', nome: 'Processo subsequente por falta de estrutura de secagem' },
+            { cat: 'Operacional', nome: 'Processo subsequente por falta de estrutura de descarga' },
+            { cat: 'Operacional', nome: 'Processo subsequente por quebra' },
+            { cat: 'Operacional', nome: 'Limpeza com matéria prima para receber' },
+            { cat: 'Operacional', nome: 'Limpeza sem matéria prima para receber' },
+            { cat: 'Operacional', nome: 'Troca de posicionamento de carrinho tripper (com limpeza na CT)' },
+            { cat: 'Gestão', nome: 'Separação de Campo' },
+            { cat: 'Operacional', nome: 'Equipe Liberada' },
+            { cat: 'Operacional', nome: 'Falta de insumos (bland/bentonita)' },
+            { cat: 'Operacional', nome: 'Limpeza na máquina' },
+            { cat: 'Operacional', nome: 'Falta de Ordem para Carregamento (Agricola)' },
+            { cat: 'Operacional', nome: 'Falta de água' },
+            { cat: 'Operacional', nome: 'Aguardando produção' },
+            { cat: 'Operacional', nome: 'Aguardando descarregamento do Caminhão BICAÇAMBA' },
+            { cat: 'Operacional', nome: 'Separando por UMIDADE' },
+            { cat: 'Operacional', nome: 'Separando por CAMPO' },
+            { cat: 'Manutenção', nome: 'Aguardando troca de variedade' },
+            { cat: 'Operacional', nome: 'Problemas Mecanicos' },
+            { cat: 'Operacional', nome: 'Moega Cheia' },
+            { cat: 'Gestão', nome: 'Aguardando liberação da qualidade' },
+            { cat: 'Operacional', nome: 'LIMPEZA FACIL' },
+            { cat: 'Operacional', nome: 'LIMPEZA SIMPLES' },
+            { cat: 'Operacional', nome: 'LIMPEZA COMPLETA' },
+            { cat: 'Operacional', nome: 'Conferencia de Processo com Equipamento ou Materia Prima' },
+            { cat: 'Gestão', nome: 'Decisão Gerencial' },
+            { cat: 'Operacional', nome: 'Falha no Sistema do Tablet' },
+            { cat: 'Gestão', nome: 'Ensacando Lotes Reprovados' },
+            { cat: 'Operacional', nome: 'Problemas no Sistema da Color Sorter' },
+            { cat: 'Operacional', nome: 'Falta de Espaço para armazenagem' },
+            { cat: 'Operacional', nome: 'Aguardando a Calda' },
+            { cat: 'Operacional', nome: 'Corredor do Armazem com umidade e escorregadio' },
+            { cat: 'Operacional', nome: 'Equipamento com umidade sem condição para iniciar produção' },
+            { cat: 'Operacional', nome: 'Falta de Demanda para Descarregar' },
+            { cat: 'Manutenção', nome: 'Carga Reduzida' },
+            { cat: 'Manutenção', nome: 'Calibração de Equipamento' },
+            { cat: 'Operacional', nome: 'Aguardando retorno do teste de qualidade' },
+            { cat: 'Operacional', nome: 'Falta de Demanda para Produção' },
+            { cat: 'Gestão', nome: 'Aguardando ordem de Produção' },
+            { cat: 'Operacional', nome: 'Falta de semente seca' },
+            { cat: 'Operacional', nome: 'Aguardando semente tratada (caixa do ensaque)' },
+            { cat: 'Operacional', nome: 'Troca de big bag de semente tratada' },
+            { cat: 'Operacional', nome: 'Calibragem de balança' },
+            { cat: 'Gestão', nome: 'Parada não programada' },
+            { cat: 'Operacional', nome: 'Planejamento Operacional' },
+            { cat: 'Operacional', nome: 'Semente com umidade acima do padrão' },
+            { cat: 'Gestão', nome: 'Sinistro' },
+            { cat: 'Gestão', nome: 'Qualidade Industrial - CQI' },
+            { cat: 'Gestão', nome: 'QUEDA DE CONEXÃO COM  SERVIDOR - T.I' }
         ];
 
         const METAS_PRODUTIVIDADE = { 'BRAQUIARIA': 30, 'CROTALARIA': 40, 'FEIJAO_GUANDU': 70, 'FEIJAO_PORCO': 50, 'MILHETO': 40, 'SOJA': 80 };
+        const SOJA_CULTIVARES = [
+            "BMX OLIMPO IPRO",
+            "DM 75I74 IPRO",
+            "BMX BONUS IPRO",
+            "TMG 2379 IPRO",
+            "ATTO 178 CE",
+            "DM 74K75 CE",
+            "BMX GUEPARDO IPRO",
+            "BMX DESAFIO RR",
+            "M 8220 I2X",
+            "DM 82I78 IPRO",
+            "TMG 2383 IPRO",
+            "BMX TORMENTA CE",
+            "TMG 2370 IPRO",
+            "ATTO 182 IPRO",
+            "BMX DOMINIO IPRO",
+            "DM 79I81 IPRO",
+            "BMX ATAQUE I2X",
+            "BMX FOCO IPRO",
+            "BMX ORIGEM IPRO",
+            "M 8349 IPRO",
+            "BMX VORAZ IPRO",
+            "GH 2282 IPRO",
+            "BMX TANQUE I2X",
+            "GH 2376 IPRO",
+            "78KA42",
+            "DM 72IX74 I2X",
+            "BMX SPARTA I2X",
+            "DM 76IX78 I2X",
+            "BMX SUPERA I2X",
+            "DM 83IX84 I2X",
+            "DM 78IX80 I2X",
+            "TMG 22X77 I2X",
+            "TMG 22X83 I2X",
+            "TMG 22X73 I2X",
+            "M 7601 I2X",
+            "DM 80I85 IPRO"
+        ];
+
+        // Cultivares adicionais por cultura
+        const BRAQUIARIA_CULTIVARES = ["RUZIZIENSIS", "MARANDÚ", "PIATÃ", "XARÁES"];
+        const CROTALARIA_CULTIVARES = ["OCHROLEUCA", "SPECTABILIS"];
+        const MILHETO_CULTIVARES = ["ADRG 9060", "ADRG 9070", "BAM 200", "ADRF 6010"];
+        const FEIJAO_GUANDU_CULTIVARES = ["BAM 2014"];
+
+        const CULTIVARES = {
+            'SOJA': SOJA_CULTIVARES,
+            'BRAQUIARIA': BRAQUIARIA_CULTIVARES,
+            'CROTALARIA': CROTALARIA_CULTIVARES,
+            'MILHETO': MILHETO_CULTIVARES,
+            'FEIJAO_GUANDU': FEIJAO_GUANDU_CULTIVARES
+        };
+
+        const CUSTOM_CULTIVARES_KEY = 'moega_custom_cultivares';
+
+        function loadCustomCultivars() {
+            try {
+                const raw = localStorage.getItem(CUSTOM_CULTIVARES_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch(e) { return {}; }
+        }
+
+        function saveCustomCultivars(obj) {
+            try { localStorage.setItem(CUSTOM_CULTIVARES_KEY, JSON.stringify(obj)); } catch(e) { console.warn('failed save custom cultivars', e); }
+        }
+
+        let customCultivars = loadCustomCultivars();
+
+        function findKeyForProduct(prod) {
+            if(!prod) return null;
+            const p = String(prod).toUpperCase();
+            return Object.keys(CULTIVARES).find(k => p.includes(k));
+        }
+
+        function addCustomCultivarForProduct(prod, cultivar) {
+            const key = findKeyForProduct(prod);
+            if (!key) return false;
+            const name = String(cultivar).trim();
+            if (!name) return false;
+            customCultivars[key] = customCultivars[key] || [];
+            // avoid duplicates (case-insensitive)
+            if (!customCultivars[key].some(c => c.toUpperCase() === name.toUpperCase())) {
+                customCultivars[key].push(name);
+                saveCustomCultivars(customCultivars);
+            }
+            return true;
+        }
 
         onAuthStateChanged(auth, (user) => {
+            console.log('moega.html: onAuthStateChanged fired, user=', user && user.uid ? user.uid : user);
             if (user) {
                 userId = user.uid;
                 initListeners();
@@ -379,12 +563,22 @@
         });
 
         function initListeners() {
+            console.log('moega.html: initListeners()');
             const col = collection(db, 'moega_ciclos_ativos');
             onSnapshot(col, (snapshot) => {
-                activeCycles = {};
-                snapshot.forEach(doc => { activeCycles[doc.id] = doc.data(); });
-                renderMoegaButtons();
-                if(moegaSelecionada) window.selectMoega(moegaSelecionada);
+                try {
+                    console.log('moega.html: onSnapshot moega_ciclos_ativos callback, docs=', snapshot.size);
+                    activeCycles = {};
+                    snapshot.forEach(doc => { activeCycles[doc.id] = doc.data(); });
+                    renderMoegaButtons();
+                    if(moegaSelecionada) window.selectMoega(moegaSelecionada);
+                } catch(err) {
+                    console.error('Error handling snapshot callback', err);
+                }
+            }, (err) => {
+                console.error('onSnapshot error moega_ciclos_ativos', err);
+                const container = document.getElementById('moega-buttons-container');
+                if (container) container.innerHTML = `<div class="text-xs text-red-400 p-6">Erro conexão Firestore: ${err && err.message ? err.message : String(err)}</div>`;
             });
         }
 
@@ -409,6 +603,9 @@
                 }
             }
         }
+
+        // Inicializa validação do formulário retroativo ao carregar a página
+        try { attachRetroValidation(); } catch(e) { console.warn('attachRetroValidation failed', e); }
 
         window.renderMoegaButtons = function() {
             const container = document.getElementById('moega-buttons-container');
@@ -493,6 +690,11 @@
             const destino = panel.querySelector('#input-destino').value || '-';
             
             if(!romaneio || !placa || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+            if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+            const umNum = parseFloat(panel.querySelector('#input-umidade').value);
+            if (isNaN(umNum) || umNum < 5 || umNum > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
+            const impNum = parseFloat(panel.querySelector('#input-impureza').value);
+            if (isNaN(impNum)) return notify('Pureza/Impureza deve ser numérica', 'erro');
 
             // Store pending data
             pendingData = {
@@ -702,7 +904,9 @@
              const panel = document.getElementById('panel-content');
              const template = document.getElementById('form-entrada-container');
              if(panel && template) {
-                 panel.innerHTML = template.innerHTML.replace(/id="tpl_/g, 'id="');
+                     panel.innerHTML = template.innerHTML.replace(/id=\"tpl_/g, 'id="').replace(/for=\"tpl_/g, 'for="');
+                     // Anexa validações e listeners ao formulário recém-renderizado
+                     try { attachEntryValidation(panel); } catch(e){ console.warn('attachEntryValidation failed', e); }
              }
         }
 
@@ -735,6 +939,107 @@
                      tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="p-3 font-mono text-slate-400">${new Date(c.timestamp).toLocaleTimeString('pt-BR').substring(0,5)}</td><td class="p-3 font-bold text-white">${c.romaneio}</td><td class="p-3">${c.produto}</td><td class="p-3 text-xs">${c.cultivar || '-'}</td><td class="p-3 text-right font-bold text-emerald-400">${c.peso}</td></tr>`;
                  });
              }
+        }
+        // Validação dinâmica do formulário de entrada (tempo real)
+        function validateEntryPanel(panel) {
+            if (!panel) return false;
+            const rom = panel.querySelector('#input-romaneio')?.value;
+            const placa = panel.querySelector('#input-placa')?.value;
+            const peso = parseFloat(panel.querySelector('#input-peso')?.value);
+            const um = parseFloat(panel.querySelector('#input-umidade')?.value);
+            const imp = panel.querySelector('#input-impureza')?.value;
+            const produto = panel.querySelector('#input-produto')?.value;
+            if (!rom || !placa || !produto) return false;
+            if (isNaN(peso) || peso < 100) return false;
+            if (isNaN(um) || um < 5 || um > 30) return false;
+            if (isNaN(parseFloat(imp))) return false;
+            return true;
+        }
+
+        function attachEntryValidation(panel) {
+            const submitBtn = panel.querySelector('button[onclick="enviarDados()"]');
+            const inputs = panel.querySelectorAll('#input-romaneio,#input-placa,#tpl_input-peso,#input-peso,#tpl_input-umidade,#input-umidade,#tpl_input-impureza,#input-impureza,#tpl_input-produto,#input-produto');
+            const check = () => {
+                const ok = validateEntryPanel(panel);
+                if (submitBtn) submitBtn.disabled = !ok;
+            };
+            inputs.forEach(i => i && i.addEventListener('input', check));
+            // product change -> ajustar cultivar no painel
+            try {
+                const prodSel = panel.querySelector('#input-produto');
+                if (prodSel) prodSel.addEventListener('change', (e) => { try { updatePanelCultivarUI(panel, e.target.value); setTimeout(check,50); } catch(err){} });
+            } catch(e) { console.warn('attachEntryValidation product listener failed', e); }
+            // initial
+            check();
+            try { const prodSel0 = panel.querySelector('#input-produto'); if (prodSel0 && prodSel0.value) updatePanelCultivarUI(panel, prodSel0.value); } catch(e){}
+        }
+
+        function updatePanelCultivarUI(panel, prod) {
+            if (!panel) return;
+            const container = panel.querySelector('#container-cultivar');
+            if (!container) return;
+            const cultivars = getCultivarsForProduct(prod);
+            if (Array.isArray(cultivars) && cultivars.length>0) {
+                container.innerHTML = `<label for="input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar</label><select id="input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="input-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-yellow-600/50 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
+                const sel = container.querySelector('#input-cultivar');
+                if (sel) {
+                    sel.addEventListener('change', () => { const outro = container.querySelector('#input-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                    const outroEl = container.querySelector('#input-cultivar-outro');
+                    if (outroEl) {
+                        const handle = () => { const v = outroEl.value.trim(); if (!v) return; commitOutroValue(prod, v); outroEl.value = ''; outroEl.classList.add('hidden'); };
+                        outroEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handle(); } });
+                        outroEl.addEventListener('blur', handle);
+                    }
+                }
+            } else {
+                container.innerHTML = `<label for="input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar</label><input type="text" id="input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
+            }
+        }
+
+        // Validação do formulário retroativo (unitário e lote)
+        function validateRetroForm() {
+            const mode = retroMode || 'single';
+            if (mode === 'single') {
+                const inicio = document.getElementById('retro-inicio')?.value;
+                const fim = document.getElementById('retro-fim')?.value;
+                const peso = Number(document.getElementById('retro-peso')?.value);
+                const um = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : NaN;
+                const pureza = document.getElementById('retro-pureza')?.value;
+                const produto = document.getElementById('retro-produto')?.value || null;
+                if (!inicio || !fim || !produto) return false;
+                if (new Date(fim).getTime() < new Date(inicio).getTime()) return false;
+                if (isNaN(peso) || peso < 100) return false;
+                if (isNaN(um) || um < 5 || um > 30) return false;
+                if (pureza !== undefined && pureza !== '' && isNaN(Number(pureza))) return false;
+                return true;
+            } else {
+                const inicio = document.getElementById('retro-batch-inicio')?.value;
+                const fim = document.getElementById('retro-batch-fim')?.value;
+                const peso = Number(document.getElementById('retro-batch-peso')?.value);
+                const qtd = Number(document.getElementById('retro-batch-qtd')?.value);
+                const um = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : NaN;
+                const pureza = document.getElementById('retro-pureza')?.value;
+                if (!inicio || !fim || !peso || !qtd) return false;
+                if (new Date(fim).getTime() < new Date(inicio).getTime()) return false;
+                if (isNaN(peso) || peso < 100) return false;
+                if (isNaN(um) || um < 5 || um > 30) return false;
+                if (pureza !== undefined && pureza !== '' && isNaN(Number(pureza))) return false;
+                return true;
+            }
+        }
+
+        function attachRetroValidation() {
+            const btn = document.querySelector('button[onclick="salvarRetroativo()"]');
+            const fields = ['retro-inicio','retro-fim','retro-peso','retro-umidade','retro-pureza','retro-produto','retro-batch-inicio','retro-batch-fim','retro-batch-peso','retro-batch-qtd'];
+            const check = () => { if (btn) btn.disabled = !validateRetroForm(); };
+            fields.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', check); if (el) el.addEventListener('change', check); });
+            // também escuta mudança de modo retro
+            const btnModeS = document.getElementById('btn-mode-single');
+            const btnModeB = document.getElementById('btn-mode-batch');
+            if (btnModeS) btnModeS.addEventListener('click', () => setTimeout(check,50));
+            if (btnModeB) btnModeB.addEventListener('click', () => setTimeout(check,50));
+            // initial
+            check();
         }
         
         window.abrirFormularioAdicional = function() {
@@ -782,6 +1087,97 @@
             silosHTML += '</optgroup>';
             
             if(dest) dest.innerHTML = silosHTML;
+
+            // Quando produto mudar, ajustar campo cultivar (retro e template)
+            try {
+                if (retroProd) retroProd.addEventListener('change', (e) => { try { updateRetroCultivarUI(e.target.value); } catch(err){} });
+                if (inputProd) inputProd.addEventListener('change', (e) => { try { updateTemplateCultivarUI(e.target.value); } catch(err){} });
+            } catch(e) { console.warn('populateSelects: attach product listeners failed', e); }
+        }
+
+        function getCultivarsForProduct(prod) {
+            if (!prod) return null;
+            const p = String(prod).toUpperCase();
+            for (const key of Object.keys(CULTIVARES)) {
+                if (p.includes(key)) {
+                    const base = Array.isArray(CULTIVARES[key]) ? CULTIVARES[key].slice() : [];
+                    const custom = Array.isArray(customCultivars[key]) ? customCultivars[key].slice() : [];
+                    // Merge keeping base first, then customs (avoid duplicates case-insensitive)
+                    const merged = base.slice();
+                    custom.forEach(c => { if (!merged.some(m => m.toUpperCase() === String(c).toUpperCase())) merged.push(c); });
+                    return merged;
+                }
+            }
+            return null;
+        }
+
+        function buildCultivarOptionsHTML(prod) {
+            const list = getCultivarsForProduct(prod);
+            if (Array.isArray(list) && list.length>0) {
+                return list.map(c => `<option value="${c}">${c}</option>`).join('') + `<option value="OUTRO">OUTRO (Preencha abaixo o nome do mesmo)</option>`;
+            }
+            return `<option value="OUTRO">OUTRO (Preencha abaixo o nome do mesmo)</option>`;
+        }
+
+        function commitOutroValue(prod, novoValor) {
+            if (!novoValor || !prod) return;
+            const added = addCustomCultivarForProduct(prod, novoValor);
+            if (!added) return;
+            // Rebuild any selects currently in DOM for this product
+            ['retro-cultivar','tpl_input-cultivar','input-cultivar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.tagName === 'SELECT') {
+                    try {
+                        const prev = el.value;
+                        el.innerHTML = buildCultivarOptionsHTML(prod);
+                        el.value = novoValor;
+                    } catch(e) { console.warn('rebuild select failed', id, e); }
+                }
+            });
+        }
+
+        function updateRetroCultivarUI(prod) {
+            const existing = document.getElementById('retro-cultivar');
+            if (!existing) return;
+            const parent = existing.parentElement;
+            if (!parent) return;
+            const cultivars = getCultivarsForProduct(prod);
+            if (Array.isArray(cultivars) && cultivars.length>0) {
+                parent.innerHTML = ` <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><select id="retro-cultivar" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="retro-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-slate-600 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p> `;
+                const sel = document.getElementById('retro-cultivar');
+                sel.addEventListener('change', () => { const outro = document.getElementById('retro-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                const outroRetro = document.getElementById('retro-cultivar-outro');
+                if (outroRetro) {
+                    const handleRetro = () => { const v = outroRetro.value.trim(); if (!v) return; commitOutroValue(prod, v); outroRetro.value = ''; outroRetro.classList.add('hidden'); };
+                    outroRetro.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleRetro(); } });
+                    outroRetro.addEventListener('blur', handleRetro);
+                }
+            } else {
+                parent.innerHTML = `<label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><input type="text" id="retro-cultivar" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
+            }
+        }
+
+        function updateTemplateCultivarUI(prod) {
+            // template ID uses tpl_ prefix
+            const existingTpl = document.getElementById('tpl_input-cultivar');
+            const parentTpl = existingTpl ? existingTpl.parentElement : document.getElementById('tpl_container-cultivar');
+            if (!parentTpl) return;
+            const cultivars = getCultivarsForProduct(prod);
+            if (Array.isArray(cultivars) && cultivars.length>0) {
+                parentTpl.innerHTML = `<label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><select id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="tpl_input-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-yellow-600/50 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
+                const sel = document.getElementById('tpl_input-cultivar');
+                if (sel) {
+                    sel.addEventListener('change', () => { const outro = document.getElementById('tpl_input-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                    const outroTpl = document.getElementById('tpl_input-cultivar-outro');
+                    if (outroTpl) {
+                        const handleTpl = () => { const v = outroTpl.value.trim(); if (!v) return; commitOutroValue(prod, v); outroTpl.value = ''; outroTpl.classList.add('hidden'); };
+                        outroTpl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleTpl(); } });
+                        outroTpl.addEventListener('blur', handleTpl);
+                    }
+                }
+            } else {
+                parentTpl.innerHTML = `<label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><input type="text" id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
+            }
         }
         
         function calcularTempoLiquido(ciclo, agoraTimestamp) {
@@ -923,6 +1319,139 @@
             document.getElementById('retro-moega-id').value = id; 
         }
 
+        window.salvarRetroativo = async function() {
+            if (!auth || !auth.currentUser) {
+                notify('Usuário não autenticado. Abra o modal de login.', 'erro');
+                document.getElementById('login-modal')?.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const mode = retroMode || 'single';
+                const colLogs = collection(db, 'moega_historico_descargas');
+
+                if (mode === 'single') {
+                    const moega = document.getElementById('retro-moega-id').value;
+                    const romaneio = document.getElementById('retro-romaneio').value || 'N/A';
+                    const placa = document.getElementById('retro-placa').value || 'N/A';
+                    const inicioVal = document.getElementById('retro-inicio').value;
+                    const fimVal = document.getElementById('retro-fim').value;
+                    const peso = Number(document.getElementById('retro-peso').value) || 0;
+                    const produto = document.getElementById('retro-produto').value || '-';
+                    const cultivar = document.getElementById('retro-cultivar').value || '-';
+                    const fazenda = document.getElementById('retro-fazenda')?.value || '-';
+                    const zona = document.getElementById('retro-zona')?.value || '-';
+                    const talhao = document.getElementById('retro-talhao')?.value || '-';
+                    const umidade = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : undefined;
+                    const pureza = document.getElementById('retro-pureza')?.value ? Number(document.getElementById('retro-pureza').value) : undefined;
+
+                    if (!moega || !inicioVal || !fimVal || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+                    // Validações adicionais
+                    if (new Date(fimVal).getTime() < new Date(inicioVal).getTime()) return notify('Data final não pode ser anterior à data inicial', 'erro');
+                    if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+                    if (umidade === undefined || isNaN(umidade) || umidade < 5 || umidade > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
+                    if (pureza !== undefined && isNaN(pureza)) return notify('Pureza deve ser numérica', 'erro');
+
+                    // coletar pausas se houver
+                    const pausas = [];
+                    if (document.getElementById('check-pausa-retro')?.checked) {
+                        document.querySelectorAll('#container-pausas-retro .paused-retro-row').forEach(r => {
+                            const inicio = r.querySelector('.retro-pausa-inicio')?.value;
+                            const fim = r.querySelector('.retro-pausa-fim')?.value;
+                            const motivo = r.querySelector('.retro-pausa-motivo')?.value || 'Outros';
+                            if (inicio) pausas.push({ inicio: new Date(inicio).toISOString(), fim: fim ? new Date(fim).toISOString() : null, motivo });
+                        });
+                    }
+
+                    const resumo = {
+                        moega: Number(moega),
+                        produto,
+                        cultivar,
+                        peso,
+                        inicio: new Date(inicioVal).toISOString(),
+                        fim: new Date(fimVal).toISOString(),
+                        statusFinal: 'CORRIGIDO',
+                        romaneio,
+                        placa,
+                        cargas: [{ romaneio, placa, produto, cultivar, peso, timestamp: new Date(fimVal).toISOString(), fazenda, zona, talhao, umidade, pureza }],
+                        pausas: pausas,
+                        fazenda,
+                        zona,
+                        talhao,
+                        umidade,
+                        pureza,
+                        createdBy: auth.currentUser.uid
+                    };
+
+                    await addDoc(colLogs, resumo);
+                    notify('Lançamento retroativo salvo', 'sucesso');
+                } else {
+                    // batch
+                    const inicioVal = document.getElementById('retro-batch-inicio').value;
+                    const fimVal = document.getElementById('retro-batch-fim').value;
+                    const peso = Number(document.getElementById('retro-batch-peso').value) || 0;
+                    const qtd = Number(document.getElementById('retro-batch-qtd').value) || 0;
+                    const placasText = document.getElementById('retro-batch-placas').value || '';
+                    const placas = placasText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length>0);
+                    const produto = document.getElementById('retro-produto').value || '-';
+                    const cultivar = document.getElementById('retro-cultivar').value || '-';
+                    const fazenda = document.getElementById('retro-fazenda')?.value || '-';
+                    const zona = document.getElementById('retro-zona')?.value || '-';
+                    const talhao = document.getElementById('retro-talhao')?.value || '-';
+                    const umidade = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : undefined;
+                    const pureza = document.getElementById('retro-pureza')?.value ? Number(document.getElementById('retro-pureza').value) : undefined;
+                    const moega = Number(document.getElementById('retro-moega-id').value) || null;
+
+                    if (!inicioVal || !fimVal || !peso || !qtd || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+                    // Validações batch
+                    if (new Date(fimVal).getTime() < new Date(inicioVal).getTime()) return notify('Data final não pode ser anterior à data inicial', 'erro');
+                    if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+                    if (umidade === undefined || isNaN(umidade) || umidade < 5 || umidade > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
+                    if (pureza !== undefined && isNaN(pureza)) return notify('Pureza deve ser numérica', 'erro');
+
+                    const resumo = {
+                        moega: moega,
+                        produto,
+                        cultivar,
+                        peso,
+                        inicio: new Date(inicioVal).toISOString(),
+                        fim: new Date(fimVal).toISOString(),
+                        statusFinal: 'CORRIGIDO',
+                        romaneio: 'LOTE',
+                        placa: placas.length>0 ? placas.join(',') : 'Múltiplas',
+                        placas: placas,
+                        qtdVeiculos: qtd,
+                        cargas: [],
+                        fazenda,
+                        zona,
+                        talhao,
+                        umidade,
+                        pureza,
+                        createdBy: auth.currentUser.uid
+                    };
+
+                    await addDoc(colLogs, resumo);
+                    notify('Lote retroativo salvo', 'sucesso');
+                }
+
+                // limpa formulário
+                document.getElementById('retro-romaneio').value = '';
+                document.getElementById('retro-placa').value = '';
+                document.getElementById('retro-inicio').value = '';
+                document.getElementById('retro-fim').value = '';
+                document.getElementById('retro-peso').value = '';
+                document.getElementById('retro-batch-peso').value = '';
+                document.getElementById('retro-batch-qtd').value = '';
+                document.getElementById('retro-batch-placas').value = '';
+                document.getElementById('container-pausas-retro').innerHTML = '';
+                document.getElementById('check-pausa-retro').checked = false;
+
+            } catch (e) {
+                console.error('Erro ao salvar retroativo', e);
+                notify('Erro ao salvar retroativo', 'erro');
+            }
+        }
+
         window.togglePausaRetro = () => {
              const c = document.getElementById('check-pausa-retro');
              const d = document.getElementById('container-pausas-retro');
@@ -930,10 +1459,25 @@
              if(c.checked) { d.classList.remove('hidden'); b.classList.remove('hidden'); if(d.children.length===0) window.addPausaRetroRow(); }
              else { d.classList.add('hidden'); b.classList.add('hidden'); d.innerHTML=''; }
         }
+        // Ajustes de UX: sincroniza min/max entre campos de data do Retroativo
+        try {
+            const riGlobal = document.getElementById('retro-inicio');
+            const rfGlobal = document.getElementById('retro-fim');
+            if (riGlobal && rfGlobal) {
+                riGlobal.addEventListener('change', () => { try { rfGlobal.min = riGlobal.value; if (rfGlobal.value && new Date(rfGlobal.value).getTime() < new Date(riGlobal.value).getTime()) rfGlobal.value = riGlobal.value; } catch(e){} });
+                rfGlobal.addEventListener('change', () => { try { riGlobal.max = rfGlobal.value; if (riGlobal.value && new Date(riGlobal.value).getTime() > new Date(rfGlobal.value).getTime()) riGlobal.value = rfGlobal.value; } catch(e){} });
+            }
+            const rbi = document.getElementById('retro-batch-inicio');
+            const rbf = document.getElementById('retro-batch-fim');
+            if (rbi && rbf) {
+                rbi.addEventListener('change', () => { try { rbf.min = rbi.value; if (rbf.value && new Date(rbf.value).getTime() < new Date(rbi.value).getTime()) rbf.value = rbi.value; } catch(e){} });
+                rbf.addEventListener('change', () => { try { rbi.max = rbf.value; if (rbi.value && new Date(rbi.value).getTime() > new Date(rbf.value).getTime()) rbi.value = rbf.value; } catch(e){} });
+            }
+        } catch(e) { console.warn('Erro ao inicializar listeners de data retro:', e); }
         window.addPausaRetroRow = () => {
             const div = document.createElement('div');
             div.className = "grid grid-cols-7 gap-2 items-end animate-fade-in paused-retro-row";
-            div.innerHTML = `<div class="col-span-2"><input type="datetime-local" class="retro-pausa-inicio w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><input type="datetime-local" class="retro-pausa-fim w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><select class="retro-pausa-motivo w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white">${MOTIVOS_PAUSA.map(m=>`<option>${m.nome}</option>`).join('')}</select></div><div class="col-span-1"><button onclick="this.parentElement.parentElement.remove()" class="w-full h-9 bg-red-900/50 hover:bg-red-600 text-red-400 hover:text-white rounded flex items-center justify-center transition border border-red-800/30"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+            div.innerHTML = `<div class="col-span-2"><input type="datetime-local" class="retro-pausa-inicio w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><input type="datetime-local" class="retro-pausa-fim w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><select class="retro-pausa-motivo w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white">${MOTIVOS_PAUSA.map(m=>`<option>${m.nome}</option>`).join('')}</select></div><div class="col-span-1"><button onclick="this.parentElement.parentElement.remove()" title="Remover pausa" aria-label="Remover pausa" class="w-full h-9 bg-red-900/50 hover:bg-red-600 text-red-400 hover:text-white rounded flex items-center justify-center transition border border-red-800/30"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
             document.getElementById('container-pausas-retro').appendChild(div);
             lucide.createIcons();
         }
