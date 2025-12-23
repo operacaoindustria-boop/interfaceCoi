@@ -1088,6 +1088,12 @@
             
             if(dest) dest.innerHTML = silosHTML;
 
+            // Persist metas/culturas ativas para dashboard (localStorage sync)
+            try {
+                const kult = Object.keys(METAS_PRODUTIVIDADE).map(k => ({ name: k, goal: METAS_PRODUTIVIDADE[k] }));
+                localStorage.setItem('moega_culturas', JSON.stringify(kult));
+            } catch(e) { console.warn('failed persist moega_culturas', e); }
+
             // Quando produto mudar, ajustar campo cultivar (retro e template)
             try {
                 if (retroProd) retroProd.addEventListener('change', (e) => { try { updateRetroCultivarUI(e.target.value); } catch(err){} });
