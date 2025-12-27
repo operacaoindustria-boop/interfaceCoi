@@ -402,6 +402,7 @@
                                             <th class="p-4 border-b border-slate-700">Fazenda</th>
                                             <th class="p-4 border-b border-slate-700">Zona</th>
                                             <th class="p-4 border-b border-slate-700">Talhão</th>
+                                            <th class="p-4 border-b border-slate-700">Destino</th>
                                             <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
                                             <th class="p-4 border-b border-slate-700 text-center">Ações</th>
                                         </tr>
@@ -529,6 +530,7 @@
                                             <th class="p-3">Fazenda</th>
                                             <th class="p-3">Zona</th>
                                             <th class="p-3">Talhão</th>
+                                            <th class="p-3">Destino</th>
                                             <th class="p-3 text-right">Peso (Kg)</th>
                                         </tr>
                                     </thead>
@@ -629,6 +631,7 @@
                                         <tr>
                                             <th class="p-4 border-b border-slate-700">Hora</th>
                                             <th class="p-4 border-b border-slate-700">Romaneio</th>
+                                            <th class="p-4 border-b border-slate-700">Placa</th>
                                             <th class="p-4 border-b border-slate-700">Moega</th>
                                             <th class="p-4 border-b border-slate-700 text-indigo-400"><i
                                                     data-lucide="tractor" class="w-3 h-3 inline mr-1"></i> Fazenda</th>
@@ -636,6 +639,7 @@
                                                     data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i> Zona</th>
                                             <th class="p-4 border-b border-slate-700 text-indigo-400"><i
                                                     data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th>
+                                            <th class="p-4 border-b border-slate-700">Pureza</th>
                                             <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
                                             <th class="p-4 border-b border-slate-700 text-center">Ações</th>
                                         </tr>
@@ -1713,10 +1717,7 @@
 
             let totalPeso = 0;
             let totalCargas = 0;
-            let totalUmidade = 0; // fallback sum for simple average
-            let cargasComUmidade = 0;
-            let umidadePesoSum = 0; // sum of umidade * peso for weighted average
-            let pesoForUmidadeSum = 0; // sum of pesos used in weighted average
+            const allUmidades = []; // Array para armazenar todas as umidades
 
             // Sumariza cargas de ciclos ativos
             Object.values(ciclosAtivos).forEach(ciclo => {
@@ -1726,10 +1727,7 @@
                         totalPeso += p;
                         totalCargas++;
                         if (carga.umidade && Number(carga.umidade) > 0) {
-                            const u = Number(carga.umidade);
-                            totalUmidade += u;
-                            cargasComUmidade++;
-                            if (p > 0) { umidadePesoSum += u * p; pesoForUmidadeSum += p; }
+                            allUmidades.push(Number(carga.umidade));
                         }
                     });
                 }
@@ -1746,24 +1744,39 @@
                     totalCargas += log.cargas.length;
                     log.cargas.forEach(c => {
                         if (c && c.umidade && Number(c.umidade) > 0) {
-                            const u = Number(c.umidade);
-                            totalUmidade += u; cargasComUmidade++;
-                            const p = Number(c.peso) || 0;
-                            if (p > 0) { umidadePesoSum += u * p; pesoForUmidadeSum += p; }
+                            allUmidades.push(Number(c.umidade));
                         }
                     });
                 } else {
                     totalCargas += 1;
+                    if (log.umidade && Number(log.umidade) > 0) {
+                        allUmidades.push(Number(log.umidade));
+                    }
                 }
             });
 
             if (document.getElementById('kpi-peso')) document.getElementById('kpi-peso').innerHTML = `${(totalPeso / 1000).toFixed(1)} <span class="text-lg text-slate-500">t</span>`;
             if (document.getElementById('kpi-cargas')) document.getElementById('kpi-cargas').innerText = totalCargas;
-            // Calcula média ponderada por peso quando possível
+            
+            // Calcula a umidade que mais aparece (moda)
             let umidadeExibida = 0.0;
-            if (pesoForUmidadeSum > 0) umidadeExibida = umidadePesoSum / pesoForUmidadeSum;
-            else if (cargasComUmidade > 0) umidadeExibida = totalUmidade / cargasComUmidade;
-            if (document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = `${umidadeExibida.toFixed(1)}<span class="text-lg text-slate-500">%</span>`;
+            if (allUmidades.length > 0) {
+                const frequencyMap = allUmidades.reduce((map, val) => {
+                    map[val] = (map[val] || 0) + 1;
+                    return map;
+                }, {});
+
+                let mode = null;
+                let maxFreq = 0;
+                for (const key in frequencyMap) {
+                    if (frequencyMap[key] > maxFreq) {
+                        maxFreq = frequencyMap[key];
+                        mode = key;
+                    }
+                }
+                umidadeExibida = mode !== null ? Number(mode) : 0.0;
+            }
+            if (document.getElementById('kpi-umidade')) document.getElementById('kpi-umidade').innerHTML = `${umidadeExibida.toFixed(2).replace('.', ',')}<span class="text-lg text-slate-500">%</span>`;
             if (document.getElementById('kpi-ativas')) document.getElementById('kpi-ativas').innerHTML = `${Object.keys(ciclosAtivos).length}<span class="text-lg text-slate-500">/4</span>`;
 
             if (activeTab === 'visao-geral') {
@@ -1913,7 +1926,7 @@
             let modal = document.getElementById(modalId);
             if (!modal) {
                 modal = document.createElement('div'); modal.id = modalId; modal.className = 'fixed inset-0 z-60 modal-backdrop flex items-center justify-center p-4';
-                modal.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-xl p-6 overflow-auto"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Veículos Lançados</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Veículos"><i data-lucide="x"></i></button></div><div id="vehicles-list" class="space-y-2 text-sm text-slate-300"></div></div>`;
+                modal.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl p-6 flex flex-col"><div class="flex justify-between items-center mb-4 shrink-0"><h3 class="text-lg font-bold text-white">Veículos Lançados</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Veículos"><i data-lucide="x"></i></button></div><div id="vehicles-list" class="space-y-2 text-sm text-slate-300 overflow-y-auto max-h-[70vh] pr-2"></div></div>`;
                 document.body.appendChild(modal);
             }
             const container = modal.querySelector('#vehicles-list');
@@ -2026,8 +2039,8 @@
             const tbody = document.getElementById('table-body');
             if (!tbody) return;
             tbody.innerHTML = '';
-            if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
+            if (logs.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="13" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
                 return;
             }
             // Render more detailed table with delete action
@@ -2046,6 +2059,12 @@
                 const fazendaVal = (log.fazenda !== undefined && log.fazenda !== null) ? log.fazenda : (src.fazenda !== undefined && src.fazenda !== null ? src.fazenda : '-');
                 const zonaVal = (log.zona !== undefined && log.zona !== null) ? log.zona : (src.zona !== undefined && src.zona !== null ? src.zona : '-');
                 const talhaoVal = (log.talhao !== undefined && log.talhao !== null) ? log.talhao : (src.talhao !== undefined && src.talhao !== null ? src.talhao : '-');
+                const destinoVal = src.destino || '-';
+
+                let romaneioContent = log.romaneio || src.romaneio || '---';
+                if (romaneioContent === 'Múltiplos' || (Array.isArray(log.cargas) && log.cargas.length > 1)) {
+                    romaneioContent = `<button onclick="showRomaneiosForLog('${log.id}')" class="text-indigo-400 hover:text-indigo-300 font-bold underline decoration-dashed underline-offset-4 transition-colors" title="Ver lista de romaneios">Múltiplos</button>`;
+                }
 
                 // Peso: preferir log.peso (resumo); se inexistente e houver cargas, somar
                 let pesoDisplay = Number(log.peso || 0);
@@ -2057,7 +2076,7 @@
                     <tr class="hover:bg-slate-800/50">
                         <td class="p-4 text-slate-400 font-mono">${inicio ? inicio.toLocaleTimeString('pt-BR') : '--:--'}</td>
                         <td class="p-4 text-slate-400 font-mono">${fim ? fim.toLocaleTimeString('pt-BR') : '--:--'}</td>
-                        <td class="p-4 font-bold">${log.romaneio || src.romaneio || '---'}</td>
+                        <td class="p-4 font-bold">${romaneioContent}</td>
                         <td class="p-4 text-center">${log.moega || src.moega || '---'}</td>
                         <td class="p-4 font-semibold text-white">${produtoText}</td>
                         <td class="p-4 text-slate-400">${purezaVal}</td>
@@ -2065,6 +2084,7 @@
                         <td class="p-4 text-slate-300">${fazendaVal}</td>
                         <td class="p-4 text-slate-300">${zonaVal}</td>
                         <td class="p-4 text-slate-300">${talhaoVal}</td>
+                        <td class="p-4 text-slate-300">${destinoVal}</td>
                         <td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(pesoDisplay || 0).toLocaleString('pt-BR')}</td>
                         <td class="p-4 text-center"><button onclick="deleteHistoricRecord('${log.id}')" title="Apagar" class="text-red-400 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
                     </tr>
@@ -2215,14 +2235,9 @@
                     badge.innerText = 'OPERANDO';
                     badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
                 }
-
-                // Update accumulated weight from active ciclo
-                const totalKg = Array.isArray(ciclo.cargas) ? ciclo.cargas.reduce((acc, c) => acc + Number(c.peso || 0), 0) : 0;
-                document.getElementById('detail-peso').innerHTML = `${totalKg.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
             } else {
                 badge.innerText = 'OFFLINE';
                 badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600';
-                document.getElementById('detail-peso').innerHTML = '0 <span class="text-lg text-slate-500">kg</span>';
             }
 
             // Combine cargas ativas (if any) + histórico desta moega and render
@@ -2241,7 +2256,8 @@
                         fazenda: c.fazenda || '-',
                         zona: c.zona || '-',
                         talhao: c.talhao || '-',
-                        peso: Number(c.peso || 0)
+                        peso: Number(c.peso || 0),
+                        destino: c.destino || '-'
                     });
                 });
             }
@@ -2264,7 +2280,8 @@
                                 fazenda: c.fazenda || h.fazenda || '-',
                                 zona: c.zona || h.zona || '-',
                                 talhao: c.talhao || h.talhao || '-',
-                                peso: Number(c.peso || 0)
+                                peso: Number(c.peso || 0),
+                                destino: c.destino || h.destino || '-'
                             });
                         });
                     } else {
@@ -2280,13 +2297,18 @@
                             fazenda: h.fazenda || '-',
                             zona: h.zona || '-',
                             talhao: h.talhao || '-',
-                            peso: Number(h.peso || 0)
+                            peso: Number(h.peso || 0),
+                            destino: h.destino || '-'
                         });
                     }
                 }
             });
 
             combined.sort((a, b) => { const ta = a.fim ? new Date(a.fim).getTime() : 0; const tb = b.fim ? new Date(b.fim).getTime() : 0; return tb - ta; });
+
+            // Calculate total weight from combined data
+            const totalKgCombined = combined.reduce((acc, item) => acc + (Number(item.peso) || 0), 0);
+            document.getElementById('detail-peso').innerHTML = `${totalKgCombined.toLocaleString('pt-BR')} <span class="text-lg text-slate-500">kg</span>`;
 
             const culturaBreakdown = {};
             combined.forEach(item => {
@@ -2316,7 +2338,7 @@
 
             tbody.innerHTML = '';
             if (combined.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-slate-500">Nenhuma descarga para esta moega.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center p-6 text-slate-500">Nenhuma descarga para esta moega.</td></tr>';
             } else {
                 combined.forEach(item => {
                     const inicioText = item.inicio ? new Date(item.inicio).toLocaleTimeString('pt-BR') : '--:--';
@@ -2334,6 +2356,7 @@
                             <td class="p-3 text-slate-300">${item.fazenda}</td>
                             <td class="p-3 text-slate-300">${item.zona}</td>
                             <td class="p-3 text-slate-300">${item.talhao}</td>
+                            <td class="p-3 text-slate-300">${item.destino || '---'}</td>
                             <td class="p-3 text-right font-bold text-emerald-400">${Number(item.peso || 0).toLocaleString('pt-BR')}</td>
                         </tr>
                     `;
@@ -3056,21 +3079,45 @@
                     if (Array.isArray(l.cargas) && l.cargas.length > 0) {
                         l.cargas.forEach(c => {
                             const ts = c.timestamp || l.fim || l.inicio;
-                            rows.push({ id: sourceId, hora: ts ? new Date(ts).toLocaleTimeString('pt-BR') : '--:--', romaneio: c.romaneio || l.romaneio || '-', moega: l.moega || c.moega || '-', fazenda: c.fazenda || l.fazenda || '-', zona: c.zona || l.zona || '-', talhao: c.talhao || l.talhao || '-', peso: Number(c.peso || 0) });
+                            const purezaVal = (c.pureza !== undefined && c.pureza !== null) ? c.pureza : ((c.impureza !== undefined && c.impureza !== null) ? c.impureza : (l.pureza !== undefined && l.pureza !== null ? l.pureza : (l.impureza !== undefined && l.impureza !== null ? l.impureza : '-')));
+                            rows.push({
+                                id: sourceId,
+                                hora: ts ? new Date(ts).toLocaleTimeString('pt-BR') : '--:--',
+                                romaneio: c.romaneio || l.romaneio || '-',
+                                placa: c.placa || l.placa || '-',
+                                moega: l.moega || c.moega || '-',
+                                fazenda: c.fazenda || l.fazenda || '-',
+                                zona: c.zona || l.zona || '-',
+                                talhao: c.talhao || l.talhao || '-',
+                                pureza: purezaVal,
+                                peso: Number(c.peso || 0)
+                            });
                         });
                     } else {
                         const ts = l.fim || l.inicio;
-                        rows.push({ id: sourceId, hora: ts ? new Date(ts).toLocaleTimeString('pt-BR') : '--:--', romaneio: l.romaneio || '-', moega: l.moega || '-', fazenda: l.fazenda || '-', zona: l.zona || '-', talhao: l.talhao || '-', peso: Number(l.peso || 0) });
+                        const purezaVal = (l.pureza !== undefined && l.pureza !== null) ? l.pureza : ((l.impureza !== undefined && l.impureza !== null) ? l.impureza : '-');
+                        rows.push({
+                            id: sourceId,
+                            hora: ts ? new Date(ts).toLocaleTimeString('pt-BR') : '--:--',
+                            romaneio: l.romaneio || '-',
+                            placa: l.placa || '-',
+                            moega: l.moega || '-',
+                            fazenda: l.fazenda || '-',
+                            zona: l.zona || '-',
+                            talhao: l.talhao || '-',
+                            pureza: purezaVal,
+                            peso: Number(l.peso || 0)
+                        });
                     }
                 });
                 tbody.innerHTML = '';
-                if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-slate-500">Nenhum registro para o período.</td></tr>';
+                if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="10" class="text-center p-6 text-slate-500">Nenhum registro para o período.</td></tr>';
                 else rows.forEach(r => {
                     const idAttr = r.id || '';
                     if (isMoegaView) {
                         tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-3 font-bold">${r.romaneio}</td><td class="p-3">${r.fazenda}</td><td class="p-3">${r.zona}</td><td class="p-3">${r.talhao}</td><td class="p-3 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td></tr>`;
                     } else {
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-center"><button onclick="deleteHistoricRecord('${idAttr}')" title="Excluir" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
+                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.placa}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4">${r.pureza}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-center"><button onclick="deleteHistoricRecord('${idAttr}')" title="Excluir" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
                     }
                 });
                 lucide.createIcons();
@@ -3361,6 +3408,33 @@
             try { lucide.createIcons(); } catch (e) { }
         }
         function closeRomaneiosModal() { const m = document.getElementById('modal-romaneios'); if (m) m.classList.add('hidden'); }
+
+        window.showRomaneiosForLog = function(id) {
+            const log = historicoDescargas.find(h => h.id === id);
+            if (!log || !Array.isArray(log.cargas)) return;
+            
+            const romaneios = log.cargas.map(c => c.romaneio).filter(r => r);
+            const uniqueRomaneios = [...new Set(romaneios)];
+            
+            const modalId = 'modal-romaneios-detail';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+            
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'fixed inset-0 z-[90] modal-backdrop flex items-center justify-center p-4';
+            
+            let contentHtml = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col animate-fade-in"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Romaneios do Ciclo</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button></div><div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">`;
+            
+            uniqueRomaneios.forEach(r => {
+                contentHtml += `<div class="p-3 bg-slate-900/50 rounded border border-slate-700 text-slate-300 font-mono text-center font-bold select-all hover:bg-slate-800 transition-colors">${r}</div>`;
+            });
+            
+            contentHtml += `</div></div>`;
+            modal.innerHTML = contentHtml;
+            document.body.appendChild(modal);
+            lucide.createIcons();
+        }
 
         document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
