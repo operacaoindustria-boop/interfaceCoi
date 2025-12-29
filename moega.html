@@ -1,55 +1,163 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MES - Operação Moega</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .btn-industrial { transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); }
-        .btn-industrial:active { transform: translateY(2px); box-shadow: none; }
-        .btn-moega { transition: all 0.2s; position: relative; overflow: hidden; }
-        .btn-moega:hover { transform: translateY(-2px); }
-        .moega-selected { border-color: #3b82f6 !important; background-color: #1e3a8a !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5); }
-        .moega-ocupada { border-color: #f59e0b !important; background-color: #451a03 !important; color: #fbbf24 !important; }
-        .moega-pausada { border-color: #ef4444 !important; background-color: #450a0a !important; color: #fca5a5 !important; animation: pulse-border 2s infinite; }
-        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4); } 100% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } }
-        input, select, textarea { background-color: #1e293b; border: 1px solid #475569; color: white; }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
-        input:disabled, select:disabled { background-color: #0f172a; color: #64748b; border-color: #334155; cursor: not-allowed; }
-        .nav-tab-active { background-color: #3b82f6; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); }
-        .nav-tab-inactive { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-        .sub-pill-active { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.5); }
-        .sub-pill-inactive { background-color: transparent; color: #64748b; border: 1px solid transparent; }
-        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-        .modal-backdrop { background-color: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn-industrial {
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-industrial:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .btn-moega {
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-moega:hover {
+            transform: translateY(-2px);
+        }
+
+        .moega-selected {
+            border-color: #3b82f6 !important;
+            background-color: #1e3a8a !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
+        }
+
+        .moega-ocupada {
+            border-color: #f59e0b !important;
+            background-color: #451a03 !important;
+            color: #fbbf24 !important;
+        }
+
+        .moega-pausada {
+            border-color: #ef4444 !important;
+            background-color: #450a0a !important;
+            color: #fca5a5 !important;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4);
+            }
+
+            100% {
+                box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+            }
+        }
+
+        input,
+        select,
+        textarea {
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        input:disabled,
+        select:disabled {
+            background-color: #0f172a;
+            color: #64748b;
+            border-color: #334155;
+            cursor: not-allowed;
+        }
+
+        .nav-tab-active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-tab-inactive {
+            background-color: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+
+        .sub-pill-active {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+
+        .sub-pill-inactive {
+            background-color: transparent;
+            color: #64748b;
+            border: 1px solid transparent;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.85);
+            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px);
+        }
     </style>
 </head>
+
 <body class="min-h-screen flex flex-col">
 
     <!-- LOGIN MODAL -->
     <div id="login-modal" class="hidden fixed inset-0 z-[100] modal-backdrop flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-8">
             <div class="flex flex-col items-center mb-6">
-                <div class="bg-blue-700 p-3 rounded-lg shadow-lg border border-blue-600 mb-4"><i data-lucide="factory" class="text-white h-10 w-10"></i></div>
+                <div class="bg-blue-700 p-3 rounded-lg shadow-lg border border-blue-600 mb-4"><i data-lucide="factory"
+                        class="text-white h-10 w-10"></i></div>
                 <h2 class="text-2xl font-bold text-white">MES - Login</h2>
                 <p class="text-slate-400">Acesso ao Painel Operacional</p>
             </div>
             <div class="space-y-4">
                 <div>
                     <label for="email" class="text-xs text-slate-400 uppercase font-bold mb-1 block">Email</label>
-                    <input type="email" id="email" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white placeholder-slate-600" placeholder="usuario@email.com">
+                    <input type="email" id="email"
+                        class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white placeholder-slate-600"
+                        placeholder="usuario@email.com">
                 </div>
                 <div>
                     <label for="password" class="text-xs text-slate-400 uppercase font-bold mb-1 block">Senha</label>
-                    <input type="password" id="password" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white placeholder-slate-600" placeholder="••••••••">
+                    <input type="password" id="password"
+                        class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white placeholder-slate-600"
+                        placeholder="••••••••">
                 </div>
                 <p id="login-error" class="text-red-400 text-sm text-center hidden"></p>
-                <button id="login-button" class="w-full h-14 mt-4 btn-industrial bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg">
+                <button id="login-button"
+                    class="w-full h-14 mt-4 btn-industrial bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg">
                     <i data-lucide="log-in" class="w-6 h-6"></i> Entrar
                 </button>
             </div>
@@ -57,18 +165,33 @@
     </div>
 
     <!-- HEADER -->
-    <header class="bg-slate-800 border-b border-slate-700 h-20 flex items-center justify-between px-6 shadow-lg z-50 shrink-0 sticky top-0">
+    <header
+        class="bg-slate-800 border-b border-slate-700 h-20 flex items-center justify-between px-6 shadow-lg z-50 shrink-0 sticky top-0">
         <div class="flex items-center gap-4">
-            <div class="bg-blue-700 p-2 rounded shadow-lg border border-blue-600"><i data-lucide="factory" class="text-white h-8 w-8"></i></div>
-            <div><h1 class="text-2xl font-bold tracking-wide text-white uppercase">Operação Moega</h1><p class="text-xs text-blue-400 font-bold tracking-wider">SISTEMA MES - ONLINE</p></div>
+            <div class="bg-blue-700 p-2 rounded shadow-lg border border-blue-600"><i data-lucide="factory"
+                    class="text-white h-8 w-8"></i></div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide text-white uppercase">Operação Moega</h1>
+                <p class="text-xs text-blue-400 font-bold tracking-wider">SISTEMA MES - ONLINE</p>
+            </div>
         </div>
         <div class="flex items-center gap-4">
             <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-700">
-                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-tab-active px-6 py-2 rounded font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all"><i data-lucide="layout-grid" class="w-4 h-4"></i> Tempo Real</button>
-                <button onclick="switchView('retroactive')" id="nav-retroactive" class="nav-tab-inactive px-6 py-2 rounded font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all"><i data-lucide="history" class="w-4 h-4"></i> Retroativo</button>
+                <button onclick="switchView('dashboard')" id="nav-dashboard"
+                    class="nav-tab-active px-6 py-2 rounded font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all"><i
+                        data-lucide="layout-grid" class="w-4 h-4"></i> Tempo Real</button>
+                <button onclick="switchView('retroactive')" id="nav-retroactive"
+                    class="nav-tab-inactive px-6 py-2 rounded font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all"><i
+                        data-lucide="history" class="w-4 h-4"></i> Retroativo</button>
+                <button onclick="switchView('transfer')" id="nav-transfer"
+                    class="nav-tab-inactive px-6 py-2 rounded font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all"><i
+                        data-lucide="arrow-right-left" class="w-4 h-4"></i> Transferência</button>
             </div>
             <div class="h-10 w-px bg-slate-700 mx-2"></div>
-            <div class="text-right hidden sm:block"><p class="text-[10px] text-slate-500 uppercase font-bold">Horário</p><p id="clock" class="text-xl font-mono font-bold text-emerald-400 leading-none">12:00</p></div>
+            <div class="text-right hidden sm:block">
+                <p class="text-[10px] text-slate-500 uppercase font-bold">Horário</p>
+                <p id="clock" class="text-xl font-mono font-bold text-emerald-400 leading-none">12:00</p>
+            </div>
         </div>
     </header>
 
@@ -77,7 +200,8 @@
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10">
             <div class="lg:col-span-3 flex flex-col gap-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Selecione o Equipamento</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Selecione o
+                    Equipamento</label>
                 <div class="grid grid-cols-2 lg:grid-cols-1 gap-4" id="moega-buttons-container">
                     <div class="text-slate-500 text-center py-10 flex flex-col items-center col-span-2">
                         <i data-lucide="loader" class="w-8 h-8 animate-spin mb-2 text-blue-500"></i>
@@ -86,14 +210,23 @@
                 </div>
             </div>
             <div class="lg:col-span-9 flex flex-col">
-                <div id="placeholder-selecao" class="h-full flex flex-col items-center justify-center text-slate-600 bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-700 min-h-[500px]">
+                <div id="placeholder-selecao"
+                    class="h-full flex flex-col items-center justify-center text-slate-600 bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-700 min-h-[500px]">
                     <i data-lucide="mouse-pointer-click" class="w-20 h-20 mb-4 opacity-50"></i>
                     <p class="text-xl font-bold">Selecione uma Moega ao lado</p>
                 </div>
-                <div id="action-panel" class="hidden bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden flex flex-col min-h-[600px]">
-                    <div class="bg-slate-750 p-6 border-b border-slate-600 flex justify-between items-center sticky top-0 z-10 bg-slate-800">
-                        <div><h2 class="text-xl font-bold text-white flex items-center gap-3"><i id="panel-icon" data-lucide="pen-tool" class="text-blue-500 w-6 h-6"></i> <span id="panel-title">Nova Entrada</span></h2><p id="panel-subtitle" class="text-slate-400 text-sm mt-1">Preencha os dados.</p></div>
-                        <div id="panel-badge" class="hidden px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest"></div>
+                <div id="action-panel"
+                    class="hidden bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden flex flex-col min-h-[600px]">
+                    <div
+                        class="bg-slate-750 p-6 border-b border-slate-600 flex justify-between items-center sticky top-0 z-10 bg-slate-800">
+                        <div>
+                            <h2 class="text-xl font-bold text-white flex items-center gap-3"><i id="panel-icon"
+                                    data-lucide="pen-tool" class="text-blue-500 w-6 h-6"></i> <span
+                                    id="panel-title">Nova Entrada</span></h2>
+                            <p id="panel-subtitle" class="text-slate-400 text-sm mt-1">Preencha os dados.</p>
+                        </div>
+                        <div id="panel-badge"
+                            class="hidden px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest"></div>
                     </div>
                     <div id="panel-content" class="p-6 md:p-8 flex-1"></div>
                 </div>
@@ -103,11 +236,23 @@
         <!-- VIEW: RETROATIVO -->
         <div id="view-retroactive" class="hidden max-w-5xl mx-auto pb-10">
             <div class="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
-                <div class="p-8 border-b border-slate-600 bg-slate-750 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div class="flex items-center gap-4"><div class="p-4 bg-indigo-900/50 rounded-xl border border-indigo-500/30"><i data-lucide="archive-restore" class="w-8 h-8 text-indigo-400"></i></div><div><h2 class="text-2xl font-bold text-white">Lançamento Retroativo</h2><p class="text-slate-400 text-sm">Correção de histórico.</p></div></div>
+                <div
+                    class="p-8 border-b border-slate-600 bg-slate-750 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="p-4 bg-indigo-900/50 rounded-xl border border-indigo-500/30"><i
+                                data-lucide="archive-restore" class="w-8 h-8 text-indigo-400"></i></div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Lançamento Retroativo</h2>
+                            <p class="text-slate-400 text-sm">Correção de histórico.</p>
+                        </div>
+                    </div>
                     <div class="bg-slate-900 p-1.5 rounded-lg flex text-sm font-bold border border-slate-700">
-                        <button onclick="toggleRetroMode('single')" id="btn-mode-single" class="sub-pill-active px-6 py-2.5 rounded-md flex items-center gap-2 transition-all"><i data-lucide="file-plus" class="w-4 h-4"></i> Unitário</button>
-                        <button onclick="toggleRetroMode('batch')" id="btn-mode-batch" class="sub-pill-inactive px-6 py-2.5 rounded-md flex items-center gap-2 transition-all"><i data-lucide="files" class="w-4 h-4"></i> Em Lote</button>
+                        <button onclick="toggleRetroMode('single')" id="btn-mode-single"
+                            class="sub-pill-active px-6 py-2.5 rounded-md flex items-center gap-2 transition-all"><i
+                                data-lucide="file-plus" class="w-4 h-4"></i> Unitário</button>
+                        <button onclick="toggleRetroMode('batch')" id="btn-mode-batch"
+                            class="sub-pill-inactive px-6 py-2.5 rounded-md flex items-center gap-2 transition-all"><i
+                                data-lucide="files" class="w-4 h-4"></i> Em Lote</button>
                     </div>
                 </div>
                 <div class="p-8">
@@ -115,10 +260,18 @@
                     <div class="mb-8 p-4 bg-slate-900/50 rounded-xl border border-slate-700/50">
                         <label class="text-xs text-slate-400 uppercase font-bold mb-3 block">Moega de Referência</label>
                         <div class="flex gap-3 overflow-x-auto">
-                            <button onclick="setRetroMoega(1)" class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition" data-id="1">01</button>
-                            <button onclick="setRetroMoega(2)" class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition" data-id="2">02</button>
-                            <button onclick="setRetroMoega(3)" class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition" data-id="3">03</button>
-                            <button onclick="setRetroMoega(4)" class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition" data-id="4">04</button>
+                            <button onclick="setRetroMoega(1)"
+                                class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition"
+                                data-id="1">01</button>
+                            <button onclick="setRetroMoega(2)"
+                                class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition"
+                                data-id="2">02</button>
+                            <button onclick="setRetroMoega(3)"
+                                class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition"
+                                data-id="3">03</button>
+                            <button onclick="setRetroMoega(4)"
+                                class="btn-retro-moega flex-1 py-3 rounded border border-slate-600 text-slate-400 font-bold hover:bg-slate-700 hover:text-white transition"
+                                data-id="4">04</button>
                         </div>
                         <input type="hidden" id="retro-moega-id">
                     </div>
@@ -126,137 +279,474 @@
                     <!-- FORMULÁRIO UNITÁRIO -->
                     <div id="form-retro-single" class="space-y-6">
                         <div class="grid grid-cols-2 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Nº Romaneio</label><input type="text" id="retro-romaneio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono placeholder-slate-600" placeholder="00000"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa</label><input type="text" id="retro-placa" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono uppercase placeholder-slate-600" placeholder="ABC-1234"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Nº
+                                    Romaneio</label><input type="text" id="retro-romaneio"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono placeholder-slate-600"
+                                    placeholder="00000"></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa</label><input
+                                    type="text" id="retro-placa"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono uppercase placeholder-slate-600"
+                                    placeholder="ABC-1234"></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Início</label><input type="datetime-local" id="retro-inicio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fim</label><input type="datetime-local" id="retro-fim" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso (Kg)</label><input type="number" id="retro-peso" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-4 text-white font-mono font-bold text-lg bg-slate-900 border-slate-600 focus:border-indigo-500"></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Início</label><input
+                                    type="datetime-local" id="retro-inicio"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm">
+                            </div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fim</label><input
+                                    type="datetime-local" id="retro-fim"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm">
+                            </div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso
+                                    (Kg)</label><input type="number" id="retro-peso"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-4 text-white font-mono font-bold text-lg bg-slate-900 border-slate-600 focus:border-indigo-500">
+                            </div>
                         </div>
                     </div>
 
                     <!-- FORMULÁRIO EM LOTE -->
                     <div id="form-retro-batch" class="hidden space-y-6">
-                        <div class="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-lg text-sm text-indigo-200 flex items-start gap-3"><i data-lucide="info" class="w-5 h-5 shrink-0 mt-0.5"></i><p>O modo "Em Lote" cria um registro consolidado. A produtividade será calculada pela média do período.</p></div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Início do Período</label><input type="datetime-local" id="retro-batch-inicio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm focus:border-indigo-500 outline-none"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fim do Período</label><input type="datetime-local" id="retro-batch-fim" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm focus:border-indigo-500 outline-none"></div>
+                        <div
+                            class="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-lg text-sm text-indigo-200 flex items-start gap-3">
+                            <i data-lucide="info" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                            <p>O modo "Em Lote" cria um registro consolidado. A produtividade será calculada pela média
+                                do período.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso Total Acumulado (Kg)</label><input type="number" id="retro-batch-peso" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono font-bold text-xl bg-slate-900"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Qtd. Veículos</label><input type="number" id="retro-batch-qtd" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono font-bold focus:border-indigo-500 outline-none" placeholder="Ex: 10"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Início do
+                                    Período</label><input type="datetime-local" id="retro-batch-inicio"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm focus:border-indigo-500 outline-none">
+                            </div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fim do
+                                    Período</label><input type="datetime-local" id="retro-batch-fim"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm focus:border-indigo-500 outline-none">
+                            </div>
                         </div>
-                        <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 flex justify-between"><span>Lista de Placas (Opcional)</span><span id="batch-plates-count" class="text-indigo-400">0 detectadas</span></label><textarea id="retro-batch-placas" rows="3" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white text-sm font-mono uppercase focus:border-indigo-500 outline-none" placeholder="Cole as placas aqui..." onkeyup="countPlates()"></textarea></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso Total
+                                    Acumulado (Kg)</label><input type="number" id="retro-batch-peso"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono font-bold text-xl bg-slate-900">
+                            </div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Qtd.
+                                    Veículos</label><input type="number" id="retro-batch-qtd"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono font-bold focus:border-indigo-500 outline-none"
+                                    placeholder="Ex: 10"></div>
+                        </div>
+                        <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 flex justify-between"><span>Lista
+                                    de Placas (Opcional)</span><span id="batch-plates-count" class="text-indigo-400">0
+                                    detectadas</span></label><textarea id="retro-batch-placas" rows="3"
+                                class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white text-sm font-mono uppercase focus:border-indigo-500 outline-none"
+                                placeholder="Cole as placas aqui..." onkeyup="countPlates()"></textarea></div>
                     </div>
 
                     <!-- Campos Comuns -->
                     <div class="mt-6 pt-6 border-t border-slate-700 space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Produto</label><select id="retro-produto" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"><option value="" disabled selected>Selecione...</option></select></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><input type="text" id="retro-cultivar" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Produto</label><select
+                                    id="retro-produto"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none">
+                                    <option value="" disabled selected>Selecione...</option>
+                                </select></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><input
+                                    type="text" id="retro-cultivar"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none">
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fazenda</label><input type="text" id="retro-fazenda" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Nome da fazenda"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Zona</label><input type="text" id="retro-zona" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Zona"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Talhão</label><input type="text" id="retro-talhao" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none" placeholder="Talhão"></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Fazenda</label><input
+                                    type="text" id="retro-fazenda"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
+                                    placeholder="Nome da fazenda"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Zona</label><input
+                                    type="text" id="retro-zona"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
+                                    placeholder="Zona"></div>
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Talhão</label><input
+                                    type="text" id="retro-talhao"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
+                                    placeholder="Talhão"></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Umidade (%)</label><input type="number" id="retro-umidade" step="0.1" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" placeholder="Ex: 13.5"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Pureza (%)</label><input type="number" id="retro-pureza" step="0.1" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" placeholder="Ex: 99.5"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Umidade
+                                    (%)</label><input type="number" id="retro-umidade" step="0.1"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                                    placeholder="Ex: 13.5"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Pureza
+                                    (%)</label><input type="number" id="retro-pureza" step="0.1"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                                    placeholder="Ex: 99.5"></div>
                         </div>
                         <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-5">
                             <div class="flex justify-between items-center mb-4">
-                                <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="check-pausa-retro" class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-indigo-500 focus:ring-offset-slate-900" onchange="togglePausaRetro()"><span class="text-sm font-bold text-slate-300 uppercase tracking-wider">Houve Pausas no Período?</span></label>
-                                <button id="btn-add-pausa-retro" onclick="addPausaRetroRow()" class="hidden text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-bold flex items-center gap-2 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar Pausa</button>
+                                <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox"
+                                        id="check-pausa-retro"
+                                        class="w-5 h-5 rounded border-slate-500 bg-slate-800 text-indigo-500 focus:ring-offset-slate-900"
+                                        onchange="togglePausaRetro()"><span
+                                        class="text-sm font-bold text-slate-300 uppercase tracking-wider">Houve Pausas
+                                        no Período?</span></label>
+                                <button id="btn-add-pausa-retro" onclick="addPausaRetroRow()"
+                                    class="hidden text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-bold flex items-center gap-2 transition-colors"><i
+                                        data-lucide="plus" class="w-4 h-4"></i> Adicionar Pausa</button>
                             </div>
                             <div id="container-pausas-retro" class="hidden space-y-3"></div>
                         </div>
-                        <button onclick="salvarRetroativo()" class="w-full h-16 mt-4 btn-industrial bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg"><i data-lucide="save" class="w-6 h-6"></i> Confirmar Lançamento Retroativo</button>
+                        <button onclick="salvarRetroativo()"
+                            class="w-full h-16 mt-4 btn-industrial bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg"><i
+                                data-lucide="save" class="w-6 h-6"></i> Confirmar Lançamento Retroativo</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TEMPLATE: NOVA ENTRADA -->
-        <div id="form-entrada-container" class="hidden"> 
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-white">Nova Entrada de Carga</h3>
-                <button id="btn-cancelar-entrada" onclick="cancelarEntrada()" class="hidden text-sm text-slate-400 hover:text-white underline">Voltar para Gestão</button>
+        <!-- VIEW: CONTROLE DE TRANSFERÊNCIA -->
+        <div id="view-transfer" class="hidden max-w-5xl mx-auto pb-10">
+            <div class="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+                <div
+                    class="p-8 border-b border-slate-600 bg-slate-750 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="p-4 bg-orange-900/50 rounded-xl border border-orange-500/30">
+                            <i data-lucide="arrow-right-left" class="w-8 h-8 text-orange-400"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Controle de Transferência</h2>
+                            <p class="text-slate-400 text-sm">Registro de saída de produtos e descartes.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8 space-y-6">
+                    <!-- Data, Placa, Hora -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Data da Saída</label>
+                            <input type="date" id="transf-data"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa do
+                                Veículo</label>
+                            <input type="text" id="transf-placa"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase"
+                                placeholder="ABC-1234">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Hora da Saída</label>
+                            <input type="time" id="transf-hora"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white">
+                        </div>
+                    </div>
+                    <!-- Separator -->
+                    <div class="pt-6 border-t border-slate-700"></div>
+                    <!-- Produto, Cultura, Destino -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Produto Tipo</label>
+                            <select id="transf-produto"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                                onchange="toggleTransferInput('produto')">
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="DESCARTE DE SEMENTE (GRÃOS)">DESCARTE DE SEMENTE (GRÃOS)</option>
+                                <option value="RESÍDUO / PALHA">RESÍDUO / PALHA</option>
+                                <option value="TRANSBORDO SEMENTE">TRANSBORDO SEMENTE</option>
+                                <option value="TRANSBORDO INDÚSTRIA">TRANSBORDO INDÚSTRIA</option>
+                                <option value="GRÃO CONTAMINADOS (LIXO)">GRÃO CONTAMINADOS (LIXO)</option>
+                                <option value="OUTROS">OUTROS</option>
+                            </select>
+                            <input type="text" id="transf-produto-outro"
+                                class="w-full mt-2 h-10 bg-slate-900 border border-slate-600 rounded px-3 text-white hidden"
+                                placeholder="Digite o tipo de produto...">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultura</label>
+                            <select id="transf-cultura"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                                onchange="toggleTransferInput('cultura')">
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="BRAQUIÁRIA">BRAQUIÁRIA</option>
+                                <option value="CROTALÁRIA">CROTALÁRIA</option>
+                                <option value="FEIJÃO GUANDÚ">FEIJÃO GUANDÚ</option>
+                                <option value="FEIJÃO DE PORCO">FEIJÃO DE PORCO</option>
+                                <option value="MILHETO">MILHETO</option>
+                                <option value="SOJA">SOJA</option>
+                                <option value="OUTRO">OUTRO</option>
+                            </select>
+                            <input type="text" id="transf-cultura-outro"
+                                class="w-full mt-2 h-10 bg-slate-900 border border-slate-600 rounded px-3 text-white hidden"
+                                placeholder="Digite a cultura...">
+                        </div>
+                    </div>
+                    <!-- Destino -->
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Destino</label>
+                        <select id="transf-destino"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                            onchange="toggleTransferInput('destino')">
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="UAS ATTO SEMENTES">UAS ATTO SEMENTES</option>
+                            <option value="UAS ATTO ARMAZÉM SEMENTES">UAS ATTO ARMAZÉM SEMENTES</option>
+                            <option value="UBS SHAPARRAL">UBS SHAPARRAL</option>
+                            <option value="UAS SHAPARRAL ARMAZÉM SEMENTES">UAS SHAPARRAL ARMAZÉM SEMENTES</option>
+                            <option value="DEPÓSITO DE GRÃOS CONTAMINADOS (LIXO)">DEPÓSITO DE GRÃOS CONTAMINADOS (LIXO)
+                            </option>
+                            <option value="GRANELEIRO ATTO SEMENTES">GRANELEIRO ATTO SEMENTES</option>
+                            <option value="GRANELEIRO RAINHA">GRANELEIRO RAINHA</option>
+                            <option value="GRANELEIRO AGROCEMA">GRANELEIRO AGROCEMA</option>
+                            <option value="FÁBRICA DE ADUBO">FÁBRICA DE ADUBO</option>
+                            <option value="ARMAZÉM RAÇÃO CRISTO REI">ARMAZÉM RAÇÃO CRISTO REI</option>
+                            <option value="ARMAZÉM RESÍDUO RAINHA">ARMAZÉM RESÍDUO RAINHA</option>
+                            <option value="OUTRO">OUTRO</option>
+                        </select>
+                        <input type="text" id="transf-destino-outro"
+                            class="w-full mt-2 h-10 bg-slate-900 border border-slate-600 rounded px-3 text-white hidden"
+                            placeholder="Digite o destino...">
+                    </div>
+                    <!-- Variedade, Lote -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Variedade</label>
+                            <input type="text" id="transf-variedade"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase"
+                                placeholder="Ex: BMX BÔNUS IPRO">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Lote</label>
+                            <input type="text" id="transf-lote"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase"
+                                placeholder="Ex: LOTE-123">
+                        </div>
+                    </div>
+                    <!-- Quantidade (Peso) -->
+                    <div>
+                        <!-- Embalagem, Qtd, Peso -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div><label
+                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Embalagem</label><input
+                                    type="text" id="transf-embalagem"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white"
+                                    placeholder="Ex: Big Bag, Saco 25kg"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Qtd.
+                                    Embalagens</label><input type="number" id="transf-qtd-embalagem"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white"
+                                    placeholder="0"></div>
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso Total
+                                    (Kg)</label><input type="number" id="transf-peso"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-4 text-white font-mono font-bold text-lg bg-slate-900 border-slate-600 focus:border-orange-500"
+                                    placeholder="0"></div>
+                        </div>
+                        <!-- Operador, Motorista -->
+                        <div class="pt-6 border-t border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Operador
+                                    Responsável</label>
+                                <input type="text" id="transf-operador"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white"
+                                    placeholder="Nome do operador">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Motorista</label>
+                                <input type="text" id="transf-motorista"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white"
+                                    placeholder="Nome do motorista">
+                            </div>
+                        </div>
+                        <!-- Submit -->
+                        <button onclick="salvarTransferencia()"
+                            class="w-full h-16 mt-4 btn-industrial bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg">
+                            <i data-lucide="save" class="w-6 h-6"></i> Registrar Transferência
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div id="aviso-trava-qualidade" class="hidden mb-4 bg-blue-900/30 border border-blue-800 p-3 rounded text-xs text-blue-200 flex items-center gap-2">
-                <i data-lucide="lock" class="w-4 h-4"></i><span><b>Controle de Qualidade Ativo:</b> Produto e cultivar travados pelo ciclo atual.</span>
-            </div>
+
+            <!-- TEMPLATE: NOVA ENTRADA -->
+            <div id="form-entrada-container" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">Nova Entrada de Carga</h3>
+                    <button id="btn-cancelar-entrada" onclick="cancelarEntrada()"
+                        class="hidden text-sm text-slate-400 hover:text-white underline">Voltar para Gestão</button>
+                </div>
+                <div id="aviso-trava-qualidade"
+                    class="hidden mb-4 bg-blue-900/30 border border-blue-800 p-3 rounded text-xs text-blue-200 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4"></i><span><b>Controle de Qualidade Ativo:</b> Produto e
+                        cultivar travados pelo ciclo atual.</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div><label for="tpl_input-romaneio" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Nº Romaneio</label><input type="text" id="tpl_input-romaneio" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono" placeholder="00000"></div>
-                <div><label for="tpl_input-placa" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa</label><input type="text" id="tpl_input-placa" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono" placeholder="ABC-1234"></div>
+                    <div><label for="tpl_input-romaneio"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Nº Romaneio</label><input
+                            type="text" id="tpl_input-romaneio"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"
+                            placeholder="00000"></div>
+                    <div><label for="tpl_input-placa"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa</label><input
+                            type="text" id="tpl_input-placa"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"
+                            placeholder="ABC-1234"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label for="tpl_input-produto"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select
+                            id="tpl_input-produto" onchange="toggleCultivar()"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none"
+                            aria-label="Produto">
+                            <option value="" disabled selected>Selecione...</option>
+                        </select></div>
+                    <div id="tpl_container-cultivar" class="hidden"><label for="tpl_input-cultivar"
+                            class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span
+                                id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock"
+                                    class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto"
+                            class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input
+                            type="text" id="tpl_input-cultivar"
+                            class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase">
+                    </div>
+                </div>
+                <!-- Rastreabilidade -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div><label for="tpl_input-fazenda"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input
+                            type="text" id="tpl_input-fazenda"
+                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                            placeholder="Nome da fazenda"></div>
+                    <div><label for="tpl_input-zona"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input type="text"
+                            id="tpl_input-zona"
+                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                            placeholder="Zona"></div>
+                    <div><label for="tpl_input-talhao"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input
+                            type="text" id="tpl_input-talhao"
+                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                            placeholder="Talhão"></div>
+                </div>
+                <!-- Qualidade -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label for="tpl_input-umidade"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input
+                            type="number" id="tpl_input-umidade" step="0.1"
+                            class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
+                            placeholder="Ex: 13.5"></div>
+                    <div><label for="tpl_input-impureza"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input
+                            type="number" id="tpl_input-impureza" step="0.1"
+                            class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
+                            placeholder="Ex: 0.5"></div>
+                </div>
+                <div class="mb-4"><label for="tpl_input-peso"
+                        class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label>
+                    <div class="relative"><input type="number" id="tpl_input-peso"
+                            class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all"
+                            placeholder="Kg"><span
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">KG</span></div>
+                </div>
+                <div class="mb-6"><label for="tpl_input-destino"
+                        class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de
+                        Armazenagem</label><select id="tpl_input-destino"
+                        class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                        aria-label="Destino de Armazenagem">
+                        <option value="" disabled selected>Selecione o silo...</option>
+                    </select></div>
+                <div class="flex gap-3"><button onclick="enviarDados()"
+                        class="flex-1 btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2"><i
+                            data-lucide="plus-circle" class="w-5 h-5"></i> Lançar Carga</button></div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div><label for="tpl_input-produto" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select id="tpl_input-produto" onchange="toggleCultivar()" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none" aria-label="Produto"><option value="" disabled selected>Selecione...</option></select></div>
-                <div id="tpl_container-cultivar" class="hidden"><label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input type="text" id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase"></div>
-            </div>
-            <!-- Rastreabilidade -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div><label for="tpl_input-fazenda" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input type="text" id="tpl_input-fazenda" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Nome da fazenda"></div>
-                <div><label for="tpl_input-zona" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input type="text" id="tpl_input-zona" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Zona"></div>
-                <div><label for="tpl_input-talhao" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input type="text" id="tpl_input-talhao" class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase" placeholder="Talhão"></div>
-            </div>
-            <!-- Qualidade -->
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                 <div><label for="tpl_input-umidade" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input type="number" id="tpl_input-umidade" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none" placeholder="Ex: 13.5"></div>
-                 <div><label for="tpl_input-impureza" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input type="number" id="tpl_input-impureza" step="0.1" class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none" placeholder="Ex: 0.5"></div>
-            </div>
-            <div class="mb-4"><label for="tpl_input-peso" class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label><div class="relative"><input type="number" id="tpl_input-peso" class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all" placeholder="Kg"><span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">KG</span></div></div>
-            <div class="mb-6"><label for="tpl_input-destino" class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de Armazenagem</label><select id="tpl_input-destino" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none" aria-label="Destino de Armazenagem"><option value="" disabled selected>Selecione o silo...</option></select></div>
-            <div class="flex gap-3"><button onclick="enviarDados()" class="flex-1 btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Lançar Carga</button></div>
-        </div>
 
-        <!-- TEMPLATE: GESTÃO DE CICLO -->
-        <div id="painel-gestao-container" class="hidden h-full flex flex-col relative">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-b border-slate-700 pb-4">
-                <div>
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2"><span id="tpl_status-dot" class="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></span> Moega <span id="tpl_lbl-ciclo-moega">00</span> <span id="tpl_lbl-estado-texto">em Operação</span></h3>
-                        <button onclick="abrirModalPausa()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded border border-slate-600 flex items-center gap-1 transition-colors"><i data-lucide="pause" class="w-3 h-3"></i> Pausar</button>
+            <!-- TEMPLATE: GESTÃO DE CICLO -->
+            <div id="painel-gestao-container" class="hidden h-full flex flex-col relative">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-b border-slate-700 pb-4">
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2"><span
+                                    id="tpl_status-dot" class="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></span>
+                                Moega <span id="tpl_lbl-ciclo-moega">00</span> <span id="tpl_lbl-estado-texto">em
+                                    Operação</span></h3>
+                            <button onclick="abrirModalPausa()"
+                                class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded border border-slate-600 flex items-center gap-1 transition-colors"><i
+                                    data-lucide="pause" class="w-3 h-3"></i> Pausar</button>
+                        </div>
+                        <div class="flex items-start gap-6 mt-3">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tempo Decorrido
+                                </p><span id="tpl_lbl-ciclo-tempo"
+                                    class="font-mono text-white text-xl font-bold">00:00:00</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Estimativa
+                                    Término</p><span id="tpl_lbl-ciclo-restante"
+                                    class="font-mono text-emerald-400 text-xl font-bold">--:--:--</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">Total Acumulado: <span id="tpl_lbl-ciclo-peso"
+                                class="font-bold text-white text-lg">0</span> Kg</p>
                     </div>
-                    <div class="flex items-start gap-6 mt-3">
-                        <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tempo Decorrido</p><span id="tpl_lbl-ciclo-tempo" class="font-mono text-white text-xl font-bold">00:00:00</span></div>
-                        <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Estimativa Término</p><span id="tpl_lbl-ciclo-restante" class="font-mono text-emerald-400 text-xl font-bold">--:--:--</span></div>
+                    <div
+                        class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 relative flex flex-col justify-center">
+                        <div id="tpl_overlay-kpi-pausa"
+                            class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                            <span class="text-xs font-bold text-slate-400 flex items-center gap-1"><i
+                                    data-lucide="snowflake" class="w-3 h-3"></i> KPIs CONGELADOS</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Performance
+                            (Ton/h)</p>
+                        <div class="flex items-end justify-between mb-1"><span id="tpl_lbl-ciclo-kpi"
+                                class="text-3xl font-bold text-white font-mono leading-none">0.0</span><span
+                                class="text-xs text-slate-500 font-bold mb-1">Meta: <span id="tpl_lbl-meta-kpi"
+                                    class="text-slate-300">0</span> t/h</span></div>
+                        <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden relative">
+                            <div id="tpl_bar-kpi" class="h-full w-0 transition-all duration-1000 bg-slate-500"></div>
+                        </div>
+                        <p id="tpl_lbl-status-kpi" class="text-[10px] text-right mt-1 font-bold text-slate-500">
+                            CALCULANDO...</p>
                     </div>
-                    <p class="text-xs text-slate-500 mt-3">Total Acumulado: <span id="tpl_lbl-ciclo-peso" class="font-bold text-white text-lg">0</span> Kg</p>
                 </div>
-                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 relative flex flex-col justify-center">
-                    <div id="tpl_overlay-kpi-pausa" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10"><span class="text-xs font-bold text-slate-400 flex items-center gap-1"><i data-lucide="snowflake" class="w-3 h-3"></i> KPIs CONGELADOS</span></div>
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Performance (Ton/h)</p>
-                    <div class="flex items-end justify-between mb-1"><span id="tpl_lbl-ciclo-kpi" class="text-3xl font-bold text-white font-mono leading-none">0.0</span><span class="text-xs text-slate-500 font-bold mb-1">Meta: <span id="tpl_lbl-meta-kpi" class="text-slate-300">0</span> t/h</span></div>
-                    <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden relative"><div id="tpl_bar-kpi" class="h-full w-0 transition-all duration-1000 bg-slate-500"></div></div>
-                    <p id="tpl_lbl-status-kpi" class="text-[10px] text-right mt-1 font-bold text-slate-500">CALCULANDO...</p>
+                <div class="flex-1 overflow-auto bg-slate-800 rounded-lg border border-slate-700 mb-6">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-700 text-slate-300 text-xs uppercase font-bold sticky top-0">
+                            <tr>
+                                <th class="p-3">Hora</th>
+                                <th class="p-3">Romaneio</th>
+                                <th class="p-3">Produto</th>
+                                <th class="p-3">Cultivar</th>
+                                <th class="p-3 text-right">Peso (Kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tpl_tabela-cargas-ciclo" class="text-sm text-slate-300"></tbody>
+                    </table>
+                </div>
+                <div id="botoes-acao-ciclo" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
+                    <button onclick="abrirFormularioAdicional()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"><i
+                            data-lucide="truck" class="w-5 h-5"></i> Adicionar Carga</button>
+                    <button onclick="encerrarCiclo()"
+                        class="bg-red-600/90 hover:bg-red-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg border border-red-500"><i
+                            data-lucide="power" class="w-5 h-5"></i> Encerrar Ciclo</button>
+                </div>
+                <div id="tpl_tela-pausa-ativa"
+                    class="hidden absolute inset-0 bg-slate-900 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-red-500/30">
+                    <div class="mb-6 p-6 bg-red-900/20 rounded-full animate-pulse"><i data-lucide="pause-circle"
+                            class="w-16 h-16 text-red-500"></i></div>
+                    <h2 class="text-3xl font-bold text-white mb-2">OPERAÇÃO PAUSADA</h2>
+                    <p class="text-slate-400 mb-8">Motivo: <span id="tpl_lbl-motivo-pausa"
+                            class="text-white font-bold uppercase">---</span></p>
+                    <div class="text-center mb-10">
+                        <p class="text-xs text-red-400 uppercase font-bold tracking-widest mb-1">Tempo Parado</p>
+                        <p id="tpl_lbl-timer-pausa" class="text-5xl font-mono font-bold text-red-500">00:00:00</p>
+                    </div>
+                    <button onclick="retomarOperacao()"
+                        class="btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-lg font-bold text-xl uppercase tracking-wider flex items-center gap-3 shadow-lg hover:shadow-emerald-500/20"><i
+                            data-lucide="play" class="w-6 h-6 fill-current"></i> RETOMAR OPERAÇÃO</button>
                 </div>
             </div>
-            <div class="flex-1 overflow-auto bg-slate-800 rounded-lg border border-slate-700 mb-6">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-700 text-slate-300 text-xs uppercase font-bold sticky top-0"><tr><th class="p-3">Hora</th><th class="p-3">Romaneio</th><th class="p-3">Produto</th><th class="p-3">Cultivar</th><th class="p-3 text-right">Peso (Kg)</th></tr></thead>
-                    <tbody id="tpl_tabela-cargas-ciclo" class="text-sm text-slate-300"></tbody>
-                </table>
-            </div>
-            <div id="botoes-acao-ciclo" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
-                <button onclick="abrirFormularioAdicional()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"><i data-lucide="truck" class="w-5 h-5"></i> Adicionar Carga</button>
-                <button onclick="encerrarCiclo()" class="bg-red-600/90 hover:bg-red-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg border border-red-500"><i data-lucide="power" class="w-5 h-5"></i> Encerrar Ciclo</button>
-            </div>
-            <div id="tpl_tela-pausa-ativa" class="hidden absolute inset-0 bg-slate-900 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-red-500/30">
-                <div class="mb-6 p-6 bg-red-900/20 rounded-full animate-pulse"><i data-lucide="pause-circle" class="w-16 h-16 text-red-500"></i></div>
-                <h2 class="text-3xl font-bold text-white mb-2">OPERAÇÃO PAUSADA</h2>
-                <p class="text-slate-400 mb-8">Motivo: <span id="tpl_lbl-motivo-pausa" class="text-white font-bold uppercase">---</span></p>
-                <div class="text-center mb-10"><p class="text-xs text-red-400 uppercase font-bold tracking-widest mb-1">Tempo Parado</p><p id="tpl_lbl-timer-pausa" class="text-5xl font-mono font-bold text-red-500">00:00:00</p></div>
-                <button onclick="retomarOperacao()" class="btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-lg font-bold text-xl uppercase tracking-wider flex items-center gap-3 shadow-lg hover:shadow-emerald-500/20"><i data-lucide="play" class="w-6 h-6 fill-current"></i> RETOMAR OPERAÇÃO</button>
-            </div>
-        </div>
 
     </main>
 
     <!-- CONFIRMATION MODAL (Lançamento de Carga) -->
     <div id="modal-confirmacao" class="hidden fixed inset-0 z-[70] modal-backdrop flex items-center justify-center p-4">
-        <div class="bg-slate-800 border-2 border-emerald-500/50 rounded-xl shadow-2xl w-full max-w-lg flex flex-col animate-fade-in">
+        <div
+            class="bg-slate-800 border-2 border-emerald-500/50 rounded-xl shadow-2xl w-full max-w-lg flex flex-col animate-fade-in">
             <div class="p-6 border-b border-slate-700 bg-slate-900/50">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
                     <i data-lucide="check-circle" class="text-emerald-500"></i> Confirmar Lançamento
@@ -265,34 +755,48 @@
             </div>
             <div class="p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="text-slate-500 block text-xs uppercase">Romaneio</span><span id="conf-romaneio" class="text-white font-bold text-lg">---</span></div>
-                    <div><span class="text-slate-500 block text-xs uppercase">Placa</span><span id="conf-placa" class="text-white font-bold text-lg">---</span></div>
-                    <div><span class="text-slate-500 block text-xs uppercase">Produto</span><span id="conf-produto" class="text-emerald-400 font-bold">---</span></div>
-                    <div><span class="text-slate-500 block text-xs uppercase">Peso</span><span id="conf-peso" class="text-white font-bold">---</span></div>
+                    <div><span class="text-slate-500 block text-xs uppercase">Romaneio</span><span id="conf-romaneio"
+                            class="text-white font-bold text-lg">---</span></div>
+                    <div><span class="text-slate-500 block text-xs uppercase">Placa</span><span id="conf-placa"
+                            class="text-white font-bold text-lg">---</span></div>
+                    <div><span class="text-slate-500 block text-xs uppercase">Produto</span><span id="conf-produto"
+                            class="text-emerald-400 font-bold">---</span></div>
+                    <div><span class="text-slate-500 block text-xs uppercase">Peso</span><span id="conf-peso"
+                            class="text-white font-bold">---</span></div>
                 </div>
                 <div class="bg-slate-900/50 p-3 rounded border border-slate-700 text-xs text-slate-300">
                     <div class="grid grid-cols-3 gap-2">
-                        <div><span class="text-slate-500 block">Fazenda</span><span id="conf-fazenda" class="font-bold text-white">---</span></div>
-                        <div><span class="text-slate-500 block">Zona</span><span id="conf-zona" class="font-bold text-white">---</span></div>
-                        <div><span class="text-slate-500 block">Talhão</span><span id="conf-talhao" class="font-bold text-white">---</span></div>
+                        <div><span class="text-slate-500 block">Fazenda</span><span id="conf-fazenda"
+                                class="font-bold text-white">---</span></div>
+                        <div><span class="text-slate-500 block">Zona</span><span id="conf-zona"
+                                class="font-bold text-white">---</span></div>
+                        <div><span class="text-slate-500 block">Talhão</span><span id="conf-talhao"
+                                class="font-bold text-white">---</span></div>
                     </div>
                     <div class="mt-2 pt-2 border-t border-slate-700 grid grid-cols-2 gap-2">
-                         <div><span class="text-slate-500">Umidade:</span> <span id="conf-umidade" class="font-bold text-white">---</span></div>
-                         <div><span class="text-slate-500">Impureza:</span> <span id="conf-impureza" class="font-bold text-white">---</span></div>
+                        <div><span class="text-slate-500">Umidade:</span> <span id="conf-umidade"
+                                class="font-bold text-white">---</span></div>
+                        <div><span class="text-slate-500">Impureza:</span> <span id="conf-impureza"
+                                class="font-bold text-white">---</span></div>
                     </div>
                 </div>
-                 <div><span class="text-slate-500 block text-xs uppercase">Destino</span><span id="conf-destino" class="text-white font-bold">---</span></div>
+                <div><span class="text-slate-500 block text-xs uppercase">Destino</span><span id="conf-destino"
+                        class="text-white font-bold">---</span></div>
             </div>
             <div class="p-4 border-t border-slate-700 bg-slate-900/50 flex gap-3">
-                <button onclick="fecharModalConfirmacao()" class="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold transition">Corrigir</button>
-                <button onclick="confirmarEnvioFinal()" class="flex-1 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold shadow-lg transition">CONFIRMAR</button>
+                <button onclick="fecharModalConfirmacao()"
+                    class="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold transition">Corrigir</button>
+                <button onclick="confirmarEnvioFinal()"
+                    class="flex-1 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold shadow-lg transition">CONFIRMAR</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL RESUMO ENCERRAMENTO (NOVO) -->
-    <div id="modal-resumo-encerramento" class="hidden fixed inset-0 z-[70] modal-backdrop flex items-center justify-center p-4">
-        <div class="bg-slate-800 border-2 border-red-500/50 rounded-xl shadow-2xl w-full max-w-lg flex flex-col animate-fade-in">
+    <div id="modal-resumo-encerramento"
+        class="hidden fixed inset-0 z-[70] modal-backdrop flex items-center justify-center p-4">
+        <div
+            class="bg-slate-800 border-2 border-red-500/50 rounded-xl shadow-2xl w-full max-w-lg flex flex-col animate-fade-in">
             <div class="p-6 border-b border-slate-700 bg-slate-900/50">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
                     <i data-lucide="power" class="text-red-500"></i> Encerrar Ciclo
@@ -320,30 +824,57 @@
                 </div>
             </div>
             <div class="p-4 border-t border-slate-700 bg-slate-900/50 flex gap-3">
-                <button onclick="document.getElementById('modal-resumo-encerramento').classList.add('hidden')" class="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold transition">Voltar</button>
-                <button onclick="confirmarEncerramento()" class="flex-1 py-3 rounded-lg bg-red-600 text-white hover:bg-red-500 font-bold shadow-lg transition">ENCERRAR CICLO</button>
+                <button onclick="document.getElementById('modal-resumo-encerramento').classList.add('hidden')"
+                    class="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold transition">Voltar</button>
+                <button onclick="confirmarEncerramento()"
+                    class="flex-1 py-3 rounded-lg bg-red-600 text-white hover:bg-red-500 font-bold shadow-lg transition">ENCERRAR
+                    CICLO</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL PAUSA -->
     <div id="modal-motivo-pausa" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center p-6 border-b border-slate-700 bg-slate-900"><h3 class="text-xl font-bold text-white">Pausar Operação</h3><button onclick="fecharModalPausa()" class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Pausar Operação"><i data-lucide="x" class="w-6 h-6"></i></button></div>
-            <div class="p-4 bg-slate-900/50 border-b border-slate-700">
-                <input type="text" id="busca-motivo" placeholder="Buscar..." class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white mb-4" onkeyup="filtrarMotivos()">
-                <div class="flex gap-2"><button onclick="filtrarCategoria('Operacional')" class="text-xs bg-blue-600 text-white px-3 py-1 rounded">Operacional</button><button onclick="filtrarCategoria('Manutenção')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Manutenção</button><button onclick="filtrarCategoria('Gestão')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Gestão</button><button onclick="filtrarCategoria('Todos')" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Todos</button></div>
+        <div
+            class="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center p-6 border-b border-slate-700 bg-slate-900">
+                <h3 class="text-xl font-bold text-white">Pausar Operação</h3><button onclick="fecharModalPausa()"
+                    class="text-slate-400 hover:text-white" title="Fechar" aria-label="Fechar modal Pausar Operação"><i
+                        data-lucide="x" class="w-6 h-6"></i></button>
             </div>
-            <div id="lista-motivos" class="flex-1 overflow-y-auto p-4 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-2"></div>
-            <div class="p-4 border-t border-slate-700 bg-slate-800"><div class="flex gap-2"><input type="text" id="input-outro-motivo" placeholder="Outro motivo..." class="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"><button onclick="confirmarPausaManual()" class="bg-blue-600 text-white px-4 rounded">OK</button></div></div>
+            <div class="p-4 bg-slate-900/50 border-b border-slate-700">
+                <input type="text" id="busca-motivo" placeholder="Buscar..."
+                    class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white mb-4"
+                    onkeyup="filtrarMotivos()">
+                <div class="flex gap-2"><button onclick="filtrarCategoria('Operacional')"
+                        class="text-xs bg-blue-600 text-white px-3 py-1 rounded">Operacional</button><button
+                        onclick="filtrarCategoria('Manutenção')"
+                        class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Manutenção</button><button
+                        onclick="filtrarCategoria('Gestão')"
+                        class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Gestão</button><button
+                        onclick="filtrarCategoria('Todos')"
+                        class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Todos</button></div>
+            </div>
+            <div id="lista-motivos"
+                class="flex-1 overflow-y-auto p-4 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+            <div class="p-4 border-t border-slate-700 bg-slate-800">
+                <div class="flex gap-2"><input type="text" id="input-outro-motivo" placeholder="Outro motivo..."
+                        class="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white"><button
+                        onclick="confirmarPausaManual()" class="bg-blue-600 text-white px-4 rounded">OK</button></div>
+            </div>
         </div>
     </div>
 
     <!-- TOAST -->
-    <div id="toast" class="fixed top-6 right-6 z-[70] opacity-0 transition-all duration-300 pointer-events-none transform translate-x-10">
-        <div class="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center gap-4 shadow-2xl border-l-4" id="toast-border">
+    <div id="toast"
+        class="fixed top-6 right-6 z-[70] opacity-0 transition-all duration-300 pointer-events-none transform translate-x-10">
+        <div class="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center gap-4 shadow-2xl border-l-4"
+            id="toast-border">
             <div id="toast-icon"></div>
-            <div><h4 id="toast-title" class="font-bold text-white text-sm"></h4><p id="toast-msg" class="text-xs text-slate-300"></p></div>
+            <div>
+                <h4 id="toast-title" class="font-bold text-white text-sm"></h4>
+                <p id="toast-msg" class="text-xs text-slate-300"></p>
+            </div>
         </div>
     </div>
 
@@ -520,17 +1051,17 @@
             try {
                 const raw = localStorage.getItem(CUSTOM_CULTIVARES_KEY);
                 return raw ? JSON.parse(raw) : {};
-            } catch(e) { return {}; }
+            } catch (e) { return {}; }
         }
 
         function saveCustomCultivars(obj) {
-            try { localStorage.setItem(CUSTOM_CULTIVARES_KEY, JSON.stringify(obj)); } catch(e) { console.warn('failed save custom cultivars', e); }
+            try { localStorage.setItem(CUSTOM_CULTIVARES_KEY, JSON.stringify(obj)); } catch (e) { console.warn('failed save custom cultivars', e); }
         }
 
         let customCultivars = loadCustomCultivars();
 
         function findKeyForProduct(prod) {
-            if(!prod) return null;
+            if (!prod) return null;
             const p = String(prod).toUpperCase();
             return Object.keys(CULTIVARES).find(k => p.includes(k));
         }
@@ -571,8 +1102,8 @@
                     activeCycles = {};
                     snapshot.forEach(doc => { activeCycles[doc.id] = doc.data(); });
                     renderMoegaButtons();
-                    if(moegaSelecionada) window.selectMoega(moegaSelecionada);
-                } catch(err) {
+                    if (moegaSelecionada) window.selectMoega(moegaSelecionada);
+                } catch (err) {
                     console.error('Error handling snapshot callback', err);
                 }
             }, (err) => {
@@ -583,58 +1114,161 @@
         }
 
         // --- GLOBAL FUNCTIONS EXPORTED TO WINDOW ---
-        
-        window.switchView = function(view) {
-            const dashboardDiv = document.getElementById('view-dashboard');
-            const retroactiveDiv = document.getElementById('view-retroactive');
-            const btnDashboard = document.getElementById('nav-dashboard');
-            const btnRetroactive = document.getElementById('nav-retroactive');
 
-            if(dashboardDiv && retroactiveDiv && btnDashboard && btnRetroactive) {
-                if (view === 'dashboard') {
-                    dashboardDiv.classList.remove('hidden'); retroactiveDiv.classList.add('hidden');
-                    btnDashboard.classList.replace('nav-tab-inactive', 'nav-tab-active');
-                    btnRetroactive.classList.replace('nav-tab-active', 'nav-tab-inactive');
+        window.switchView = function (view) {
+            const views = ['dashboard', 'retroactive', 'transfer'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const btn = document.getElementById(`nav-${v}`);
+                if (el) {
+                    if (v === view) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+                if (btn) {
+                    if (v === view) btn.classList.replace('nav-tab-inactive', 'nav-tab-active');
+                    else btn.classList.replace('nav-tab-active', 'nav-tab-inactive');
+                }
+            });
+            if (view === 'retroactive') window.toggleRetroMode('single');
+            lucide.createIcons();
+        }
+
+        window.toggleTransferInput = function (type) {
+            const select = document.getElementById(`transf-${type}`);
+            const input = document.getElementById(`transf-${type}-outro`);
+            if (select && input) {
+                if (select.value === 'OUTROS' || select.value === 'OUTRO') {
+                    input.classList.remove('hidden');
+                    input.focus();
                 } else {
-                    dashboardDiv.classList.add('hidden'); retroactiveDiv.classList.remove('hidden');
-                    btnDashboard.classList.replace('nav-tab-active', 'nav-tab-inactive');
-                    btnRetroactive.classList.replace('nav-tab-inactive', 'nav-tab-active');
-                    window.toggleRetroMode('single');
+                    input.classList.add('hidden');
                 }
             }
         }
 
-        // Inicializa validação do formulário retroativo ao carregar a página
-        try { attachRetroValidation(); } catch(e) { console.warn('attachRetroValidation failed', e); }
+        window.salvarTransferencia = async function () {
+            if (!auth || !auth.currentUser) {
+                notify('Usuário não autenticado.', 'erro');
+                document.getElementById('login-modal')?.classList.remove('hidden');
+                return;
+            }
 
-        window.renderMoegaButtons = function() {
+            // Collect data from all fields
+            const data = document.getElementById('transf-data').value;
+            const placa = document.getElementById('transf-placa').value;
+            const hora = document.getElementById('transf-hora').value;
+            const produtoSel = document.getElementById('transf-produto').value;
+            const produtoOutro = document.getElementById('transf-produto-outro').value;
+            const culturaSel = document.getElementById('transf-cultura').value;
+            const culturaOutro = document.getElementById('transf-cultura-outro').value;
+            const destinoSel = document.getElementById('transf-destino').value;
+            const destinoOutro = document.getElementById('transf-destino-outro').value;
+            const variedade = document.getElementById('transf-variedade').value;
+            const lote = document.getElementById('transf-lote').value;
+            const embalagem = document.getElementById('transf-embalagem').value;
+            const qtdEmbalagem = Number(document.getElementById('transf-qtd-embalagem').value);
+            const peso = Number(document.getElementById('transf-peso').value);
+            const operador = document.getElementById('transf-operador').value;
+            const motorista = document.getElementById('transf-motorista').value;
+
+            // Validation
+            if (!data || !placa.trim() || !hora) return notify('Preencha Data, Placa e Hora da Saída', 'erro');
+
+            if (!produtoSel) return notify('Selecione o Produto', 'erro');
+            if ((produtoSel === 'OUTROS') && !produtoOutro.trim()) return notify('Digite o tipo de Produto', 'erro');
+
+            if (!destinoSel) return notify('Selecione o Destino', 'erro');
+            if ((destinoSel === 'OUTRO') && !destinoOutro.trim()) return notify('Digite o Destino', 'erro');
+
+            if (!peso || peso <= 0) return notify('Informe um Peso Total válido', 'erro');
+            if (!operador.trim()) return notify('Informe o nome do Operador Responsável', 'erro');
+            if (!motorista.trim()) return notify('Informe o nome do Motorista', 'erro');
+
+            // Prepare final data
+            const produtoFinal = (produtoSel === 'OUTROS') ? produtoOutro.trim().toUpperCase() : produtoSel;
+            const culturaFinal = (culturaSel === 'OUTRO') ? culturaOutro.trim().toUpperCase() : (culturaSel || '-');
+            const destinoFinal = (destinoSel === 'OUTRO') ? destinoOutro.trim().toUpperCase() : destinoSel;
+
+            try {
+                const colRef = collection(db, 'moega_controle_transferencia');
+                await addDoc(colRef, {
+                    dataSaida: data,
+                    placa: placa.trim().toUpperCase(),
+                    horaSaida: hora,
+                    produto: produtoFinal,
+                    cultura: culturaFinal,
+                    destino: destinoFinal,
+                    variedade: variedade.trim().toUpperCase(),
+                    lote: lote.trim().toUpperCase(),
+                    embalagem: embalagem.trim(),
+                    qtdEmbalagem: qtdEmbalagem || 0,
+                    peso: peso,
+                    operador: operador.trim(),
+                    motorista: motorista.trim(),
+                    timestamp: new Date().toISOString(),
+                    createdBy: auth.currentUser.uid
+                });
+
+                notify('Transferência registrada com sucesso!', 'sucesso');
+
+                // Reset form
+                document.getElementById('transf-data').value = "";
+                document.getElementById('transf-placa').value = "";
+                document.getElementById('transf-hora').value = "";
+                document.getElementById('transf-produto').value = "";
+                document.getElementById('transf-produto-outro').value = "";
+                document.getElementById('transf-produto-outro').classList.add('hidden');
+                document.getElementById('transf-cultura').value = "";
+                document.getElementById('transf-cultura-outro').value = "";
+                document.getElementById('transf-cultura-outro').classList.add('hidden');
+                document.getElementById('transf-destino').value = "";
+                document.getElementById('transf-destino-outro').value = "";
+                document.getElementById('transf-destino-outro').classList.add('hidden');
+                document.getElementById('transf-variedade').value = "";
+                document.getElementById('transf-lote').value = "";
+                document.getElementById('transf-embalagem').value = "";
+                document.getElementById('transf-qtd-embalagem').value = "";
+                document.getElementById('transf-peso').value = "";
+                document.getElementById('transf-operador').value = "";
+                document.getElementById('transf-motorista').value = "";
+
+            } catch (e) {
+                console.error(e);
+                notify('Erro ao salvar transferência', 'erro');
+            }
+        }
+
+        // Inicializa validação do formulário retroativo ao carregar a página
+        try { attachRetroValidation(); } catch (e) { console.warn('attachRetroValidation failed', e); }
+
+        window.renderMoegaButtons = function () {
             const container = document.getElementById('moega-buttons-container');
-            if(!container) return;
+            if (!container) return;
             container.innerHTML = '';
 
-            for(let i=1; i<=4; i++) {
-                const ciclo = activeCycles[i.toString()]; 
+            for (let i = 1; i <= 4; i++) {
+                const ciclo = activeCycles[i.toString()];
                 const btn = document.createElement('button');
                 const isSelected = moegaSelecionada === i;
-                
+
                 let baseClass = "btn-moega h-32 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all p-2";
                 let colorClass = "border-slate-600 bg-slate-750 hover:bg-slate-700";
                 let statusText = "LIVRE";
                 let statusColor = "text-slate-400";
                 let infoHTML = "";
 
-                if(ciclo) {
-                    if(ciclo.status === 'PAUSADO') {
+                if (ciclo) {
+                    if (ciclo.status === 'PAUSADO') {
                         colorClass = "moega-pausada"; statusText = "PAUSADO"; statusColor = "text-red-200";
                     } else {
                         colorClass = "moega-ocupada"; statusText = "OPERANDO"; statusColor = "text-amber-200";
                     }
-                    const total = ciclo.cargas ? ciclo.cargas.reduce((a,b)=>a+Number(b.peso),0)/1000 : 0;
-                    const produto = ciclo.cargas && ciclo.cargas[0] ? ciclo.cargas[0].produto.substring(0,10) : '---';
+                    const total = ciclo.cargas ? ciclo.cargas.reduce((a, b) => a + Number(b.peso), 0) / 1000 : 0;
+                    const produto = ciclo.cargas && ciclo.cargas[0] ? ciclo.cargas[0].produto.substring(0, 10) : '---';
                     infoHTML = `<div class="text-xs text-white font-bold mt-1">${produto}</div><div class="text-xs font-mono text-white/80">${total.toFixed(1)} t</div>`;
                 }
 
-                if(isSelected) colorClass += " moega-selected";
+                if (isSelected) colorClass += " moega-selected";
 
                 btn.className = `${baseClass} ${colorClass}`;
                 btn.onclick = () => window.selectMoega(i);
@@ -644,15 +1278,15 @@
             lucide.createIcons();
         }
 
-        window.selectMoega = function(id) {
+        window.selectMoega = function (id) {
             moegaSelecionada = id;
             window.renderMoegaButtons();
-            
+
             document.getElementById('placeholder-selecao')?.classList.add('hidden');
             document.getElementById('action-panel')?.classList.remove('hidden');
-            
+
             const ciclo = activeCycles[id.toString()];
-            if(ciclo) {
+            if (ciclo) {
                 renderManagementPanel(id, ciclo);
                 // Força atualização imediata
                 window.atualizarTimersCiclo();
@@ -662,16 +1296,16 @@
         }
 
         // --- ENVIAR DADOS COM CONFIRMAÇÃO ---
-        window.enviarDados = function() {
-            if(!userId) return notify('Aguarde autenticação...', 'erro');
-            
+        window.enviarDados = function () {
+            if (!userId) return notify('Aguarde autenticação...', 'erro');
+
             const panel = document.getElementById('panel-content');
-            
+
             // Collect Data
             const romaneio = panel.querySelector('#input-romaneio').value;
             const placa = panel.querySelector('#input-placa').value;
             const peso = parseFloat(panel.querySelector('#input-peso').value);
-            
+
             let produto, cultivar;
             if (activeCycles[moegaSelecionada]) {
                 const ciclo = activeCycles[moegaSelecionada];
@@ -688,8 +1322,8 @@
             const umidade = panel.querySelector('#input-umidade').value || '0';
             const impureza = panel.querySelector('#input-impureza').value || '0';
             const destino = panel.querySelector('#input-destino').value || '-';
-            
-            if(!romaneio || !placa || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+
+            if (!romaneio || !placa || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
             if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
             const umNum = parseFloat(panel.querySelector('#input-umidade').value);
             if (isNaN(umNum) || umNum < 5 || umNum > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
@@ -723,22 +1357,22 @@
             lucide.createIcons();
         }
 
-        window.fecharModalConfirmacao = function() {
-             document.getElementById('modal-confirmacao').classList.add('hidden');
-             pendingData = null;
+        window.fecharModalConfirmacao = function () {
+            document.getElementById('modal-confirmacao').classList.add('hidden');
+            pendingData = null;
         }
 
-        window.confirmarEnvioFinal = async function() {
-            if(!pendingData) return;
+        window.confirmarEnvioFinal = async function () {
+            if (!pendingData) return;
             if (!auth || !auth.currentUser) {
                 notify('Usuário não autenticado. Abra o modal de login.', 'erro');
                 document.getElementById('login-modal')?.classList.remove('hidden');
                 return;
             }
-            
+
             try {
                 const docRef = doc(db, 'moega_ciclos_ativos', moegaSelecionada.toString());
-                
+
                 if (activeCycles[moegaSelecionada]) {
                     // Update
                     const cicloAtual = activeCycles[moegaSelecionada];
@@ -753,9 +1387,9 @@
                     await setDoc(docRef, novoCiclo);
                     notify('Ciclo Iniciado', 'sucesso');
                 }
-                
+
                 fecharModalConfirmacao();
-            } catch(e) {
+            } catch (e) {
                 console.error('Firestore write error:', e);
                 const code = e.code || (e && e.name) || 'unknown';
                 const msg = e.message || String(e);
@@ -766,12 +1400,12 @@
             }
         }
 
-        window.adicionarCarga = async function(id) { window.abrirFormularioAdicional(); }
+        window.adicionarCarga = async function (id) { window.abrirFormularioAdicional(); }
 
-        window.pausarCiclo = async function(motivo) {
+        window.pausarCiclo = async function (motivo) {
             const id = moegaSelecionada;
             const ciclo = activeCycles[id.toString()];
-            if(!ciclo) return;
+            if (!ciclo) return;
             const pausas = [...(ciclo.pausas || []), { inicio: new Date().toISOString(), fim: null, motivo }];
             const docRef = doc(db, 'moega_ciclos_ativos', id.toString());
             await updateDoc(docRef, { status: 'PAUSADO', pausas: pausas });
@@ -779,33 +1413,33 @@
             notify('Operação Pausada', 'aviso');
         }
 
-        window.retomarOperacao = async function() {
+        window.retomarOperacao = async function () {
             const id = moegaSelecionada;
             const ciclo = activeCycles[id.toString()];
             const pausas = [...ciclo.pausas];
-            pausas[pausas.length-1].fim = new Date().toISOString();
+            pausas[pausas.length - 1].fim = new Date().toISOString();
             const docRef = doc(db, 'moega_ciclos_ativos', id.toString());
             await updateDoc(docRef, { status: 'OPERANDO', pausas: pausas });
             notify('Operação Retomada', 'sucesso');
         }
 
         // --- ENCERRAMENTO COM MODAL DE RESUMO ---
-        window.encerrarCiclo = function() {
+        window.encerrarCiclo = function () {
             const id = moegaSelecionada;
             const ciclo = activeCycles[id.toString()];
-            if(!ciclo) return;
-            
+            if (!ciclo) return;
+
             // Calcula totais
-            const totalPeso = ciclo.cargas.reduce((a,b) => a + Number(b.peso), 0);
+            const totalPeso = ciclo.cargas.reduce((a, b) => a + Number(b.peso), 0);
             const qtdCargas = ciclo.cargas.length;
             const qtdPausas = ciclo.pausas ? ciclo.pausas.length : 0;
-            
+
             const now = Date.now();
             const diffLiquido = calcularTempoLiquido(ciclo, now);
-            const h = Math.floor(diffLiquido/3600000); 
-            const m = Math.floor((diffLiquido%3600000)/60000);
-            const s = Math.floor((diffLiquido%60000)/1000);
-            
+            const h = Math.floor(diffLiquido / 3600000);
+            const m = Math.floor((diffLiquido % 3600000) / 60000);
+            const s = Math.floor((diffLiquido % 60000) / 1000);
+
             // Produtividade Real
             const horasDecimais = diffLiquido / 3600000;
             const tons = totalPeso / 1000;
@@ -813,22 +1447,22 @@
 
             // Preenche Modal
             document.getElementById('resumo-peso-total').innerText = `${totalPeso.toLocaleString('pt-BR')} Kg`;
-            document.getElementById('resumo-tempo-total').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            document.getElementById('resumo-tempo-total').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             document.getElementById('resumo-produtividade').innerText = `${produtividade.toFixed(1)} t/h`;
             document.getElementById('resumo-qtd-cargas').innerText = qtdCargas;
             document.getElementById('resumo-qtd-pausas').innerText = qtdPausas;
-            
+
             // Exibe Modal
             document.getElementById('modal-resumo-encerramento').classList.remove('hidden');
         }
 
-        window.confirmarEncerramento = async function() {
+        window.confirmarEncerramento = async function () {
             const id = moegaSelecionada;
             const ciclo = activeCycles[id.toString()];
-            
+
             try {
                 // Prepara objeto consolidado para histórico (Summary)
-                const totalPeso = ciclo.cargas.reduce((a,b) => a + Number(b.peso), 0);
+                const totalPeso = ciclo.cargas.reduce((a, b) => a + Number(b.peso), 0);
                 // Calcular médias ponderadas (umidade/pureza) a partir das cargas
                 let umidadePesoSum = 0, impurezaPesoSum = 0, pesoForQualidade = 0;
                 let fazenda = '-', zona = '-', talhao = '-';
@@ -870,24 +1504,24 @@
 
                 const colLogs = collection(db, 'moega_historico_descargas');
                 await addDoc(colLogs, resumo);
-                
+
                 const docAtivo = doc(db, 'moega_ciclos_ativos', id.toString());
                 await deleteDoc(docAtivo);
-                
+
                 document.getElementById('modal-resumo-encerramento').classList.add('hidden');
                 notify('Ciclo Encerrado com Sucesso', 'sucesso');
                 window.selectMoega(id);
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
                 notify('Erro ao encerrar ciclo', 'erro');
             }
         }
 
         // --- PAUSAS ---
-        window.abrirModalPausa = function() { window.filtrarMotivos(); document.getElementById('modal-motivo-pausa').classList.remove('hidden'); }
-        window.fecharModalPausa = function() { document.getElementById('modal-motivo-pausa').classList.add('hidden'); }
-        window.filtrarCategoria = function(cat) { categoriaAtiva = cat; window.filtrarMotivos(); }
-        window.filtrarMotivos = function() {
+        window.abrirModalPausa = function () { window.filtrarMotivos(); document.getElementById('modal-motivo-pausa').classList.remove('hidden'); }
+        window.fecharModalPausa = function () { document.getElementById('modal-motivo-pausa').classList.add('hidden'); }
+        window.filtrarCategoria = function (cat) { categoriaAtiva = cat; window.filtrarMotivos(); }
+        window.filtrarMotivos = function () {
             const termo = document.getElementById('busca-motivo').value.toLowerCase();
             const container = document.getElementById('lista-motivos');
             container.innerHTML = '';
@@ -895,50 +1529,50 @@
                 container.innerHTML += `<button onclick="${m.nome === 'Outros' ? 'focarCampoOutros()' : `confirmarPausa('${m.nome}')`}" class="w-full text-left p-3 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium flex items-center gap-2 mb-2">${m.nome}</button>`;
             });
         }
-        window.confirmarPausa = function(m) { window.pausarCiclo(m); }
-        window.confirmarPausaManual = function() { const v = document.getElementById('input-outro-motivo').value; if(v) window.pausarCiclo('Outros: '+v); }
-        window.focarCampoOutros = function() { document.getElementById('input-outro-motivo').focus(); }
+        window.confirmarPausa = function (m) { window.pausarCiclo(m); }
+        window.confirmarPausaManual = function () { const v = document.getElementById('input-outro-motivo').value; if (v) window.pausarCiclo('Outros: ' + v); }
+        window.focarCampoOutros = function () { document.getElementById('input-outro-motivo').focus(); }
 
         // --- RENDERIZADORES AUXILIARES ---
         function renderNewEntryForm(id) {
-             const panel = document.getElementById('panel-content');
-             const template = document.getElementById('form-entrada-container');
-             if(panel && template) {
-                     panel.innerHTML = template.innerHTML.replace(/id=\"tpl_/g, 'id="').replace(/for=\"tpl_/g, 'for="');
-                     // Anexa validações e listeners ao formulário recém-renderizado
-                     try { attachEntryValidation(panel); } catch(e){ console.warn('attachEntryValidation failed', e); }
-             }
+            const panel = document.getElementById('panel-content');
+            const template = document.getElementById('form-entrada-container');
+            if (panel && template) {
+                panel.innerHTML = template.innerHTML.replace(/id=\"tpl_/g, 'id="').replace(/for=\"tpl_/g, 'for="');
+                // Anexa validações e listeners ao formulário recém-renderizado
+                try { attachEntryValidation(panel); } catch (e) { console.warn('attachEntryValidation failed', e); }
+            }
         }
 
         function renderManagementPanel(id, ciclo) {
-             const panel = document.getElementById('panel-content');
-             const template = document.getElementById('painel-gestao-container');
-             
-             if(panel && template) {
-                 panel.innerHTML = template.innerHTML.replace(/id="tpl_/g, 'id="');
-                 
-                 panel.querySelector('#lbl-ciclo-moega').innerText = id.toString().padStart(2,'0');
-                 const total = ciclo.cargas.reduce((a,b)=>a+Number(b.peso),0);
-                 panel.querySelector('#lbl-ciclo-peso').innerText = total.toLocaleString('pt-BR');
-                 
-                 const statusEl = panel.querySelector('#lbl-estado-texto');
-                 const dot = panel.querySelector('#status-dot');
-                 if(ciclo.status === 'PAUSADO') {
-                     statusEl.innerText = "PAUSADA"; dot.className = "w-3 h-3 bg-red-500 rounded-full animate-pulse";
-                     panel.querySelector('#tela-pausa-ativa').classList.remove('hidden');
-                     const lastPause = ciclo.pausas[ciclo.pausas.length-1];
-                     panel.querySelector('#lbl-motivo-pausa').innerText = lastPause.motivo;
-                 } else {
-                     statusEl.innerText = "em Operação"; dot.className = "w-3 h-3 bg-amber-500 rounded-full animate-pulse";
-                     panel.querySelector('#tela-pausa-ativa').classList.add('hidden');
-                 }
+            const panel = document.getElementById('panel-content');
+            const template = document.getElementById('painel-gestao-container');
 
-                 const tbody = panel.querySelector('#tabela-cargas-ciclo');
-                 tbody.innerHTML = '';
-                 [...ciclo.cargas].reverse().forEach(c => {
-                     tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="p-3 font-mono text-slate-400">${new Date(c.timestamp).toLocaleTimeString('pt-BR').substring(0,5)}</td><td class="p-3 font-bold text-white">${c.romaneio}</td><td class="p-3">${c.produto}</td><td class="p-3 text-xs">${c.cultivar || '-'}</td><td class="p-3 text-right font-bold text-emerald-400">${c.peso}</td></tr>`;
-                 });
-             }
+            if (panel && template) {
+                panel.innerHTML = template.innerHTML.replace(/id="tpl_/g, 'id="');
+
+                panel.querySelector('#lbl-ciclo-moega').innerText = id.toString().padStart(2, '0');
+                const total = ciclo.cargas.reduce((a, b) => a + Number(b.peso), 0);
+                panel.querySelector('#lbl-ciclo-peso').innerText = total.toLocaleString('pt-BR');
+
+                const statusEl = panel.querySelector('#lbl-estado-texto');
+                const dot = panel.querySelector('#status-dot');
+                if (ciclo.status === 'PAUSADO') {
+                    statusEl.innerText = "PAUSADA"; dot.className = "w-3 h-3 bg-red-500 rounded-full animate-pulse";
+                    panel.querySelector('#tela-pausa-ativa').classList.remove('hidden');
+                    const lastPause = ciclo.pausas[ciclo.pausas.length - 1];
+                    panel.querySelector('#lbl-motivo-pausa').innerText = lastPause.motivo;
+                } else {
+                    statusEl.innerText = "em Operação"; dot.className = "w-3 h-3 bg-amber-500 rounded-full animate-pulse";
+                    panel.querySelector('#tela-pausa-ativa').classList.add('hidden');
+                }
+
+                const tbody = panel.querySelector('#tabela-cargas-ciclo');
+                tbody.innerHTML = '';
+                [...ciclo.cargas].reverse().forEach(c => {
+                    tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="p-3 font-mono text-slate-400">${new Date(c.timestamp).toLocaleTimeString('pt-BR').substring(0, 5)}</td><td class="p-3 font-bold text-white">${c.romaneio}</td><td class="p-3">${c.produto}</td><td class="p-3 text-xs">${c.cultivar || '-'}</td><td class="p-3 text-right font-bold text-emerald-400">${c.peso}</td></tr>`;
+                });
+            }
         }
         // Validação dinâmica do formulário de entrada (tempo real)
         function validateEntryPanel(panel) {
@@ -967,11 +1601,11 @@
             // product change -> ajustar cultivar no painel
             try {
                 const prodSel = panel.querySelector('#input-produto');
-                if (prodSel) prodSel.addEventListener('change', (e) => { try { updatePanelCultivarUI(panel, e.target.value); setTimeout(check,50); } catch(err){} });
-            } catch(e) { console.warn('attachEntryValidation product listener failed', e); }
+                if (prodSel) prodSel.addEventListener('change', (e) => { try { updatePanelCultivarUI(panel, e.target.value); setTimeout(check, 50); } catch (err) { } });
+            } catch (e) { console.warn('attachEntryValidation product listener failed', e); }
             // initial
             check();
-            try { const prodSel0 = panel.querySelector('#input-produto'); if (prodSel0 && prodSel0.value) updatePanelCultivarUI(panel, prodSel0.value); } catch(e){}
+            try { const prodSel0 = panel.querySelector('#input-produto'); if (prodSel0 && prodSel0.value) updatePanelCultivarUI(panel, prodSel0.value); } catch (e) { }
         }
 
         function updatePanelCultivarUI(panel, prod) {
@@ -979,11 +1613,11 @@
             const container = panel.querySelector('#container-cultivar');
             if (!container) return;
             const cultivars = getCultivarsForProduct(prod);
-            if (Array.isArray(cultivars) && cultivars.length>0) {
+            if (Array.isArray(cultivars) && cultivars.length > 0) {
                 container.innerHTML = `<label for="input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar</label><select id="input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="input-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-yellow-600/50 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
                 const sel = container.querySelector('#input-cultivar');
                 if (sel) {
-                    sel.addEventListener('change', () => { const outro = container.querySelector('#input-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                    sel.addEventListener('change', () => { const outro = container.querySelector('#input-cultivar-outro'); if (sel.value === 'OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
                     const outroEl = container.querySelector('#input-cultivar-outro');
                     if (outroEl) {
                         const handle = () => { const v = outroEl.value.trim(); if (!v) return; commitOutroValue(prod, v); outroEl.value = ''; outroEl.classList.add('hidden'); };
@@ -1030,75 +1664,75 @@
 
         function attachRetroValidation() {
             const btn = document.querySelector('button[onclick="salvarRetroativo()"]');
-            const fields = ['retro-inicio','retro-fim','retro-peso','retro-umidade','retro-pureza','retro-produto','retro-batch-inicio','retro-batch-fim','retro-batch-peso','retro-batch-qtd'];
+            const fields = ['retro-inicio', 'retro-fim', 'retro-peso', 'retro-umidade', 'retro-pureza', 'retro-produto', 'retro-batch-inicio', 'retro-batch-fim', 'retro-batch-peso', 'retro-batch-qtd'];
             const check = () => { if (btn) btn.disabled = !validateRetroForm(); };
             fields.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', check); if (el) el.addEventListener('change', check); });
             // também escuta mudança de modo retro
             const btnModeS = document.getElementById('btn-mode-single');
             const btnModeB = document.getElementById('btn-mode-batch');
-            if (btnModeS) btnModeS.addEventListener('click', () => setTimeout(check,50));
-            if (btnModeB) btnModeB.addEventListener('click', () => setTimeout(check,50));
+            if (btnModeS) btnModeS.addEventListener('click', () => setTimeout(check, 50));
+            if (btnModeB) btnModeB.addEventListener('click', () => setTimeout(check, 50));
             // initial
             check();
         }
-        
-        window.abrirFormularioAdicional = function() {
+
+        window.abrirFormularioAdicional = function () {
             renderNewEntryForm(moegaSelecionada);
             const panel = document.getElementById('panel-content');
             const btnVoltar = panel.querySelector('#btn-cancelar-entrada');
-            if(btnVoltar) btnVoltar.classList.remove('hidden');
+            if (btnVoltar) btnVoltar.classList.remove('hidden');
             const ciclo = activeCycles[moegaSelecionada.toString()];
-            
+
             // Wait for DOM update
             setTimeout(() => {
                 const prodInput = panel.querySelector('#input-produto');
                 const cultInput = panel.querySelector('#input-cultivar');
-                
-                if(prodInput) { prodInput.value = ciclo.cargas[0].produto; prodInput.disabled = true; }
-                if(cultInput) { cultInput.value = ciclo.cargas[0].cultivar; cultInput.disabled = true; }
-                
+
+                if (prodInput) { prodInput.value = ciclo.cargas[0].produto; prodInput.disabled = true; }
+                if (cultInput) { cultInput.value = ciclo.cargas[0].cultivar; cultInput.disabled = true; }
+
                 panel.querySelector('#aviso-trava-qualidade').classList.remove('hidden');
                 panel.querySelector('#container-cultivar').classList.remove('hidden');
             }, 0);
         }
 
-        window.cancelarEntrada = function() { window.selectMoega(moegaSelecionada); }
+        window.cancelarEntrada = function () { window.selectMoega(moegaSelecionada); }
 
         // --- RETROACTIVE & UTILS ---
         function populateSelects() {
             const retroProd = document.getElementById('retro-produto');
-            const inputProd = document.getElementById('tpl_input-produto'); 
-            
+            const inputProd = document.getElementById('tpl_input-produto');
+
             const optionsHTML = Object.keys(METAS_PRODUTIVIDADE).map(p => `<option value="${p}">${p}</option>`).join('');
-            
-            if(retroProd) retroProd.innerHTML += optionsHTML;
-            if(inputProd) inputProd.innerHTML += optionsHTML;
-            
+
+            if (retroProd) retroProd.innerHTML += optionsHTML;
+            if (inputProd) inputProd.innerHTML += optionsHTML;
+
             const dest = document.getElementById('tpl_input-destino');
             let silosHTML = '<option value="" disabled selected>Selecione o silo...</option>';
             silosHTML += '<optgroup label="Silos de Armazenagem" class="bg-slate-800 text-slate-400 font-bold">';
-            for(let i=1; i<=20; i++) silosHTML += `<option value="Silo de Armazenagem ${i.toString().padStart(2,'0')}" class="text-white">Silo de Armazenagem ${i.toString().padStart(2,'0')}</option>`;
+            for (let i = 1; i <= 20; i++) silosHTML += `<option value="Silo de Armazenagem ${i.toString().padStart(2, '0')}" class="text-white">Silo de Armazenagem ${i.toString().padStart(2, '0')}</option>`;
             silosHTML += '</optgroup>';
             silosHTML += '<optgroup label="Pré Secagem" class="bg-slate-800 text-slate-400 font-bold">';
-            for(let i=1; i<=10; i++) silosHTML += `<option value="Pré Secagem ${i.toString().padStart(2,'0')}" class="text-white">Pré Secagem ${i.toString().padStart(2,'0')}</option>`;
+            for (let i = 1; i <= 10; i++) silosHTML += `<option value="Pré Secagem ${i.toString().padStart(2, '0')}" class="text-white">Pré Secagem ${i.toString().padStart(2, '0')}</option>`;
             silosHTML += '</optgroup>';
             silosHTML += '<optgroup label="Silos Metálicos" class="bg-slate-800 text-slate-400 font-bold">';
-            for(let i=1; i<=10; i++) silosHTML += `<option value="Silo Metálico ${i.toString().padStart(2,'0')}" class="text-white">Silo Metálico ${i.toString().padStart(2,'0')}</option>`;
+            for (let i = 1; i <= 10; i++) silosHTML += `<option value="Silo Metálico ${i.toString().padStart(2, '0')}" class="text-white">Silo Metálico ${i.toString().padStart(2, '0')}</option>`;
             silosHTML += '</optgroup>';
-            
-            if(dest) dest.innerHTML = silosHTML;
+
+            if (dest) dest.innerHTML = silosHTML;
 
             // Persist metas/culturas ativas para dashboard (localStorage sync)
             try {
                 const kult = Object.keys(METAS_PRODUTIVIDADE).map(k => ({ name: k, goal: METAS_PRODUTIVIDADE[k] }));
                 localStorage.setItem('moega_culturas', JSON.stringify(kult));
-            } catch(e) { console.warn('failed persist moega_culturas', e); }
+            } catch (e) { console.warn('failed persist moega_culturas', e); }
 
             // Quando produto mudar, ajustar campo cultivar (retro e template)
             try {
-                if (retroProd) retroProd.addEventListener('change', (e) => { try { updateRetroCultivarUI(e.target.value); } catch(err){} });
-                if (inputProd) inputProd.addEventListener('change', (e) => { try { updateTemplateCultivarUI(e.target.value); } catch(err){} });
-            } catch(e) { console.warn('populateSelects: attach product listeners failed', e); }
+                if (retroProd) retroProd.addEventListener('change', (e) => { try { updateRetroCultivarUI(e.target.value); } catch (err) { } });
+                if (inputProd) inputProd.addEventListener('change', (e) => { try { updateTemplateCultivarUI(e.target.value); } catch (err) { } });
+            } catch (e) { console.warn('populateSelects: attach product listeners failed', e); }
         }
 
         function getCultivarsForProduct(prod) {
@@ -1119,7 +1753,7 @@
 
         function buildCultivarOptionsHTML(prod) {
             const list = getCultivarsForProduct(prod);
-            if (Array.isArray(list) && list.length>0) {
+            if (Array.isArray(list) && list.length > 0) {
                 return list.map(c => `<option value="${c}">${c}</option>`).join('') + `<option value="OUTRO">OUTRO (Preencha abaixo o nome do mesmo)</option>`;
             }
             return `<option value="OUTRO">OUTRO (Preencha abaixo o nome do mesmo)</option>`;
@@ -1130,14 +1764,14 @@
             const added = addCustomCultivarForProduct(prod, novoValor);
             if (!added) return;
             // Rebuild any selects currently in DOM for this product
-            ['retro-cultivar','tpl_input-cultivar','input-cultivar'].forEach(id => {
+            ['retro-cultivar', 'tpl_input-cultivar', 'input-cultivar'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && el.tagName === 'SELECT') {
                     try {
                         const prev = el.value;
                         el.innerHTML = buildCultivarOptionsHTML(prod);
                         el.value = novoValor;
-                    } catch(e) { console.warn('rebuild select failed', id, e); }
+                    } catch (e) { console.warn('rebuild select failed', id, e); }
                 }
             });
         }
@@ -1148,10 +1782,10 @@
             const parent = existing.parentElement;
             if (!parent) return;
             const cultivars = getCultivarsForProduct(prod);
-            if (Array.isArray(cultivars) && cultivars.length>0) {
+            if (Array.isArray(cultivars) && cultivars.length > 0) {
                 parent.innerHTML = ` <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Cultivar</label><select id="retro-cultivar" class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="retro-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-slate-600 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p> `;
                 const sel = document.getElementById('retro-cultivar');
-                sel.addEventListener('change', () => { const outro = document.getElementById('retro-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                sel.addEventListener('change', () => { const outro = document.getElementById('retro-cultivar-outro'); if (sel.value === 'OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
                 const outroRetro = document.getElementById('retro-cultivar-outro');
                 if (outroRetro) {
                     const handleRetro = () => { const v = outroRetro.value.trim(); if (!v) return; commitOutroValue(prod, v); outroRetro.value = ''; outroRetro.classList.add('hidden'); };
@@ -1169,11 +1803,11 @@
             const parentTpl = existingTpl ? existingTpl.parentElement : document.getElementById('tpl_container-cultivar');
             if (!parentTpl) return;
             const cultivars = getCultivarsForProduct(prod);
-            if (Array.isArray(cultivars) && cultivars.length>0) {
+            if (Array.isArray(cultivars) && cultivars.length > 0) {
                 parentTpl.innerHTML = `<label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><select id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none">${buildCultivarOptionsHTML(prod)}</select><input id="tpl_input-cultivar-outro" class="w-full mt-2 h-10 bg-slate-900 border border-yellow-600/50 rounded px-3 text-white hidden" placeholder="Preencha outro cultivar"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
                 const sel = document.getElementById('tpl_input-cultivar');
                 if (sel) {
-                    sel.addEventListener('change', () => { const outro = document.getElementById('tpl_input-cultivar-outro'); if (sel.value==='OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
+                    sel.addEventListener('change', () => { const outro = document.getElementById('tpl_input-cultivar-outro'); if (sel.value === 'OUTRO') { outro.classList.remove('hidden'); outro.focus(); } else outro.classList.add('hidden'); });
                     const outroTpl = document.getElementById('tpl_input-cultivar-outro');
                     if (outroTpl) {
                         const handleTpl = () => { const v = outroTpl.value.trim(); if (!v) return; commitOutroValue(prod, v); outroTpl.value = ''; outroTpl.classList.add('hidden'); };
@@ -1185,7 +1819,7 @@
                 parentTpl.innerHTML = `<label for="tpl_input-cultivar" class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span></label><input type="text" id="tpl_input-cultivar" class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none"><p class="text-xs text-slate-400 mt-2">Outro cultivar? preencha abaixo o nome do mesmo</p>`;
             }
         }
-        
+
         function calcularTempoLiquido(ciclo, agoraTimestamp) {
             const inicio = new Date(ciclo.inicio).getTime();
             let tempoPausadoTotal = 0;
@@ -1204,53 +1838,53 @@
         }
 
         // Timer Loop for KPIs - FIXED LOGIC
-        window.atualizarTimersCiclo = function() {
+        window.atualizarTimersCiclo = function () {
             if (moegaSelecionada && activeCycles[moegaSelecionada.toString()]) {
                 const ciclo = activeCycles[moegaSelecionada.toString()];
                 const now = Date.now();
-                
+
                 const panel = document.getElementById('panel-content');
-                if(!panel || !panel.querySelector('#lbl-ciclo-tempo')) return;
+                if (!panel || !panel.querySelector('#lbl-ciclo-tempo')) return;
 
                 // 1. Tempo Líquido (Corrigido)
                 const diffLiquido = Math.max(0, calcularTempoLiquido(ciclo, now)); // Evita negativo
-                const h = Math.floor(diffLiquido/3600000); 
-                const m = Math.floor((diffLiquido%3600000)/60000);
-                const s = Math.floor((diffLiquido%60000)/1000);
-                panel.querySelector('#lbl-ciclo-tempo').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                
+                const h = Math.floor(diffLiquido / 3600000);
+                const m = Math.floor((diffLiquido % 3600000) / 60000);
+                const s = Math.floor((diffLiquido % 60000) / 1000);
+                panel.querySelector('#lbl-ciclo-tempo').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
                 const totalPesoKg = ciclo.cargas.reduce((acc, c) => acc + Number(c.peso), 0);
                 const tons = totalPesoKg / 1000;
-                
+
                 const produto = ciclo.cargas[0].produto;
-                let metaVal = 50; 
+                let metaVal = 50;
                 Object.keys(METAS_PRODUTIVIDADE).forEach(k => { if (produto.includes(k)) metaVal = METAS_PRODUTIVIDADE[k]; });
-                
+
                 // Estimativa: Tempo Necessário (ms) = (Ton / Meta) * 3600000
                 const msNecessarios = (tons / metaVal) * 3600000;
                 const msRestantes = msNecessarios - diffLiquido;
-                
+
                 const lblRestante = panel.querySelector('#lbl-ciclo-restante');
-                if(lblRestante) {
+                if (lblRestante) {
                     const absRestante = Math.abs(msRestantes);
                     const rH = Math.floor(absRestante / 3600000);
                     const rM = Math.floor((absRestante % 3600000) / 60000);
                     const rS = Math.floor((absRestante % 60000) / 1000);
-                    
+
                     if (msRestantes > 0) {
-                        lblRestante.innerText = `${rH.toString().padStart(2,'0')}:${rM.toString().padStart(2,'0')}:${rS.toString().padStart(2,'0')}`;
+                        lblRestante.innerText = `${rH.toString().padStart(2, '0')}:${rM.toString().padStart(2, '0')}:${rS.toString().padStart(2, '0')}`;
                         lblRestante.className = "font-mono text-emerald-400 text-xl font-bold";
                     } else {
-                        lblRestante.innerText = `- ${rH.toString().padStart(2,'0')}:${rM.toString().padStart(2,'0')}:${rS.toString().padStart(2,'0')}`;
+                        lblRestante.innerText = `- ${rH.toString().padStart(2, '0')}:${rM.toString().padStart(2, '0')}:${rS.toString().padStart(2, '0')}`;
                         lblRestante.className = "font-mono text-red-500 text-xl font-bold animate-pulse";
                     }
                 }
-                
+
                 const lblMeta = panel.querySelector('#lbl-meta-kpi');
                 if (lblMeta) lblMeta.innerText = metaVal;
-                
+
                 // Performance: Ton / Horas Decorridas (Líquidas)
-                let performanceExibida = metaVal; 
+                let performanceExibida = metaVal;
                 const horasDecimais = diffLiquido / 3600000;
                 if (horasDecimais > 0.0028) { // > 10 segundos
                     performanceExibida = tons / horasDecimais;
@@ -1258,55 +1892,36 @@
 
                 const lblKpi = panel.querySelector('#lbl-ciclo-kpi');
                 if (lblKpi) lblKpi.innerText = performanceExibida.toFixed(1);
-                
+
                 const barKpi = panel.querySelector('#bar-kpi');
                 if (barKpi) {
-                    const pct = Math.min((performanceExibida/metaVal)*100, 100);
+                    const pct = Math.min((performanceExibida / metaVal) * 100, 100);
                     barKpi.style.width = `${pct}%`;
-                    
+
                     if (msRestantes < 0) {
-                         // Se estourou o tempo, barra vermelha indicando queda de produtividade
-                         barKpi.className = "h-full transition-all duration-1000 bg-red-500";
-                         panel.querySelector('#lbl-status-kpi').innerText = "ATRASADO - PERDA DE RITMO";
+                        // Se estourou o tempo, barra vermelha indicando queda de produtividade
+                        barKpi.className = "h-full transition-all duration-1000 bg-red-500";
+                        panel.querySelector('#lbl-status-kpi').innerText = "ATRASADO - PERDA DE RITMO";
                     } else {
-                         barKpi.className = "h-full transition-all duration-1000 bg-emerald-500";
-                         panel.querySelector('#lbl-status-kpi').innerText = "DENTRO DA META";
+                        barKpi.className = "h-full transition-all duration-1000 bg-emerald-500";
+                        panel.querySelector('#lbl-status-kpi').innerText = "DENTRO DA META";
                     }
                 }
-                
+
                 // Timer Pausa (Se houver)
-                if(ciclo.status === 'PAUSADO') {
-                    const lastP = ciclo.pausas[ciclo.pausas.length-1];
+                if (ciclo.status === 'PAUSADO') {
+                    const lastP = ciclo.pausas[ciclo.pausas.length - 1];
                     const diffP = now - new Date(lastP.inicio).getTime();
-                    const hp = Math.floor(diffP/3600000); const mp = Math.floor((diffP%3600000)/60000); const sp = Math.floor((diffP%60000)/1000);
+                    const hp = Math.floor(diffP / 3600000); const mp = Math.floor((diffP % 3600000) / 60000); const sp = Math.floor((diffP % 60000) / 1000);
                     const elTimerPausa = panel.querySelector('#lbl-timer-pausa');
-                    if(elTimerPausa) elTimerPausa.innerText = `${hp.toString().padStart(2,'0')}:${mp.toString().padStart(2,'0')}:${sp.toString().padStart(2,'0')}`;
+                    if (elTimerPausa) elTimerPausa.innerText = `${hp.toString().padStart(2, '0')}:${mp.toString().padStart(2, '0')}:${sp.toString().padStart(2, '0')}`;
                 }
             }
         }
-        
+
         setInterval(atualizarTimersCiclo, 1000);
 
         // --- GLOBAL FUNCTIONS ---
-        window.switchView = function(view) {
-            const dashboardDiv = document.getElementById('view-dashboard');
-            const retroactiveDiv = document.getElementById('view-retroactive');
-            const btnDashboard = document.getElementById('nav-dashboard');
-            const btnRetroactive = document.getElementById('nav-retroactive');
-
-            if(dashboardDiv && retroactiveDiv && btnDashboard && btnRetroactive) {
-                if (view === 'dashboard') {
-                    dashboardDiv.classList.remove('hidden'); retroactiveDiv.classList.add('hidden');
-                    btnDashboard.classList.replace('nav-tab-inactive', 'nav-tab-active');
-                    btnRetroactive.classList.replace('nav-tab-active', 'nav-tab-inactive');
-                } else {
-                    dashboardDiv.classList.add('hidden'); retroactiveDiv.classList.remove('hidden');
-                    btnDashboard.classList.replace('nav-tab-active', 'nav-tab-inactive');
-                    btnRetroactive.classList.replace('nav-tab-inactive', 'nav-tab-active');
-                    window.toggleRetroMode('single');
-                }
-            }
-        }
         window.toggleRetroMode = (mode) => {
             retroMode = mode;
             const s = document.getElementById('form-retro-single');
@@ -1316,16 +1931,16 @@
             if (mode === 'single') { s.classList.remove('hidden'); b.classList.add('hidden'); bs.classList.replace('sub-pill-inactive', 'sub-pill-active'); bb.classList.replace('sub-pill-active', 'sub-pill-inactive'); }
             else { s.classList.add('hidden'); b.classList.remove('hidden'); bs.classList.replace('sub-pill-active', 'sub-pill-inactive'); bb.classList.replace('sub-pill-inactive', 'sub-pill-active'); }
         }
-        window.setRetroMoega = (id) => { 
-            retroMoegaSelected = id; 
-            document.querySelectorAll('.btn-retro-moega').forEach(b => { 
-                b.classList.remove('bg-blue-600', 'text-white', 'border-blue-500'); 
-                if(b.dataset.id == id) b.classList.add('bg-blue-600', 'text-white', 'border-blue-500'); 
-            }); 
-            document.getElementById('retro-moega-id').value = id; 
+        window.setRetroMoega = (id) => {
+            retroMoegaSelected = id;
+            document.querySelectorAll('.btn-retro-moega').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
+                if (b.dataset.id == id) b.classList.add('bg-blue-600', 'text-white', 'border-blue-500');
+            });
+            document.getElementById('retro-moega-id').value = id;
         }
 
-        window.salvarRetroativo = async function() {
+        window.salvarRetroativo = async function () {
             if (!auth || !auth.currentUser) {
                 notify('Usuário não autenticado. Abra o modal de login.', 'erro');
                 document.getElementById('login-modal')?.classList.remove('hidden');
@@ -1398,7 +2013,7 @@
                     const peso = Number(document.getElementById('retro-batch-peso').value) || 0;
                     const qtd = Number(document.getElementById('retro-batch-qtd').value) || 0;
                     const placasText = document.getElementById('retro-batch-placas').value || '';
-                    const placas = placasText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length>0);
+                    const placas = placasText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length > 0);
                     const produto = document.getElementById('retro-produto').value || '-';
                     const cultivar = document.getElementById('retro-cultivar').value || '-';
                     const fazenda = document.getElementById('retro-fazenda')?.value || '-';
@@ -1424,7 +2039,7 @@
                         fim: new Date(fimVal).toISOString(),
                         statusFinal: 'CORRIGIDO',
                         romaneio: 'LOTE',
-                        placa: placas.length>0 ? placas.join(',') : 'Múltiplas',
+                        placa: placas.length > 0 ? placas.join(',') : 'Múltiplas',
                         placas: placas,
                         qtdVeiculos: qtd,
                         cargas: [],
@@ -1459,31 +2074,31 @@
         }
 
         window.togglePausaRetro = () => {
-             const c = document.getElementById('check-pausa-retro');
-             const d = document.getElementById('container-pausas-retro');
-             const b = document.getElementById('btn-add-pausa-retro');
-             if(c.checked) { d.classList.remove('hidden'); b.classList.remove('hidden'); if(d.children.length===0) window.addPausaRetroRow(); }
-             else { d.classList.add('hidden'); b.classList.add('hidden'); d.innerHTML=''; }
+            const c = document.getElementById('check-pausa-retro');
+            const d = document.getElementById('container-pausas-retro');
+            const b = document.getElementById('btn-add-pausa-retro');
+            if (c.checked) { d.classList.remove('hidden'); b.classList.remove('hidden'); if (d.children.length === 0) window.addPausaRetroRow(); }
+            else { d.classList.add('hidden'); b.classList.add('hidden'); d.innerHTML = ''; }
         }
         // Ajustes de UX: sincroniza min/max entre campos de data do Retroativo
         try {
             const riGlobal = document.getElementById('retro-inicio');
             const rfGlobal = document.getElementById('retro-fim');
             if (riGlobal && rfGlobal) {
-                riGlobal.addEventListener('change', () => { try { rfGlobal.min = riGlobal.value; if (rfGlobal.value && new Date(rfGlobal.value).getTime() < new Date(riGlobal.value).getTime()) rfGlobal.value = riGlobal.value; } catch(e){} });
-                rfGlobal.addEventListener('change', () => { try { riGlobal.max = rfGlobal.value; if (riGlobal.value && new Date(riGlobal.value).getTime() > new Date(rfGlobal.value).getTime()) riGlobal.value = rfGlobal.value; } catch(e){} });
+                riGlobal.addEventListener('change', () => { try { rfGlobal.min = riGlobal.value; if (rfGlobal.value && new Date(rfGlobal.value).getTime() < new Date(riGlobal.value).getTime()) rfGlobal.value = riGlobal.value; } catch (e) { } });
+                rfGlobal.addEventListener('change', () => { try { riGlobal.max = rfGlobal.value; if (riGlobal.value && new Date(riGlobal.value).getTime() > new Date(rfGlobal.value).getTime()) riGlobal.value = rfGlobal.value; } catch (e) { } });
             }
             const rbi = document.getElementById('retro-batch-inicio');
             const rbf = document.getElementById('retro-batch-fim');
             if (rbi && rbf) {
-                rbi.addEventListener('change', () => { try { rbf.min = rbi.value; if (rbf.value && new Date(rbf.value).getTime() < new Date(rbi.value).getTime()) rbf.value = rbi.value; } catch(e){} });
-                rbf.addEventListener('change', () => { try { rbi.max = rbf.value; if (rbi.value && new Date(rbi.value).getTime() > new Date(rbf.value).getTime()) rbi.value = rbf.value; } catch(e){} });
+                rbi.addEventListener('change', () => { try { rbf.min = rbi.value; if (rbf.value && new Date(rbf.value).getTime() < new Date(rbi.value).getTime()) rbf.value = rbi.value; } catch (e) { } });
+                rbf.addEventListener('change', () => { try { rbi.max = rbf.value; if (rbi.value && new Date(rbi.value).getTime() > new Date(rbf.value).getTime()) rbi.value = rbf.value; } catch (e) { } });
             }
-        } catch(e) { console.warn('Erro ao inicializar listeners de data retro:', e); }
+        } catch (e) { console.warn('Erro ao inicializar listeners de data retro:', e); }
         window.addPausaRetroRow = () => {
             const div = document.createElement('div');
             div.className = "grid grid-cols-7 gap-2 items-end animate-fade-in paused-retro-row";
-            div.innerHTML = `<div class="col-span-2"><input type="datetime-local" class="retro-pausa-inicio w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><input type="datetime-local" class="retro-pausa-fim w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><select class="retro-pausa-motivo w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white">${MOTIVOS_PAUSA.map(m=>`<option>${m.nome}</option>`).join('')}</select></div><div class="col-span-1"><button onclick="this.parentElement.parentElement.remove()" title="Remover pausa" aria-label="Remover pausa" class="w-full h-9 bg-red-900/50 hover:bg-red-600 text-red-400 hover:text-white rounded flex items-center justify-center transition border border-red-800/30"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+            div.innerHTML = `<div class="col-span-2"><input type="datetime-local" class="retro-pausa-inicio w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><input type="datetime-local" class="retro-pausa-fim w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white"></div><div class="col-span-2"><select class="retro-pausa-motivo w-full bg-slate-900 border border-slate-600 rounded px-2 h-9 text-xs text-white">${MOTIVOS_PAUSA.map(m => `<option>${m.nome}</option>`).join('')}</select></div><div class="col-span-1"><button onclick="this.parentElement.parentElement.remove()" title="Remover pausa" aria-label="Remover pausa" class="w-full h-9 bg-red-900/50 hover:bg-red-600 text-red-400 hover:text-white rounded flex items-center justify-center transition border border-red-800/30"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
             document.getElementById('container-pausas-retro').appendChild(div);
             lucide.createIcons();
         }
@@ -1491,20 +2106,20 @@
             const text = document.getElementById('retro-batch-placas').value;
             const count = text.split(/[\n,]+/).filter(p => p.trim().length > 0).length;
             document.getElementById('batch-plates-count').innerText = `${count} detectadas`;
-            if(count > 0) document.getElementById('retro-batch-qtd').value = count;
+            if (count > 0) document.getElementById('retro-batch-qtd').value = count;
         }
 
-        window.toggleCultivar = () => { 
+        window.toggleCultivar = () => {
             const panel = document.getElementById('panel-content');
             let p = panel.querySelector('#input-produto');
             let c = panel.querySelector('#container-cultivar');
             // Fallback para form global se não achar no panel
-            if(!p) p = document.getElementById('input-produto');
-            if(!c) c = document.getElementById('container-cultivar');
+            if (!p) p = document.getElementById('input-produto');
+            if (!c) c = document.getElementById('container-cultivar');
 
-            if(p && c) { if(p.value) c.classList.remove('hidden'); else c.classList.add('hidden'); }
+            if (p && c) { if (p.value) c.classList.remove('hidden'); else c.classList.add('hidden'); }
         }
-        window.notify = (msg, type) => { const t = document.getElementById('toast'); document.getElementById('toast-title').innerText = type==='erro'?'Erro':'Sucesso'; document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', '-translate-y-20'); setTimeout(() => t.classList.add('opacity-0', '-translate-y-20'), 3000); }
+        window.notify = (msg, type) => { const t = document.getElementById('toast'); document.getElementById('toast-title').innerText = type === 'erro' ? 'Erro' : 'Sucesso'; document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', '-translate-y-20'); setTimeout(() => t.classList.add('opacity-0', '-translate-y-20'), 3000); }
 
         // Login modal handler: permite autenticação por email/senha nesta página
         const loginBtn = document.getElementById('login-button');
@@ -1524,17 +2139,49 @@
             });
         }
 
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR').substring(0,5), 1000);
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR').substring(0, 5), 1000);
     </script>
 
-        <!-- BOTÃO: Voltar ao Menu (canto inferior esquerdo) -->
-        <a href="menu.html" class="back-to-menu" title="Voltar ao Menu" aria-label="Voltar ao Menu">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left-circle" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 8 12 12 16"></polyline><line x1="16" y1="12" x2="8" y2="12"></line></svg>
-        </a>
-        <style>
-            .back-to-menu { position: fixed; left: 16px; bottom: 16px; z-index: 9999; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background: rgba(15,23,42,0.9); border:1px solid rgba(100,116,139,0.15); border-radius:10px; color:#cbd5e1; text-decoration:none; box-shadow: 0 6px 18px rgba(2,6,23,0.6); transition: transform .12s ease, background .12s ease, color .12s ease; }
-            .back-to-menu:hover { transform: translateY(-3px); background: rgba(30,41,59,0.95); color:#fff; }
-            .back-to-menu svg { display:block; }
-        </style>
+    <!-- BOTÃO: Voltar ao Menu (canto inferior esquerdo) -->
+    <a href="menu.html" class="back-to-menu" title="Voltar ao Menu" aria-label="Voltar ao Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+            class="feather feather-arrow-left-circle" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 8 8 12 12 16"></polyline>
+            <line x1="16" y1="12" x2="8" y2="12"></line>
+        </svg>
+    </a>
+    <style>
+        .back-to-menu {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 9999;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(100, 116, 139, 0.15);
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+            transition: transform .12s ease, background .12s ease, color .12s ease;
+        }
+
+        .back-to-menu:hover {
+            transform: translateY(-3px);
+            background: rgba(30, 41, 59, 0.95);
+            color: #fff;
+        }
+
+        .back-to-menu svg {
+            display: block;
+        }
+    </style>
 </body>
+
 </html>

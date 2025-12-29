@@ -171,6 +171,8 @@
                     data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
             <a href="#" class="nav-item" id="menu-rastreabilidade" onclick="switchMainView('rastreabilidade')"><i
                     data-lucide="map-pin" class="w-5 h-5"></i> Rastreabilidade</a>
+            <a href="#" class="nav-item" id="menu-transferencias" onclick="switchMainView('transferencias')"><i
+                    data-lucide="arrow-right-left" class="w-5 h-5"></i> Transferências</a>
             <a href="#" class="nav-item" id="menu-paradas" onclick="switchMainView('paradas')"><i
                     data-lucide="pause-circle" class="w-5 h-5"></i> Gestão de Paradas</a>
             <a href="#" class="nav-item" id="menu-relatorios" onclick="switchMainView('relatorios')"><i
@@ -682,9 +684,10 @@
                             <p class="text-slate-400">Origem atual do produto em processamento</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div class="bg-slate-800 p-6 rounded-xl border border-indigo-500/30 shadow-lg text-center">
-                                <p class="text-xs text-indigo-400 uppercase font-bold mb-2">Fazenda Origem</p>
-                                <h3 class="text-xl font-bold text-white" id="trace-moega-fazenda">---</h3>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-cyan-500/30 shadow-lg text-center">
+                                <p class="text-xs text-cyan-400 uppercase font-bold mb-2">Umidade Média</p>
+                                <h3 class="text-2xl font-bold text-white font-mono" id="trace-moega-umidade">--<span
+                                        class="text-lg text-slate-500">%</span></h3>
                             </div>
                             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-center">
                                 <p class="text-xs text-slate-400 uppercase font-bold mb-2">Zona</p>
@@ -711,6 +714,85 @@
                                         </tr>
                                     </thead>
                                     <tbody id="trace-moega-table"
+                                        class="text-sm divide-y divide-slate-700 text-slate-300"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- 2.5 TRANSFERÊNCIAS (NOVO) -->
+            <div id="view-main-transferencias" class="h-full flex flex-col hidden">
+                <div
+                    class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0">
+                    <button id="tab-transf-geral" class="dashboard-tab tab-active flex items-center gap-2"><i
+                            data-lucide="list" class="w-4 h-4"></i> Histórico de Saídas</button>
+                </div>
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="transf-view-geral" class="fade-in">
+                        <!-- Filtros -->
+                        <div class="flex items-center gap-3 mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400 font-bold">Início</label>
+                                <input type="date" id="filter-start-transf"
+                                    class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-slate-300">
+                                <label class="text-xs text-slate-400 font-bold">Fim</label>
+                                <input type="date" id="filter-end-transf"
+                                    class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
+                            </div>
+                            <button id="btn-filter-transf"
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1 rounded font-bold text-xs flex items-center gap-2"><i
+                                    data-lucide="search" class="w-3 h-3"></i> Filtrar</button>
+                        </div>
+
+                        <!-- KPIs Simples -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4">
+                                <div class="bg-orange-500/20 p-3 rounded-full text-orange-400"><i
+                                        data-lucide="package-minus" class="w-8 h-8"></i></div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-bold uppercase">Total Expedido</p>
+                                    <h3 class="text-2xl font-bold text-white" id="transf-total-peso">0 t</h3>
+                                </div>
+                            </div>
+                            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4">
+                                <div class="bg-blue-500/20 p-3 rounded-full text-blue-400"><i data-lucide="truck"
+                                        class="w-8 h-8"></i></div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-bold uppercase">Cargas</p>
+                                    <h3 class="text-2xl font-bold text-white" id="transf-total-cargas">0</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabela -->
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl">
+                            <div class="p-5 border-b border-slate-700 bg-slate-800/50">
+                                <h3
+                                    class="font-bold text-white flex items-center gap-2 uppercase tracking-wider text-sm">
+                                    <i data-lucide="table" class="w-4 h-4 text-slate-400"></i> Registros de
+                                    Transferência
+                                </h3>
+                            </div>
+                            <div style="max-height:500px; overflow-y:auto;">
+                                <table class="w-full text-left">
+                                    <thead
+                                        class="bg-slate-900 text-slate-400 text-xs uppercase font-bold tracking-wider sticky top-0">
+                                        <tr>
+                                            <th class="p-4 border-b border-slate-700">Data/Hora</th>
+                                            <th class="p-4 border-b border-slate-700">Placa</th>
+                                            <th class="p-4 border-b border-slate-700">Motorista</th>
+                                            <th class="p-4 border-b border-slate-700">Produto</th>
+                                            <th class="p-4 border-b border-slate-700">Destino</th>
+                                            <th class="p-4 border-b border-slate-700">Lote/Var.</th>
+                                            <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
+                                            <th class="p-4 border-b border-slate-700">Resp.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transf-table-body"
                                         class="text-sm divide-y divide-slate-700 text-slate-300"></tbody>
                                 </table>
                             </div>
@@ -1488,6 +1570,7 @@
 
         let ciclosAtivos = {};
         let historicoDescargas = [];
+        let historicoTransferencias = [];
         let db;
         // filtros ativos aplicados globalmente (sincroniza entre visões ou usa específicos)
         let activeFilters = { start: null, end: null, turno: 'ALL' };
@@ -1543,6 +1626,17 @@
                 });
                 console.log("Discharge history updated:", historicoDescargas);
                 atualizarDashboard();
+            });
+
+            // Listener for Transfers
+            const transfRef = collection(db, 'moega_controle_transferencia');
+            const qTransf = query(transfRef, orderBy("timestamp", "desc"), limit(100));
+            onSnapshot(qTransf, (snapshot) => {
+                historicoTransferencias = [];
+                snapshot.forEach(d => { historicoTransferencias.push(Object.assign({ id: d.id }, d.data())); });
+                updateTransferenciasView();
+            }, (error) => {
+                console.error("Erro permissão transferências:", error);
             });
         }
 
@@ -1757,7 +1851,7 @@
 
             if (document.getElementById('kpi-peso')) document.getElementById('kpi-peso').innerHTML = `${(totalPeso / 1000).toFixed(1)} <span class="text-lg text-slate-500">t</span>`;
             if (document.getElementById('kpi-cargas')) document.getElementById('kpi-cargas').innerText = totalCargas;
-            
+
             // Calcula a umidade que mais aparece (moda)
             let umidadeExibida = 0.0;
             if (allUmidades.length > 0) {
@@ -1821,6 +1915,7 @@
                 const fBtnTrace = document.getElementById('btn-filter-trace');
                 const fBtnStop = document.getElementById('btn-filter-stop');
                 const fBtnReport = document.getElementById('btn-filter-report');
+                const fBtnTransf = document.getElementById('btn-filter-transf');
 
                 // Quando qualquer input de filtro mudar, sincroniza e atualiza as views
                 ['filter-start', 'filter-end', 'filter-turno'].forEach(id => {
@@ -1838,6 +1933,9 @@
                 ['filter-start-report', 'filter-end-report', 'filter-turno-report'].forEach(id => {
                     document.getElementById(id)?.addEventListener('change', () => { syncFiltersFromInputs('report'); updateCharts(); });
                 });
+                ['filter-start-transf', 'filter-end-transf'].forEach(id => {
+                    document.getElementById(id)?.addEventListener('change', () => { syncFiltersFromInputs('transf'); updateTransferenciasView(); });
+                });
                 ['filter-start-moega', 'filter-end-moega', 'filter-turno-moega'].forEach(id => {
                     const el = document.getElementById(id);
                     if (!el) return;
@@ -1853,6 +1951,7 @@
                 if (fBtnTrace) fBtnTrace.addEventListener('click', () => { syncFiltersFromInputs('trace'); updateRastreabilidadeView(); });
                 if (fBtnStop) fBtnStop.addEventListener('click', () => { syncFiltersFromInputs('stop'); updateParadasView(); });
                 if (fBtnReport) fBtnReport.addEventListener('click', () => { syncFiltersFromInputs('report'); updateCharts(); });
+                if (fBtnTransf) fBtnTransf.addEventListener('click', () => { syncFiltersFromInputs('transf'); updateTransferenciasView(); });
 
                 // Listeners for Moega-specific filters in Trace/Stop
                 document.getElementById('btn-filter-trace-moega')?.addEventListener('click', () => { updateRastreabilidadeView(); });
@@ -2039,7 +2138,7 @@
             const tbody = document.getElementById('table-body');
             if (!tbody) return;
             tbody.innerHTML = '';
-            if (logs.length === 0) { 
+            if (logs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="13" class="text-center p-8 text-slate-500">Nenhuma descarga finalizada recentemente.</td></tr>';
                 return;
             }
@@ -2196,6 +2295,10 @@
                     activeFilters.start = document.getElementById('filter-start-report')?.value || null;
                     activeFilters.end = document.getElementById('filter-end-report')?.value || null;
                     activeFilters.turno = document.getElementById('filter-turno-report')?.value || 'ALL';
+                } else if (source === 'transf') {
+                    activeFilters.start = document.getElementById('filter-start-transf')?.value || null;
+                    activeFilters.end = document.getElementById('filter-end-transf')?.value || null;
+                    activeFilters.turno = 'ALL'; // Transferências não tem filtro de turno por enquanto
                 } else {
                     activeFilters.start = document.getElementById('filter-start')?.value || null;
                     activeFilters.end = document.getElementById('filter-end')?.value || null;
@@ -2206,7 +2309,7 @@
                 const s = activeFilters.start || '';
                 const e = activeFilters.end || '';
                 const t = activeFilters.turno || 'ALL';
-                const inputs = ['filter-start', 'filter-end', 'filter-turno', 'filter-start-moega', 'filter-end-moega', 'filter-turno-moega', 'filter-start-trace', 'filter-end-trace', 'filter-turno-trace', 'filter-start-stop', 'filter-end-stop', 'filter-turno-stop', 'filter-start-report', 'filter-end-report', 'filter-turno-report'];
+                const inputs = ['filter-start', 'filter-end', 'filter-turno', 'filter-start-moega', 'filter-end-moega', 'filter-turno-moega', 'filter-start-trace', 'filter-end-trace', 'filter-turno-trace', 'filter-start-stop', 'filter-end-stop', 'filter-turno-stop', 'filter-start-report', 'filter-end-report', 'filter-turno-report', 'filter-start-transf', 'filter-end-transf'];
                 inputs.forEach(id => {
                     const el = document.getElementById(id);
                     if (!el) return;
@@ -3063,7 +3166,27 @@
                 } else {
                     // Update Moega specific headers
                     const lastLog = logs[0];
-                    document.getElementById('trace-moega-fazenda').innerText = lastLog ? (lastLog.fazenda || '-') : '---';
+
+                    // Calcular Umidade Média Ponderada
+                    let totalHum = 0;
+                    let totalPesoHum = 0;
+                    logs.forEach(l => {
+                        const process = (w, h) => {
+                            w = Number(w) || 0;
+                            // Trata umidade que pode vir com vírgula ou ponto como separador decimal.
+                            h = Number(String(h || '0').replace(',', '.'));
+                            if (w > 0 && !isNaN(h) && h > 0) {
+                                totalHum += w * h;
+                                totalPesoHum += w;
+                            }
+                        };
+                        if (Array.isArray(l.cargas)) l.cargas.forEach(c => process(c.peso, c.umidade));
+                        else process(l.peso, l.umidade);
+                    });
+                    const avgHum = totalPesoHum > 0 ? (totalHum / totalPesoHum) : 0;
+                    const humEl = document.getElementById('trace-moega-umidade');
+                    if (humEl) humEl.innerHTML = avgHum > 0 ? `${avgHum.toFixed(2).replace('.', ',')}<span class="text-lg text-slate-500">%</span>` : '--<span class="text-lg text-slate-500">%</span>';
+
                     document.getElementById('trace-moega-zona').innerText = lastLog ? (lastLog.zona || '-') : '---';
                     document.getElementById('trace-moega-talhao').innerText = lastLog ? (lastLog.talhao || '-') : '---';
                 }
@@ -3206,6 +3329,60 @@
             } catch (e) { console.warn('updateParadasView error', e); }
         }
 
+        // --- Transferências view updater ---
+        function updateTransferenciasView() {
+            try {
+                const filters = {
+                    start: document.getElementById('filter-start-transf')?.value || null,
+                    end: document.getElementById('filter-end-transf')?.value || null
+                };
+
+                // Filtrar logs
+                let logs = historicoTransferencias.filter(l => {
+                    const ts = l.timestamp ? new Date(l.timestamp).getTime() : null;
+                    if (!ts) return false;
+                    if (filters.start) {
+                        const sMs = new Date(filters.start + 'T00:00:00').getTime();
+                        if (ts < sMs) return false;
+                    }
+                    if (filters.end) {
+                        const eMs = new Date(filters.end + 'T23:59:59').getTime();
+                        if (ts > eMs) return false;
+                    }
+                    return true;
+                });
+
+                // KPIs
+                const totalPeso = logs.reduce((acc, l) => acc + (Number(l.peso) || 0), 0);
+                document.getElementById('transf-total-peso').innerText = `${(totalPeso / 1000).toFixed(2)} t`;
+                document.getElementById('transf-total-cargas').innerText = logs.length;
+
+                // Tabela
+                const tbody = document.getElementById('transf-table-body');
+                tbody.innerHTML = '';
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-slate-500">Nenhum registro encontrado.</td></tr>';
+                } else {
+                    logs.forEach(l => {
+                        const dataHora = l.timestamp ? new Date(l.timestamp).toLocaleString('pt-BR') : (l.dataSaida ? `${l.dataSaida} ${l.horaSaida}` : '-');
+                        
+                        // Lógica robusta para combinar Produto e Cultura
+                        let produtoExibido = l.produto || '';
+                        let culturaExibida = (l.cultura && l.cultura !== '-') ? l.cultura : '';
+                        let produtoTexto;
+
+                        if (produtoExibido && culturaExibida) {
+                            produtoTexto = `${produtoExibido} (${culturaExibida})`;
+                        } else {
+                            produtoTexto = produtoExibido || culturaExibida || '-';
+                        }
+
+                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${dataHora}</td><td class="p-4 font-bold">${l.placa || '-'}</td><td class="p-4 text-slate-300 text-sm">${l.motorista || '-'}</td><td class="p-4 text-white font-semibold">${produtoTexto}</td><td class="p-4 text-slate-300">${l.destino || '-'}</td><td class="p-4 text-slate-300">${l.variedade || '-'} / ${l.lote || '-'}</td><td class="p-4 text-right font-bold text-orange-400 font-mono">${Number(l.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-slate-400 text-xs">${l.operador || '-'}</td></tr>`;
+                    });
+                }
+            } catch (e) { console.warn('updateTransferenciasView error', e); }
+        }
+
         // --- Delete historic record ---
         window.deleteHistoricRecord = async function (id) {
             if (!id) return;
@@ -3324,7 +3501,7 @@
 
         window.switchMainView = function (viewName) {
             activeMainView = viewName;
-            ['dashboard', 'rastreabilidade', 'paradas', 'relatorios', 'config-culturas', 'config-turnos', 'central-dados', 'config-usuarios', 'reset-zone'].forEach(v => {
+            ['dashboard', 'rastreabilidade', 'transferencias', 'paradas', 'relatorios', 'config-culturas', 'config-turnos', 'central-dados', 'config-usuarios', 'reset-zone'].forEach(v => {
                 const el = document.getElementById(`view-main-${v}`);
                 if (el) el.classList.add('hidden');
             });
@@ -3342,6 +3519,7 @@
                 const titles = {
                     dashboard: 'Visão Geral',
                     rastreabilidade: 'Rastreabilidade Industrial',
+                    transferencias: 'Controle de Transferências',
                     paradas: 'Gestão de Paradas',
                 };
                 headerTitle.innerHTML = `<i data-lucide="bar-chart-3" class="text-indigo-500 w-5 h-5"></i> ${titles[viewName] || 'Dashboard'}`;
@@ -3353,6 +3531,9 @@
             } else if (viewName === 'rastreabilidade') {
                 syncFiltersFromInputs('geral');
                 updateRastreabilidadeView();
+            } else if (viewName === 'transferencias') {
+                syncFiltersFromInputs('geral');
+                updateTransferenciasView();
             } else if (viewName === 'paradas') {
                 syncFiltersFromInputs('geral');
                 updateParadasView();
@@ -3409,27 +3590,27 @@
         }
         function closeRomaneiosModal() { const m = document.getElementById('modal-romaneios'); if (m) m.classList.add('hidden'); }
 
-        window.showRomaneiosForLog = function(id) {
+        window.showRomaneiosForLog = function (id) {
             const log = historicoDescargas.find(h => h.id === id);
             if (!log || !Array.isArray(log.cargas)) return;
-            
+
             const romaneios = log.cargas.map(c => c.romaneio).filter(r => r);
             const uniqueRomaneios = [...new Set(romaneios)];
-            
+
             const modalId = 'modal-romaneios-detail';
             let modal = document.getElementById(modalId);
             if (modal) modal.remove();
-            
+
             modal = document.createElement('div');
             modal.id = modalId;
             modal.className = 'fixed inset-0 z-[90] modal-backdrop flex items-center justify-center p-4';
-            
+
             let contentHtml = `<div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col animate-fade-in"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white">Romaneios do Ciclo</h3><button onclick="document.getElementById('${modalId}').remove()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button></div><div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">`;
-            
+
             uniqueRomaneios.forEach(r => {
                 contentHtml += `<div class="p-3 bg-slate-900/50 rounded border border-slate-700 text-slate-300 font-mono text-center font-bold select-all hover:bg-slate-800 transition-colors">${r}</div>`;
             });
-            
+
             contentHtml += `</div></div>`;
             modal.innerHTML = contentHtml;
             document.body.appendChild(modal);
