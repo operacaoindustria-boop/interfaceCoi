@@ -1400,6 +1400,62 @@
             }
         }
 
+        window.confirmarEnvioFinal = async function () {
+            if (!pendingData) return;
+            if (!auth || !auth.currentUser) {
+                notify('Usuário não autenticado. Abra o modal de login.', 'erro');
+                document.getElementById('login-modal')?.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // PARTE 1: Atualizar o ciclo da moega (código existente)
+                const docRef = doc(db, 'moega_ciclos_ativos', moegaSelecionada.toString());
+
+                if (activeCycles[moegaSelecionada]) {
+                    const cicloAtual = activeCycles[moegaSelecionada];
+                    await updateDoc(docRef, { cargas: [...cicloAtual.cargas, pendingData] });
+                    notify('Carga Adicionada!', 'sucesso');
+                } else {
+                    const novoCiclo = { moega: moegaSelecionada, status: 'OPERANDO', inicio: new Date().toISOString(), cargas: [pendingData], pausas: [] };
+                    await setDoc(docRef, novoCiclo);
+                    notify('Ciclo Iniciado', 'sucesso');
+                }
+
+                // PARTE 2: ENVIAR DADOS PARA O SILO DE DESTINO (NOVO)
+                if (pendingData.destino && pendingData.destino !== '-') {
+                    const siloDestinoId = pendingData.destino;
+                    const siloDestinoRef = doc(db, "mes_silos", siloDestinoId);
+
+                    try {
+                        // Usamos updateDoc para não sobrescrever o silo inteiro, apenas os campos que queremos mudar.
+                        await updateDoc(siloDestinoRef, {
+                            cultura: pendingData.produto,
+                            cultivar: pendingData.cultivar,
+                            umidade: pendingData.umidade,
+                            status: 'warning', // 'warning' pode significar 'recebendo' ou 'atenção'
+                            lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                            origemCarga: pendingData.romaneio,
+                            placaOrigem: pendingData.placa,
+                        });
+                        console.log(`Silo ${siloDestinoId} atualizado com sucesso pela Moega.`);
+                    } catch (siloError) {
+                        console.error(`Falha ao atualizar o silo de destino ${siloDestinoId}:`, siloError);
+                        notify(`Carga lançada, mas falha ao comunicar com silo ${siloDestinoId}.`, 'erro');
+                    }
+                }
+
+                fecharModalConfirmacao();
+            } catch (e) {
+                console.error('Firestore write error:', e);
+                const code = e.code || (e && e.name) || 'unknown';
+                const msg = e.message || String(e);
+                notify(`Erro ao salvar no banco (${code})`, 'erro');
+                const toastDetail = document.getElementById('toast-msg');
+                if (toastDetail) toastDetail.innerText = `${msg}`;
+            }
+        }
+
         window.adicionarCarga = async function (id) { window.abrirFormularioAdicional(); }
 
         window.pausarCiclo = async function (motivo) {
@@ -1710,14 +1766,14 @@
 
             const dest = document.getElementById('tpl_input-destino');
             let silosHTML = '<option value="" disabled selected>Selecione o silo...</option>';
-            silosHTML += '<optgroup label="Silos de Armazenagem" class="bg-slate-800 text-slate-400 font-bold">';
-            for (let i = 1; i <= 20; i++) silosHTML += `<option value="Silo de Armazenagem ${i.toString().padStart(2, '0')}" class="text-white">Silo de Armazenagem ${i.toString().padStart(2, '0')}</option>`;
-            silosHTML += '</optgroup>';
             silosHTML += '<optgroup label="Pré Secagem" class="bg-slate-800 text-slate-400 font-bold">';
-            for (let i = 1; i <= 10; i++) silosHTML += `<option value="Pré Secagem ${i.toString().padStart(2, '0')}" class="text-white">Pré Secagem ${i.toString().padStart(2, '0')}</option>`;
+            for (let i = 1; i <= 10; i++) silosHTML += `<option value="PS-${i}" class="text-white">Pré Secagem ${i.toString().padStart(2, '0')}</option>`;
+            silosHTML += '</optgroup>';
+            silosHTML += '<optgroup label="Armazenamento" class="bg-slate-800 text-slate-400 font-bold">';
+            for (let i = 1; i <= 20; i++) silosHTML += `<option value="AZ-${i}" class="text-white">Armazenamento ${i.toString().padStart(2, '0')}</option>`;
             silosHTML += '</optgroup>';
             silosHTML += '<optgroup label="Silos Metálicos" class="bg-slate-800 text-slate-400 font-bold">';
-            for (let i = 1; i <= 10; i++) silosHTML += `<option value="Silo Metálico ${i.toString().padStart(2, '0')}" class="text-white">Silo Metálico ${i.toString().padStart(2, '0')}</option>`;
+            for (let i = 1; i <= 10; i++) silosHTML += `<option value="MT-${i}" class="text-white">Silo Metálico ${i.toString().padStart(2, '0')}</option>`;
             silosHTML += '</optgroup>';
 
             if (dest) dest.innerHTML = silosHTML;

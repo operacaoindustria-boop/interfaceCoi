@@ -197,7 +197,7 @@
                     class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 text-slate-300 font-bold">
                     OP</div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate">Operador Líder</p>
+                    <p class="text-sm font-medium text-white truncate">Usuário Logado</p>
                     <p class="text-xs text-slate-500 truncate">Turno A - Logado</p>
                 </div>
                 <a href="menu.html" class="p-2 text-slate-400 hover:text-white transition-colors" title="Sair"><i
@@ -421,7 +421,7 @@
                                     data-lucide="arrow-left" class="w-5 h-5"></i></button>
                             <h2 class="text-2xl font-bold text-white uppercase tracking-wide" id="detail-title">DETALHES
                                 MOEGA 00</h2><span id="detail-status-badge"
-                                class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">OFFLINE</span>
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 border border-slate-600">PARADA</span>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div
@@ -683,33 +683,29 @@
                             <h3 class="text-2xl font-bold text-white mb-2" id="trace-moega-title">MOEGA 00</h3>
                             <p class="text-slate-400">Origem atual do produto em processamento</p>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div class="bg-slate-800 p-6 rounded-xl border border-cyan-500/30 shadow-lg text-center">
                                 <p class="text-xs text-cyan-400 uppercase font-bold mb-2">Umidade Média</p>
                                 <h3 class="text-2xl font-bold text-white font-mono" id="trace-moega-umidade">--<span
                                         class="text-lg text-slate-500">%</span></h3>
                             </div>
-                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-center">
-                                <p class="text-xs text-slate-400 uppercase font-bold mb-2">Zona</p>
-                                <h3 class="text-xl font-bold text-white" id="trace-moega-zona">---</h3>
-                            </div>
-                            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg text-center">
-                                <p class="text-xs text-slate-400 uppercase font-bold mb-2">Talhão</p>
-                                <h3 class="text-xl font-bold text-white" id="trace-moega-talhao">---</h3>
+                            <div class="bg-slate-800 p-6 rounded-xl border border-emerald-500/30 shadow-lg text-center">
+                                <p class="text-xs text-emerald-400 uppercase font-bold mb-2">Pureza Média</p>
+                                <h3 class="text-2xl font-bold text-white font-mono" id="trace-moega-pureza">--<span
+                                        class="text-lg text-slate-500">%</span></h3>
                             </div>
                         </div>
                         <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                             <div class="p-4 bg-slate-900 border-b border-slate-700">
                                 <h4 class="text-sm font-bold text-white uppercase">Histórico de Origem desta Moega</h4>
                             </div>
-                            <div style="max-height:400px; overflow-y:auto;">
+                            <div style="max-height:400px; overflow-y:auto;" class="custom-scrollbar">
                                 <table class="w-full text-left">
                                     <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold sticky top-0">
                                         <tr>
                                             <th class="p-3">Romaneio</th>
                                             <th class="p-3">Fazenda</th>
                                             <th class="p-3">Zona</th>
-                                            <th class="p-3">Talhão</th>
                                             <th class="p-3 text-right">Peso</th>
                                         </tr>
                                     </thead>
@@ -790,6 +786,7 @@
                                             <th class="p-4 border-b border-slate-700">Lote/Var.</th>
                                             <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
                                             <th class="p-4 border-b border-slate-700">Resp.</th>
+                                            <th class="p-4 border-b border-slate-700 text-center">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="transf-table-body"
@@ -1536,6 +1533,27 @@
                         onclick="document.getElementById('login-modal').classList.add('hidden')"
                         class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded font-bold">Cancelar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GENERIC CONFIRMATION MODAL -->
+    <div id="modal-confirmation" class="hidden fixed inset-0 z-[80] modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-slate-800 border-2 border-amber-500/50 rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="confirmation-icon-container" class="bg-amber-500/20 p-3 rounded-full text-amber-400">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 id="confirmation-title" class="text-xl font-bold text-white">Confirmar Ação</h3>
+                    <p id="confirmation-message" class="text-slate-400 text-sm mt-1">Você tem certeza?</p>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="btn-cancel-confirmation"
+                    class="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold transition">Cancelar</button>
+                <button id="btn-confirm-confirmation"
+                    class="flex-1 py-3 rounded-lg bg-amber-600 text-white hover:bg-amber-500 font-bold shadow-lg transition">Confirmar</button>
             </div>
         </div>
     </div>
@@ -3186,9 +3204,25 @@
                     const avgHum = totalPesoHum > 0 ? (totalHum / totalPesoHum) : 0;
                     const humEl = document.getElementById('trace-moega-umidade');
                     if (humEl) humEl.innerHTML = avgHum > 0 ? `${avgHum.toFixed(2).replace('.', ',')}<span class="text-lg text-slate-500">%</span>` : '--<span class="text-lg text-slate-500">%</span>';
-
-                    document.getElementById('trace-moega-zona').innerText = lastLog ? (lastLog.zona || '-') : '---';
-                    document.getElementById('trace-moega-talhao').innerText = lastLog ? (lastLog.talhao || '-') : '---';
+                    
+                    // Calcular Pureza Média Ponderada
+                    let totalPurity = 0;
+                    let totalPurityWeight = 0;
+                    logs.forEach(l => {
+                        const processPurity = (weight, purity) => {
+                            const w = Number(weight) || 0;
+                            const p = Number(String(purity || '0').replace(',', '.'));
+                            if (w > 0 && !isNaN(p) && p > 0) {
+                                totalPurity += p * w;
+                                totalPurityWeight += w;
+                            }
+                        };
+                        if (Array.isArray(l.cargas)) l.cargas.forEach(c => processPurity(c.peso, (c.pureza !== undefined && c.pureza !== null) ? c.pureza : c.impureza));
+                        else processPurity(l.peso, (l.pureza !== undefined && l.pureza !== null) ? l.pureza : l.impureza);
+                    });
+                    const avgPurity = totalPurityWeight > 0 ? (totalPurity / totalPurityWeight) : 0;
+                    const purityEl = document.getElementById('trace-moega-pureza');
+                    if (purityEl) purityEl.innerHTML = avgPurity > 0 ? `${avgPurity.toFixed(2).replace('.', ',')}<span class="text-lg text-slate-500">%</span>` : '--<span class="text-lg text-slate-500">%</span>';
                 }
 
                 // Select correct table body
@@ -3238,7 +3272,7 @@
                 else rows.forEach(r => {
                     const idAttr = r.id || '';
                     if (isMoegaView) {
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-3 font-bold">${r.romaneio}</td><td class="p-3">${r.fazenda}</td><td class="p-3">${r.zona}</td><td class="p-3">${r.talhao}</td><td class="p-3 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td></tr>`;
+                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-3 font-bold">${r.romaneio}</td><td class="p-3">${r.fazenda}</td><td class="p-3">${r.zona}</td><td class="p-3 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td></tr>`;
                     } else {
                         tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.placa}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4">${r.pureza}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-center"><button onclick="deleteHistoricRecord('${idAttr}')" title="Excluir" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
                     }
@@ -3361,7 +3395,7 @@
                 const tbody = document.getElementById('transf-table-body');
                 tbody.innerHTML = '';
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-slate-500">Nenhum registro encontrado.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center p-6 text-slate-500">Nenhum registro encontrado.</td></tr>';
                 } else {
                     logs.forEach(l => {
                         const dataHora = l.timestamp ? new Date(l.timestamp).toLocaleString('pt-BR') : (l.dataSaida ? `${l.dataSaida} ${l.horaSaida}` : '-');
@@ -3377,10 +3411,73 @@
                             produtoTexto = produtoExibido || culturaExibida || '-';
                         }
 
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${dataHora}</td><td class="p-4 font-bold">${l.placa || '-'}</td><td class="p-4 text-slate-300 text-sm">${l.motorista || '-'}</td><td class="p-4 text-white font-semibold">${produtoTexto}</td><td class="p-4 text-slate-300">${l.destino || '-'}</td><td class="p-4 text-slate-300">${l.variedade || '-'} / ${l.lote || '-'}</td><td class="p-4 text-right font-bold text-orange-400 font-mono">${Number(l.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-slate-400 text-xs">${l.operador || '-'}</td></tr>`;
+                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${dataHora}</td><td class="p-4 font-bold">${l.placa || '-'}</td><td class="p-4 text-slate-300 text-sm">${l.motorista || '-'}</td><td class="p-4 text-white font-semibold">${produtoTexto}</td><td class="p-4 text-slate-300">${l.destino || '-'}</td><td class="p-4 text-slate-300">${l.variedade || '-'} / ${l.lote || '-'}</td><td class="p-4 text-right font-bold text-orange-400 font-mono">${Number(l.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-slate-400 text-xs">${l.operador || '-'}</td><td class="p-4 text-center"><button onclick="deleteTransferRecord('${l.id}')" title="Excluir" class="text-red-400 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
                     });
                 }
+                lucide.createIcons();
             } catch (e) { console.warn('updateTransferenciasView error', e); }
+        }
+
+        // --- Generic Confirmation Modal ---
+        function showConfirmation({ title, message, onConfirm, confirmText = 'Confirmar', confirmClass = 'bg-amber-600 hover:bg-amber-500' }) {
+            const modal = document.getElementById('modal-confirmation');
+            if (!modal) {
+                if (confirm(message)) onConfirm();
+                return;
+            }
+
+            modal.querySelector('#confirmation-title').innerText = title;
+            modal.querySelector('#confirmation-message').innerText = message;
+
+            const confirmBtn = modal.querySelector('#btn-confirm-confirmation');
+            confirmBtn.innerText = confirmText;
+            confirmBtn.className = `flex-1 py-3 rounded-lg text-white font-bold shadow-lg transition ${confirmClass}`;
+
+            const iconContainer = modal.querySelector('#confirmation-icon-container');
+            if (confirmClass.includes('red')) {
+                iconContainer.innerHTML = '<i data-lucide="trash-2" class="w-6 h-6"></i>';
+                iconContainer.className = 'bg-red-500/20 p-3 rounded-full text-red-400';
+            } else {
+                iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-6 h-6"></i>';
+                iconContainer.className = 'bg-amber-500/20 p-3 rounded-full text-amber-400';
+            }
+
+            const cancelBtn = modal.querySelector('#btn-cancel-confirmation');
+
+            confirmBtn.onclick = () => {
+                modal.classList.add('hidden');
+                onConfirm();
+            };
+
+            cancelBtn.onclick = () => {
+                modal.classList.add('hidden');
+            };
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // --- Delete transfer record ---
+        window.deleteTransferRecord = async function (id) {
+            if (!id) return;
+            showConfirmation({
+                title: 'Confirmar Exclusão',
+                message: 'O registro será apagado.',
+                confirmText: 'Confirmar',
+                confirmClass: 'bg-red-600 hover:bg-red-500',
+                onConfirm: async () => {
+                    try {
+                        const docRef = doc(db, 'moega_controle_transferencia', id);
+                        await deleteDoc(docRef);
+                        historicoTransferencias = historicoTransferencias.filter(h => h.id !== id);
+                        updateTransferenciasView();
+                        mostrarAlerta('Transferência removida com sucesso');
+                    } catch (e) {
+                        console.error('Erro ao apagar transferência:', e);
+                        mostrarAlerta('Erro ao apagar transferência');
+                    }
+                }
+            });
         }
 
         // --- Delete historic record ---
