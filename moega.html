@@ -1371,44 +1371,6 @@
             }
 
             try {
-                const docRef = doc(db, 'moega_ciclos_ativos', moegaSelecionada.toString());
-
-                if (activeCycles[moegaSelecionada]) {
-                    // Update
-                    const cicloAtual = activeCycles[moegaSelecionada];
-                    await updateDoc(docRef, { cargas: [...cicloAtual.cargas, pendingData] });
-                    notify('Carga Adicionada!', 'sucesso');
-                } else {
-                    // Create
-                    const novoCiclo = {
-                        moega: moegaSelecionada, status: 'OPERANDO', inicio: new Date().toISOString(),
-                        cargas: [pendingData], pausas: []
-                    };
-                    await setDoc(docRef, novoCiclo);
-                    notify('Ciclo Iniciado', 'sucesso');
-                }
-
-                fecharModalConfirmacao();
-            } catch (e) {
-                console.error('Firestore write error:', e);
-                const code = e.code || (e && e.name) || 'unknown';
-                const msg = e.message || String(e);
-                notify(`Erro ao salvar no banco (${code})`, 'erro');
-                // Mostrar detalhe em console e no toast
-                const toastDetail = document.getElementById('toast-msg');
-                if (toastDetail) toastDetail.innerText = `${msg}`;
-            }
-        }
-
-        window.confirmarEnvioFinal = async function () {
-            if (!pendingData) return;
-            if (!auth || !auth.currentUser) {
-                notify('Usuário não autenticado. Abra o modal de login.', 'erro');
-                document.getElementById('login-modal')?.classList.remove('hidden');
-                return;
-            }
-
-            try {
                 // PARTE 1: Atualizar o ciclo da moega (código existente)
                 const docRef = doc(db, 'moega_ciclos_ativos', moegaSelecionada.toString());
 
@@ -1428,18 +1390,58 @@
                     const siloDestinoRef = doc(db, "mes_silos", siloDestinoId);
 
                     try {
-                        // Usamos updateDoc para não sobrescrever o silo inteiro, apenas os campos que queremos mudar.
-                        await updateDoc(siloDestinoRef, {
-                            cultura: pendingData.produto,
-                            cultivar: pendingData.cultivar,
-                            umidade: pendingData.umidade,
-                            pesoCargaKg: pendingData.peso,
-                            status: 'warning', // 'warning' pode significar 'recebendo' ou 'atenção'
-                            lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                            origemCarga: pendingData.romaneio,
-                            placaOrigem: pendingData.placa,
-                        });
-                        console.log(`Silo ${siloDestinoId} atualizado com sucesso pela Moega.`);
+                        const siloDoc = await getDoc(siloDestinoRef);
+
+                        if (siloDoc.exists()) {
+                            const siloData = siloDoc.data();
+                            const siloHasProduct = siloData.cultura && siloData.cultura !== 'Vazio';
+
+                            if (siloHasProduct) {
+                                // SILO JÁ TEM PRODUTO
+                                // 1. Validação de Cultura
+                                if (siloData.cultura !== pendingData.produto) {
+                                    notify(`Silo ${siloDestinoId} já contém ${siloData.cultura}. Esvazie o silo ou envie a mesma cultura.`, 'erro');
+                                    fecharModalConfirmacao();
+                                    return;
+                                }
+
+                                // 2. Soma de Cargas
+                                const pesoAtual = parseFloat(siloData.pesoCargaKg || 0);
+                                const novoPeso = pesoAtual + pendingData.peso;
+
+                                // Atualiza apenas o peso e os dados da última carga
+                                await updateDoc(siloDestinoRef, {
+                                    pesoCargaKg: novoPeso,
+                                    lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                                    origemCarga: pendingData.romaneio, // Atualiza para o romaneio da última carga
+                                    placaOrigem: pendingData.placa,
+                                });
+                                console.log(`Silo ${siloDestinoId} atualizado com carga adicional. Novo peso: ${novoPeso}`);
+
+                            } else {
+                                // SILO ESTÁ VAZIO - Primeira Carga
+                                await updateDoc(siloDestinoRef, {
+                                    cultura: pendingData.produto, cultivar: pendingData.cultivar, umidade: pendingData.umidade,
+                                    impureza: pendingData.impureza,
+                                    pesoCargaKg: pendingData.peso, status: 'warning',
+                                    lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                                    origemCarga: pendingData.romaneio, placaOrigem: pendingData.placa,
+                                    moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda
+                                });
+                                console.log(`Silo ${siloDestinoId} preenchido com a primeira carga.`);
+                            }
+                        } else {
+                            // Documento do silo não existe, cria com a primeira carga
+                            await setDoc(siloDestinoRef, {
+                                impureza: pendingData.impureza,
+                                cultura: pendingData.produto, cultivar: pendingData.cultivar, umidade: pendingData.umidade,
+                                pesoCargaKg: pendingData.peso, status: 'warning',
+                                lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                                origemCarga: pendingData.romaneio, placaOrigem: pendingData.placa,
+                                moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda
+                            });
+                            console.log(`Silo ${siloDestinoId} criado e preenchido com a primeira carga.`);
+                        }
                     } catch (siloError) {
                         console.error(`Falha ao atualizar o silo de destino ${siloDestinoId}:`, siloError);
                         notify(`Carga lançada, mas falha ao comunicar com silo ${siloDestinoId}.`, 'erro');
