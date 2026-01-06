@@ -382,6 +382,11 @@
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
                                     placeholder="Ex: 99.5"></div>
                         </div>
+                        <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Destino
+                                (Silo)</label><select id="retro-destino"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none">
+                                <option value="" disabled selected>Selecione...</option>
+                            </select></div>
                         <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox"
@@ -1389,6 +1394,22 @@
                     const siloDestinoId = pendingData.destino;
                     const siloDestinoRef = doc(db, "mes_silos", siloDestinoId);
 
+                    // Cria objeto da carga para histórico
+                    const novaCarga = {
+                        romaneio: pendingData.romaneio,
+                        placa: pendingData.placa,
+                        peso: Number(pendingData.peso),
+                        moegaOrigem: moegaSelecionada,
+                        fazenda: pendingData.fazenda,
+                        zona: pendingData.zona,
+                        talhao: pendingData.talhao,
+                        impureza: pendingData.impureza,
+                        umidade: pendingData.umidade,
+                        cultura: pendingData.produto,
+                        cultivar: pendingData.cultivar,
+                        timestamp: new Date().toISOString()
+                    };
+
                     try {
                         const siloDoc = await getDoc(siloDestinoRef);
 
@@ -1408,6 +1429,7 @@
                                 // 2. Soma de Cargas
                                 const pesoAtual = parseFloat(siloData.pesoCargaKg || 0);
                                 const novoPeso = pesoAtual + pendingData.peso;
+                                const currentCargas = siloData.cargas || [];
 
                                 // Atualiza apenas o peso e os dados da última carga
                                 await updateDoc(siloDestinoRef, {
@@ -1415,6 +1437,7 @@
                                     lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                                     origemCarga: pendingData.romaneio, // Atualiza para o romaneio da última carga
                                     placaOrigem: pendingData.placa,
+                                    cargas: [...currentCargas, novaCarga]
                                 });
                                 console.log(`Silo ${siloDestinoId} atualizado com carga adicional. Novo peso: ${novoPeso}`);
 
@@ -1426,7 +1449,8 @@
                                     pesoCargaKg: pendingData.peso, status: 'warning',
                                     lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                                     origemCarga: pendingData.romaneio, placaOrigem: pendingData.placa,
-                                    moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda
+                                    moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda,
+                                    cargas: [novaCarga]
                                 });
                                 console.log(`Silo ${siloDestinoId} preenchido com a primeira carga.`);
                             }
@@ -1438,7 +1462,8 @@
                                 pesoCargaKg: pendingData.peso, status: 'warning',
                                 lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                                 origemCarga: pendingData.romaneio, placaOrigem: pendingData.placa,
-                                moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda
+                                moegaOrigem: moegaSelecionada, zona: pendingData.zona, talhao: pendingData.talhao, fazenda: pendingData.fazenda,
+                                cargas: [novaCarga]
                             });
                             console.log(`Silo ${siloDestinoId} criado e preenchido com a primeira carga.`);
                         }
@@ -1781,6 +1806,9 @@
 
             if (dest) dest.innerHTML = silosHTML;
 
+            const retroDest = document.getElementById('retro-destino');
+            if (retroDest) retroDest.innerHTML = silosHTML;
+
             // Persist metas/culturas ativas para dashboard (localStorage sync)
             try {
                 const kult = Object.keys(METAS_PRODUTIVIDADE).map(k => ({ name: k, goal: METAS_PRODUTIVIDADE[k] }));
@@ -2114,6 +2142,61 @@
                     notify('Lote retroativo salvo', 'sucesso');
                 }
 
+                // --- ATUALIZAÇÃO DO SILO DE DESTINO (PRESECAGEM) ---
+                const destino = document.getElementById('retro-destino').value;
+                if (destino) {
+                    const siloRef = doc(db, "mes_silos", destino);
+                    const siloDoc = await getDoc(siloRef);
+
+                    const cargaData = {
+                        moegaOrigem: Number(document.getElementById('retro-moega-id').value),
+                        fazenda: document.getElementById('retro-fazenda')?.value || '-',
+                        zona: document.getElementById('retro-zona')?.value || '-',
+                        talhao: document.getElementById('retro-talhao')?.value || '-',
+                        umidade: document.getElementById('retro-umidade')?.value || '0',
+                        impureza: document.getElementById('retro-pureza')?.value || '0',
+                        cultura: document.getElementById('retro-produto').value || '-',
+                        cultivar: document.getElementById('retro-cultivar').value || '-',
+                        timestamp: new Date(mode === 'single' ? document.getElementById('retro-fim').value : document.getElementById('retro-batch-fim').value).toISOString(),
+                        isRetroactive: true
+                    };
+
+                    if (mode === 'single') {
+                        cargaData.romaneio = document.getElementById('retro-romaneio').value || 'N/A';
+                        cargaData.placa = document.getElementById('retro-placa').value || 'N/A';
+                        cargaData.peso = Number(document.getElementById('retro-peso').value) || 0;
+                    } else {
+                        cargaData.romaneio = 'LOTE RETROATIVO';
+                        cargaData.placa = 'MULTIPLAS';
+                        cargaData.peso = Number(document.getElementById('retro-batch-peso').value) || 0;
+                        cargaData.qtdVeiculos = Number(document.getElementById('retro-batch-qtd').value) || 0;
+                    }
+
+                    if (siloDoc.exists()) {
+                        const sData = siloDoc.data();
+                        const currentCargas = sData.cargas || [];
+                        const novoPeso = (parseFloat(sData.pesoCargaKg) || 0) + cargaData.peso;
+                        await updateDoc(siloRef, {
+                            pesoCargaKg: novoPeso,
+                            cultura: cargaData.cultura,
+                            cultivar: cargaData.cultivar,
+                            umidade: cargaData.umidade,
+                            impureza: cargaData.impureza,
+                            origemCarga: cargaData.romaneio,
+                            placaOrigem: cargaData.placa,
+                            moegaOrigem: cargaData.moegaOrigem, fazenda: cargaData.fazenda, zona: cargaData.zona, talhao: cargaData.talhao,
+                            lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                            cargas: [...currentCargas, cargaData]
+                        });
+                    } else {
+                        await setDoc(siloRef, {
+                            cultura: cargaData.cultura, cultivar: cargaData.cultivar, umidade: cargaData.umidade, impureza: cargaData.impureza,
+                            pesoCargaKg: cargaData.peso, status: 'warning', lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                            cargas: [cargaData], moegaOrigem: cargaData.moegaOrigem, fazenda: cargaData.fazenda, zona: cargaData.zona, talhao: cargaData.talhao
+                        });
+                    }
+                }
+
                 // limpa formulário
                 document.getElementById('retro-romaneio').value = '';
                 document.getElementById('retro-placa').value = '';
@@ -2125,6 +2208,7 @@
                 document.getElementById('retro-batch-placas').value = '';
                 document.getElementById('container-pausas-retro').innerHTML = '';
                 document.getElementById('check-pausa-retro').checked = false;
+                document.getElementById('retro-destino').value = '';
 
             } catch (e) {
                 console.error('Erro ao salvar retroativo', e);
