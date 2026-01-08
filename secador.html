@@ -23,12 +23,22 @@
         /* Animações simples */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        /* Scrollbar customizada */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { firebaseConfig } from './firebase_config.js';
+
         const { useState, useEffect } = React;
 
         // --- Ícones SVG (Substituindo Lucide-React para funcionar direto no browser) ---
@@ -40,16 +50,15 @@
             Square: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>,
             Snowflake: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>,
             CheckCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-            ArrowLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            ArrowLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+            Database: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Cpu: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>
         };
 
-        // --- Dados Simulados ---
-        const INITIAL_DRYERS = [
-          { id: 1, name: 'Silo 01', status: 'drying', product: 'Soja BMX', batch: 'Lote-A102', tempAir: 55, tempMass: 38, moisture: 16.5, targetMoisture: 13.0 },
-          { id: 2, name: 'Silo 02', status: 'cooling', product: 'Milho 2B', batch: 'Lote-B440', tempAir: 25, tempMass: 32, moisture: 13.2, targetMoisture: 13.0 },
-          { id: 3, name: 'Silo 03', status: 'stopped', product: 'Vazio', batch: '-', tempAir: 24, tempMass: 24, moisture: 0, targetMoisture: 13.0 },
-          { id: 4, name: 'Silo 04', status: 'drying', product: 'Soja Bras', batch: 'Lote-C991', tempAir: 58, tempMass: 40, moisture: 15.1, targetMoisture: 12.5 },
-        ];
+        // Inicialização Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         // --- Componentes UI ---
         const Card = ({ children, className = "" }) => (
@@ -81,22 +90,64 @@
 
         // --- App Principal ---
         function OperatorApp() {
-          const [dryers, setDryers] = useState(INITIAL_DRYERS);
-          const [selectedDryerId, setSelectedDryerId] = useState(dryers[0].id);
+          const [activeTab, setActiveTab] = useState('dryers');
+          const [dryers, setDryers] = useState([]);
+          const [selectedDryerId, setSelectedDryerId] = useState(1);
           const [formData, setFormData] = useState({ tempAir: 0, tempMass: 0, moisture: 0 });
           const [lastSaved, setLastSaved] = useState(null);
+          const [incomingProduct, setIncomingProduct] = useState(null);
 
-          const selectedDryer = dryers.find(d => d.id === selectedDryerId);
+          useEffect(() => {
+            const stored = localStorage.getItem('discharge_source_silo');
+            if (stored) {
+                setIncomingProduct(JSON.parse(stored));
+            }
+          }, []);
+
+          // Listener Firestore
+          useEffect(() => {
+             const q = query(collection(db, "mes_secadores"), orderBy("id"));
+             const unsubscribe = onSnapshot(q, (snapshot) => {
+                 if (snapshot.empty) {
+                     // Seed inicial se vazio
+                     const batch = writeBatch(db);
+                     for(let i=1; i<=50; i++) {
+                         const id = i;
+                         const ref = doc(db, "mes_secadores", String(id));
+                         batch.set(ref, {
+                             id: id,
+                             name: `Secador ${String(id).padStart(2, '0')}`,
+                             status: 'stopped',
+                             product: 'Vazio',
+                             batch: '-',
+                             tempAir: 0,
+                             tempMass: 0,
+                             moisture: 0,
+                             targetMoisture: 13.0,
+                             loadWeight: 0
+                         });
+                     }
+                     batch.commit();
+                     return;
+                 }
+                 const data = [];
+                 snapshot.forEach(doc => data.push(doc.data()));
+                 setDryers(data);
+             });
+             return () => unsubscribe();
+          }, []);
+
+          const selectedDryer = dryers.find(d => d && d.id === selectedDryerId);
 
           useEffect(() => {
             if (selectedDryer) {
               setFormData({
-                tempAir: selectedDryer.tempAir,
-                tempMass: selectedDryer.tempMass,
-                moisture: selectedDryer.moisture
+                tempAir: selectedDryer.tempAir || 0,
+                tempMass: selectedDryer.tempMass || 0,
+                moisture: selectedDryer.moisture || 0
               });
             }
-          }, [selectedDryerId]);
+          }, [selectedDryer]);
 
           const handleInputChange = (field, value) => {
             setFormData(prev => ({ ...prev, [field]: parseFloat(value) }));
@@ -107,19 +158,86 @@
           };
 
           const handleStatusChange = (id, newStatus) => {
-            setDryers(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
+            setDryers(prev => prev.map(d => (d && d.id === id) ? { ...d, status: newStatus } : d));
           };
 
           const handleSubmit = (e) => {
             e.preventDefault();
-            setDryers(prev => prev.map(d => d.id === selectedDryerId ? { ...d, ...formData } : d));
+            if (selectedDryerId) {
+                const dryerRef = doc(db, "mes_secadores", String(selectedDryerId));
+                updateDoc(dryerRef, { ...formData });
+            }
             setLastSaved(new Date());
             setTimeout(() => setLastSaved(null), 3000);
           };
 
+          const handleEmptyDryer = async () => {
+            if (!selectedDryerId) return;
+            if (confirm(`Deseja realmente finalizar o processo e esvaziar o ${selectedDryer.name}?`)) {
+                const dryerRef = doc(db, "mes_secadores", String(selectedDryerId));
+                await updateDoc(dryerRef, {
+                    status: 'stopped', product: 'Vazio', batch: '-', tempAir: 0, tempMass: 0, moisture: 0, loadWeight: 0
+                });
+            }
+          };
+
+          const handleDryerClick = (dryerId) => {
+              if (incomingProduct) {
+                  const targetDryer = dryers.find(d => d && d.id === dryerId);
+                  if (targetDryer.status !== 'stopped') {
+                      alert("Este secador já está em operação ou ocupado. Selecione um secador 'Parado'.");
+                      return;
+                  }
+
+                  const currentWeight = parseFloat(incomingProduct.pesoCargaKg || incomingProduct.peso || 0);
+                  const DRYER_CAPACITY = 12000; // 12.000 kg = 12 toneladas
+
+                  const amountToLoad = Math.min(currentWeight, DRYER_CAPACITY);
+                  const remaining = currentWeight - amountToLoad;
+
+                  if (confirm(`Confirmar recebimento de ${(amountToLoad/1000).toFixed(2)}t (Restante: ${(remaining/1000).toFixed(2)}t) do ${incomingProduct.name} no Secador ${String(dryerId).padStart(2,'0')}?`)) {
+                      setDryers(prev => prev.map(d => {
+                          if (d && d.id === dryerId) {
+                              return {
+                                  ...d,
+                                  status: 'drying',
+                                  product: incomingProduct.cultura || 'Produto',
+                                  batch: incomingProduct.origemCarga || 'Transf. Silo',
+                                  moisture: parseFloat(incomingProduct.umidade) || d.moisture,
+                                  loadWeight: amountToLoad
+                              };
+                          }
+                          return d;
+                      }));
+                      
+                      // Persistir no Firebase imediatamente
+                      const dryerRef = doc(db, "mes_secadores", String(dryerId));
+                      updateDoc(dryerRef, {
+                          status: 'drying',
+                          product: incomingProduct.cultura || 'Produto',
+                          batch: incomingProduct.origemCarga || 'Transf. Silo',
+                          moisture: parseFloat(incomingProduct.umidade) || 0,
+                          loadWeight: amountToLoad
+                      });
+                      
+                      if (remaining > 0.1) { // Margem de erro pequena para float
+                          const updated = { ...incomingProduct, pesoCargaKg: remaining, peso: remaining };
+                          setIncomingProduct(updated);
+                          localStorage.setItem('discharge_source_silo', JSON.stringify(updated));
+                      } else {
+                          setIncomingProduct(null);
+                          localStorage.removeItem('discharge_source_silo');
+                      }
+                      setSelectedDryerId(dryerId);
+                  }
+              } else {
+                  setSelectedDryerId(dryerId);
+              }
+          };
+
           return (
             <div className="min-h-screen bg-slate-100 p-4 md:p-6 font-sans">
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-7xl mx-auto">
                 <header className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                   <div className="flex items-center">
                     <a href="menu.html" className="mr-4 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600 transition-colors">
@@ -127,7 +245,7 @@
                     </a>
                     <div>
                         <h1 className="text-xl font-bold text-slate-800">Painel do Operador</h1>
-                        <p className="text-xs text-slate-500">Terminal ID: #OP-04</p>
+                        <p className="text-xs text-slate-500">Secagem de Acabamento (Recebimento Pré-Secagem)</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
@@ -136,25 +254,69 @@
                   </div>
                 </header>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  {dryers.map(dryer => (
+                {/* Tabs */}
+                <div className="flex space-x-2 mb-6 border-b border-slate-200">
+                    <button 
+                        onClick={() => setActiveTab('dryers')}
+                        className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-all flex items-center gap-2 ${activeTab === 'dryers' ? 'bg-white text-blue-600 border-t border-x border-slate-200 shadow-sm -mb-px' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                    >
+                        <Icons.Wind className="w-4 h-4"/>
+                        Secadores Industriais (50)
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('gac')}
+                        className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-all flex items-center gap-2 ${activeTab === 'gac' ? 'bg-white text-blue-600 border-t border-x border-slate-200 shadow-sm -mb-px' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                    >
+                        <Icons.Cpu className="w-4 h-4"/>
+                        Coleta Inteligente GAC
+                    </button>
+                </div>
+
+                {incomingProduct && (
+                    <div className="bg-blue-600 text-white p-4 rounded-xl mb-6 flex justify-between items-center shadow-lg animate-fade-in border border-blue-500">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 bg-white/20 rounded-lg">
+                                <Icons.Wind className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">Recebendo Carga: {incomingProduct.name}</h3>
+                                <p className="text-sm opacity-90">{incomingProduct.cultura} • Restante: {incomingProduct.pesoCargaKg ? (incomingProduct.pesoCargaKg/1000).toFixed(2) : (incomingProduct.peso ? (incomingProduct.peso/1000).toFixed(2) : '0.00')} t</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm font-bold bg-white/20 px-4 py-2 rounded-lg animate-pulse">
+                                Selecione um secador abaixo para iniciar
+                            </div>
+                            <button onClick={() => { setIncomingProduct(null); localStorage.removeItem('discharge_source_silo'); }} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                <Icons.X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'dryers' && (
+                <>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 mb-6 max-h-[320px] overflow-y-auto p-2 bg-white rounded-xl border border-slate-200 shadow-inner custom-scrollbar">
+                  {dryers.map(dryer => dryer && (
                     <button
                       key={dryer.id}
-                      onClick={() => setSelectedDryerId(dryer.id)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left relative overflow-hidden ${
+                      onClick={() => handleDryerClick(dryer.id)}
+                      className={`p-3 rounded-lg border transition-all text-left relative overflow-hidden ${
                         selectedDryerId === dryer.id
-                          ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200'
-                          : 'border-slate-200 bg-white hover:border-blue-300'
+                          ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-200 shadow-md'
+                          : 'border-slate-100 bg-slate-50 hover:border-blue-300 hover:bg-white'
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-lg text-slate-700">{dryer.name}</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-xs text-slate-700">SEC-{String(dryer.id).padStart(2,'0')}</span>
                         <div className={`w-3 h-3 rounded-full ${
                           dryer.status === 'drying' ? 'bg-orange-500 animate-pulse' : 
                           dryer.status === 'cooling' ? 'bg-blue-500' : 'bg-slate-300'
                         }`} />
                       </div>
-                      <p className="text-xs text-slate-500 truncate">{dryer.product}</p>
+                      <p className="text-[10px] text-slate-500 truncate font-medium">{dryer.product}</p>
+                      {dryer.loadWeight && <p className="text-[10px] font-bold text-blue-600">{(dryer.loadWeight/1000).toFixed(2)} t</p>}
+                      {dryer.status !== 'stopped' && <p className="text-[10px] font-mono font-bold text-slate-600">{dryer.moisture.toFixed(1)}%</p>}
                     </button>
                   ))}
                 </div>
@@ -233,6 +395,13 @@
                             CONFIRMAR
                           </button>
                         </form>
+                        
+                        <div className="pt-4 border-t border-slate-200">
+                            <button onClick={handleEmptyDryer} className="w-full py-3 rounded-xl border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+                                <Icons.X className="w-5 h-5" />
+                                FINALIZAR E ESVAZIAR SECADOR
+                            </button>
+                        </div>
 
                         {lastSaved && (
                           <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold flex items-center justify-center animate-fade-in">
@@ -290,6 +459,56 @@
                       </div>
                     </div>
                   </div>
+                )}
+                </>
+                )}
+
+                {activeTab === 'gac' && (
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-fade-in">
+                        <div className="flex items-center gap-4 mb-8 border-b border-slate-100 pb-6">
+                            <div className="p-4 bg-blue-50 rounded-full text-blue-600">
+                                <Icons.Cpu className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-800">Sistema GAC - Coleta Inteligente</h2>
+                                <p className="text-slate-500">Integração para análise de umidade e temperatura de sementes em tempo real.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Umidade da Amostra</h3>
+                                <div className="text-5xl font-mono font-black text-blue-600 my-4 flex items-center justify-center gap-2">
+                                    13.4 <span className="text-xl text-slate-400 font-normal">%</span>
+                                </div>
+                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Última leitura: 10s atrás</p>
+                            </div>
+                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Temperatura do Grão</h3>
+                                <div className="text-5xl font-mono font-black text-orange-500 my-4 flex items-center justify-center gap-2">
+                                    28.5 <span className="text-xl text-slate-400 font-normal">°C</span>
+                                </div>
+                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Estável</p>
+                            </div>
+                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Peso Hectolitro</h3>
+                                <div className="text-5xl font-mono font-black text-emerald-600 my-4 flex items-center justify-center gap-2">
+                                    76.2 <span className="text-xl text-slate-400 font-normal">kg/hL</span>
+                                </div>
+                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Padrão Exportação</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-slate-100">
+                            <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center gap-3">
+                                <Icons.Activity className="w-5 h-5" />
+                                Sincronizar Nova Leitura GAC
+                            </button>
+                        </div>
+                    </div>
                 )}
               </div>
             </div>

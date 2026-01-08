@@ -1815,6 +1815,7 @@
             recalcCharts: function() {
                 let combinedData = [...this.rawProductionData];
                 let filterStart, filterEnd;
+                let hasDateFilter = false;
 
                 // Se houver filtros de data, usa para filtrar lotes fechados também
                 if (this.filters.startDate && this.filters.endDate) {
@@ -1822,17 +1823,22 @@
                     const [ey, em, ed] = this.filters.endDate.split('-').map(Number);
                     filterStart = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
                     filterEnd = new Date(ey, em - 1, ed, 23, 59, 59, 999);
-                } else {
-                    // Se não tiver filtro, define "Hoje" como base para os gráficos não quebrarem
-                    const now = new Date();
-                    filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
-                    filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+                    hasDateFilter = true;
                 }
 
                 const closedLotsOfDay = this.cachedData.filter(l => {
                     if (!l.closedAt) return false;
-                    const d = l.closedAt.toDate ? l.closedAt.toDate() : new Date(l.closedAt);
-                    return d >= filterStart && d <= filterEnd;
+                    if (l.hidden) return false;
+                    
+                    // Filtros de Turno e Linha para consistência com a tabela
+                    if (this.filters.shift !== 'all' && l.shift !== this.filters.shift) return false;
+                    if (this.filters.line !== 'global' && l.lineId !== this.filters.line) return false;
+
+                    if (hasDateFilter) {
+                        const d = l.closedAt.toDate ? l.closedAt.toDate() : new Date(l.closedAt);
+                        return d >= filterStart && d <= filterEnd;
+                    }
+                    return true;
                 });
 
                 closedLotsOfDay.forEach(lot => {
