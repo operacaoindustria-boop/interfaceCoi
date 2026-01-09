@@ -32,6 +32,10 @@ service cloud.firestore {
     match /mes_secadores/{docId} {
       allow read, write: if true;
     }
+    
+    match /mes_transferencias/{docId} {
+      allow read, write: if true;
+    }
 
     // Regra padrão de bloqueio (Mantenha sempre por último)
     match /{document=**} {

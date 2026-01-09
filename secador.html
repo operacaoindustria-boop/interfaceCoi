@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Operador - Secagem</title>
+    <title>MES - Operação Secagem</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,22 +16,27 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Fontes -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         /* Animações simples */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         
         /* Scrollbar customizada */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body class="bg-slate-900 text-slate-200">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
@@ -62,16 +67,16 @@
 
         // --- Componentes UI ---
         const Card = ({ children, className = "" }) => (
-          <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
+          <div className={`bg-slate-800 rounded-xl shadow-lg border border-slate-700 ${className}`}>
             {children}
           </div>
         );
 
         const StatusBadge = ({ status }) => {
           const styles = {
-            drying: 'bg-orange-100 text-orange-700 border-orange-200',
-            cooling: 'bg-blue-100 text-blue-700 border-blue-200',
-            stopped: 'bg-slate-100 text-slate-600 border-slate-200',
+            drying: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+            cooling: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+            stopped: 'bg-slate-600/20 text-slate-400 border-slate-600/30',
           };
           const labels = { drying: 'Secando', cooling: 'Resfriando', stopped: 'Parado' };
           const Icon = {
@@ -81,7 +86,7 @@
           }[status];
 
           return (
-            <span className={`flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[status]}`}>
+            <span className={`flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${styles[status]}`}>
               <Icon className="w-3 h-3 mr-1" />
               {labels[status]}
             </span>
@@ -236,36 +241,36 @@
           };
 
           return (
-            <div className="min-h-screen bg-slate-100 p-4 md:p-6 font-sans">
+            <div className="min-h-screen bg-slate-900 p-4 md:p-6 font-sans">
               <div className="max-w-7xl mx-auto">
-                <header className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <header className="mb-6 flex justify-between items-center bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
                   <div className="flex items-center">
-                    <a href="menu.html" className="mr-4 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600 transition-colors">
+                    <a href="menu.html" className="mr-4 p-2 bg-slate-700 rounded-lg hover:bg-slate-600 text-slate-300 transition-colors">
                         <Icons.ArrowLeft className="w-5 h-5" />
                     </a>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-800">Painel do Operador</h1>
-                        <p className="text-xs text-slate-500">Secagem de Acabamento (Recebimento Pré-Secagem)</p>
+                        <h1 className="text-xl font-bold text-white">Painel do Operador</h1>
+                        <p className="text-xs text-slate-400">Secagem de Acabamento (Recebimento Pré-Secagem)</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-sm font-medium text-blue-900">Online</span>
+                  <div className="flex items-center space-x-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-sm font-medium text-emerald-400">Online</span>
                   </div>
                 </header>
 
                 {/* Tabs */}
-                <div className="flex space-x-2 mb-6 border-b border-slate-200">
+                <div className="flex space-x-2 mb-6 border-b border-slate-700">
                     <button 
                         onClick={() => setActiveTab('dryers')}
-                        className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-all flex items-center gap-2 ${activeTab === 'dryers' ? 'bg-white text-blue-600 border-t border-x border-slate-200 shadow-sm -mb-px' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                        className={`px-6 py-3 font-bold text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'dryers' ? 'bg-slate-800 text-blue-400 border-t border-x border-slate-700 -mb-px' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
                     >
                         <Icons.Wind className="w-4 h-4"/>
                         Secadores Industriais (50)
                     </button>
                     <button 
                         onClick={() => setActiveTab('gac')}
-                        className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-all flex items-center gap-2 ${activeTab === 'gac' ? 'bg-white text-blue-600 border-t border-x border-slate-200 shadow-sm -mb-px' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                        className={`px-6 py-3 font-bold text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'gac' ? 'bg-slate-800 text-blue-400 border-t border-x border-slate-700 -mb-px' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
                     >
                         <Icons.Cpu className="w-4 h-4"/>
                         Coleta Inteligente GAC
@@ -273,7 +278,7 @@
                 </div>
 
                 {incomingProduct && (
-                    <div className="bg-blue-600 text-white p-4 rounded-xl mb-6 flex justify-between items-center shadow-lg animate-fade-in border border-blue-500">
+                    <div className="bg-blue-600 text-white p-4 rounded-xl mb-6 flex justify-between items-center shadow-lg animate-fade-in border border-blue-400">
                         <div className="flex items-center gap-4">
                             <div className="p-2 bg-white/20 rounded-lg">
                                 <Icons.Wind className="w-6 h-6 text-white" />
@@ -296,22 +301,22 @@
 
                 {activeTab === 'dryers' && (
                 <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 mb-6 max-h-[320px] overflow-y-auto p-2 bg-white rounded-xl border border-slate-200 shadow-inner custom-scrollbar">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 mb-6 max-h-[320px] overflow-y-auto p-3 bg-slate-800/50 rounded-xl border border-slate-700 shadow-inner custom-scrollbar">
                   {dryers.map(dryer => dryer && (
                     <button
                       key={dryer.id}
                       onClick={() => handleDryerClick(dryer.id)}
-                      className={`p-3 rounded-lg border transition-all text-left relative overflow-hidden ${
+                      className={`p-3 rounded-lg border-2 transition-all text-left relative overflow-hidden ${
                         selectedDryerId === dryer.id
-                          ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-200 shadow-md'
-                          : 'border-slate-100 bg-slate-50 hover:border-blue-300 hover:bg-white'
+                          ? 'border-blue-500 bg-slate-700 shadow-md'
+                          : 'border-slate-700 bg-slate-800 hover:border-blue-600 hover:bg-slate-700'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-xs text-slate-700">SEC-{String(dryer.id).padStart(2,'0')}</span>
+                        <span className="font-bold text-xs text-slate-300">SEC-{String(dryer.id).padStart(2,'0')}</span>
                         <div className={`w-3 h-3 rounded-full ${
                           dryer.status === 'drying' ? 'bg-orange-500 animate-pulse' : 
-                          dryer.status === 'cooling' ? 'bg-blue-500' : 'bg-slate-300'
+                          dryer.status === 'cooling' ? 'bg-blue-500' : 'bg-slate-500'
                         }`} />
                       </div>
                       <p className="text-[10px] text-slate-500 truncate font-medium">{dryer.product}</p>
@@ -325,9 +330,9 @@
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
                     
                     <div className="lg:col-span-2 space-y-6">
-                      <Card className="p-6 border-l-4 border-l-blue-600">
-                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                          <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                      <Card className="p-6 border-l-4 border-l-blue-500">
+                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+                          <h3 className="text-lg font-bold text-white flex items-center">
                             <Icons.Activity className="w-5 h-5 mr-2 text-blue-600" />
                             Leitura: {selectedDryer.name}
                           </h3>
@@ -336,43 +341,43 @@
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                              <label className="block text-sm font-semibold text-slate-600 mb-2">Temp. Ar (°C)</label>
+                            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                              <label className="block text-sm font-semibold text-slate-300 mb-2">Temp. Ar (°C)</label>
                               <div className="flex items-center space-x-2">
-                                <button type="button" onClick={() => handleStepper('tempAir', -1)} className="w-10 h-10 bg-white border rounded-lg text-lg font-bold shadow-sm active:bg-slate-100">-</button>
+                                <button type="button" onClick={() => handleStepper('tempAir', -1)} className="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg text-lg font-bold shadow-sm active:bg-slate-700">-</button>
                                 <input 
                                   type="number" 
                                   value={formData.tempAir}
                                   onChange={(e) => handleInputChange('tempAir', e.target.value)}
-                                  className="w-full h-10 text-center text-xl font-bold text-slate-800 rounded-lg border-slate-300 border focus:ring-2 focus:ring-blue-500 outline-none"
+                                  className="w-full h-10 text-center text-xl font-bold text-white rounded-lg border-slate-600 bg-slate-900 border focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
-                                <button type="button" onClick={() => handleStepper('tempAir', 1)} className="w-10 h-10 bg-white border rounded-lg text-lg font-bold shadow-sm active:bg-slate-100">+</button>
+                                <button type="button" onClick={() => handleStepper('tempAir', 1)} className="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg text-lg font-bold shadow-sm active:bg-slate-700">+</button>
                               </div>
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                              <label className="block text-sm font-semibold text-slate-600 mb-2">Temp. Massa (°C)</label>
+                            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                              <label className="block text-sm font-semibold text-slate-300 mb-2">Temp. Massa (°C)</label>
                               <div className="flex items-center space-x-2">
-                                <button type="button" onClick={() => handleStepper('tempMass', -0.5)} className="w-10 h-10 bg-white border rounded-lg text-lg font-bold shadow-sm active:bg-slate-100">-</button>
+                                <button type="button" onClick={() => handleStepper('tempMass', -0.5)} className="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg text-lg font-bold shadow-sm active:bg-slate-700">-</button>
                                 <input 
                                   type="number" 
                                   value={formData.tempMass}
                                   onChange={(e) => handleInputChange('tempMass', e.target.value)}
-                                  className={`w-full h-10 text-center text-xl font-bold rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none ${formData.tempMass > 42 ? 'text-red-600 bg-red-50' : 'text-slate-800'}`}
+                                  className={`w-full h-10 text-center text-xl font-bold rounded-lg border border-slate-600 bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none ${formData.tempMass > 42 ? 'text-red-400 bg-red-900/50' : 'text-white'}`}
                                 />
-                                <button type="button" onClick={() => handleStepper('tempMass', 0.5)} className="w-10 h-10 bg-white border rounded-lg text-lg font-bold shadow-sm active:bg-slate-100">+</button>
+                                <button type="button" onClick={() => handleStepper('tempMass', 0.5)} className="w-10 h-10 bg-slate-800 border border-slate-600 rounded-lg text-lg font-bold shadow-sm active:bg-slate-700">+</button>
                               </div>
                                {formData.tempMass > 42 && (
-                                <p className="text-xs text-red-600 mt-2 font-bold flex items-center animate-pulse">
+                                <p className="text-xs text-red-400 mt-2 font-bold flex items-center animate-pulse">
                                   <Icons.AlertTriangle className="w-3 h-3 mr-1" /> ALERTA CRÍTICO
                                 </p>
                               )}
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 md:col-span-2">
-                              <label className="block text-sm font-semibold text-slate-600 mb-2 text-center">Umidade da Amostra (%)</label>
+                            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 md:col-span-2">
+                              <label className="block text-sm font-semibold text-slate-300 mb-2 text-center">Umidade da Amostra (%)</label>
                               <div className="flex items-center justify-center space-x-6">
-                                <button type="button" onClick={() => handleStepper('moisture', -0.1)} className="w-16 h-16 bg-white border rounded-2xl text-3xl font-bold shadow-sm active:bg-slate-100 text-slate-500 hover:text-slate-700">-</button>
+                                <button type="button" onClick={() => handleStepper('moisture', -0.1)} className="w-16 h-16 bg-slate-800 border border-slate-600 rounded-2xl text-3xl font-bold shadow-sm active:bg-slate-700 text-slate-400 hover:text-white">-</button>
                                 <div className="text-center">
                                    <input 
                                     type="number" 
@@ -382,29 +387,29 @@
                                     className="w-32 text-center text-5xl font-extrabold text-blue-600 bg-transparent outline-none"
                                   />
                                 </div>
-                                <button type="button" onClick={() => handleStepper('moisture', 0.1)} className="w-16 h-16 bg-white border rounded-2xl text-3xl font-bold shadow-sm active:bg-slate-100 text-slate-500 hover:text-slate-700">+</button>
+                                <button type="button" onClick={() => handleStepper('moisture', 0.1)} className="w-16 h-16 bg-slate-800 border border-slate-600 rounded-2xl text-3xl font-bold shadow-sm active:bg-slate-700 text-slate-400 hover:text-white">+</button>
                               </div>
                             </div>
                           </div>
 
                           <button 
                             type="submit"
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-20 rounded-xl text-2xl font-bold shadow-lg shadow-blue-200 flex items-center justify-center transition-transform active:scale-95"
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white h-20 rounded-xl text-2xl font-bold shadow-lg shadow-blue-900/50 flex items-center justify-center transition-transform active:scale-95"
                           >
                             <Icons.Save className="w-8 h-8 mr-3" />
                             CONFIRMAR
                           </button>
                         </form>
                         
-                        <div className="pt-4 border-t border-slate-200">
-                            <button onClick={handleEmptyDryer} className="w-full py-3 rounded-xl border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+                        <div className="pt-4 border-t border-slate-700">
+                            <button onClick={handleEmptyDryer} className="w-full py-3 rounded-xl border-2 border-red-500/30 text-red-400 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2">
                                 <Icons.X className="w-5 h-5" />
                                 FINALIZAR E ESVAZIAR SECADOR
                             </button>
                         </div>
 
                         {lastSaved && (
-                          <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold flex items-center justify-center animate-fade-in">
+                          <div className="mt-4 p-4 bg-emerald-500/10 text-emerald-400 rounded-xl text-center font-bold flex items-center justify-center animate-fade-in border border-emerald-500/20">
                             <Icons.CheckCircle className="w-6 h-6 mr-2" />
                             Salvo às {lastSaved.toLocaleTimeString()}
                           </div>
@@ -413,39 +418,39 @@
                     </div>
 
                     <div className="space-y-6">
-                      <Card className="p-6">
-                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4 tracking-wider">Ações de Controle</h4>
+                      <Card className="p-6 bg-slate-800">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase mb-4 tracking-wider">Controle de Processo</h4>
                         <div className="space-y-3">
                           <button 
                             onClick={() => handleStatusChange(selectedDryer.id, 'drying')}
                             disabled={selectedDryer.status === 'drying'}
-                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'drying' ? 'border-orange-500 bg-orange-50 text-orange-700 opacity-50 cursor-not-allowed' : 'border-slate-100 hover:border-orange-300 text-slate-600'}`}
+                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'drying' ? 'border-orange-500 bg-orange-900/50 text-orange-400 opacity-50 cursor-not-allowed' : 'border-slate-600 hover:border-orange-500 text-slate-300'}`}
                           >
                             <Icons.Wind className="w-5 h-5 mr-2" /> Secar
                           </button>
                           <button 
                             onClick={() => handleStatusChange(selectedDryer.id, 'cooling')}
                             disabled={selectedDryer.status === 'cooling'}
-                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'cooling' ? 'border-blue-500 bg-blue-50 text-blue-700 opacity-50 cursor-not-allowed' : 'border-slate-100 hover:border-blue-300 text-slate-600'}`}
+                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'cooling' ? 'border-blue-500 bg-blue-900/50 text-blue-400 opacity-50 cursor-not-allowed' : 'border-slate-600 hover:border-blue-500 text-slate-300'}`}
                           >
                             <Icons.Snowflake className="w-5 h-5 mr-2" /> Resfriar
                           </button>
                           <button 
                             onClick={() => handleStatusChange(selectedDryer.id, 'stopped')}
                             disabled={selectedDryer.status === 'stopped'}
-                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'stopped' ? 'border-slate-500 bg-slate-100 text-slate-700 opacity-50 cursor-not-allowed' : 'border-slate-100 hover:border-slate-300 text-slate-600'}`}
+                            className={`w-full p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-colors ${selectedDryer.status === 'stopped' ? 'border-slate-500 bg-slate-700 text-slate-300 opacity-50 cursor-not-allowed' : 'border-slate-600 hover:border-slate-500 text-slate-300'}`}
                           >
                             <Icons.Square className="w-5 h-5 mr-2" /> Parar
                           </button>
                         </div>
                       </Card>
 
-                      <div className="bg-slate-800 text-white p-6 rounded-xl shadow-sm">
+                      <div className="bg-slate-800 text-white p-6 rounded-xl shadow-sm border border-slate-700">
                         <h4 className="text-xs font-bold text-slate-400 uppercase mb-4">Detalhes do Lote</h4>
                         <div className="space-y-4">
                           <div>
                             <span className="block text-xs text-slate-400">Produto</span>
-                            <span className="text-xl font-bold">{selectedDryer.product}</span>
+                            <span className="text-xl font-bold text-white">{selectedDryer.product}</span>
                           </div>
                           <div className="pt-2 border-t border-slate-700">
                             <span className="block text-xs text-slate-400">Rastreabilidade</span>
@@ -453,7 +458,7 @@
                           </div>
                           <div className="pt-2 border-t border-slate-700">
                             <span className="block text-xs text-slate-400">Meta Umidade</span>
-                            <span className="text-lg">{selectedDryer.targetMoisture}%</span>
+                            <span className="text-lg text-white">{selectedDryer.targetMoisture}%</span>
                           </div>
                         </div>
                       </div>
@@ -464,46 +469,111 @@
                 )}
 
                 {activeTab === 'gac' && (
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-fade-in">
-                        <div className="flex items-center gap-4 mb-8 border-b border-slate-100 pb-6">
-                            <div className="p-4 bg-blue-50 rounded-full text-blue-600">
+                    <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 animate-fade-in">
+                        <div className="flex items-center gap-4 mb-8 border-b border-slate-700 pb-6">
+                            <div className="p-4 bg-blue-500/10 rounded-full text-blue-400">
                                 <Icons.Cpu className="w-8 h-8" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-slate-800">Sistema GAC - Coleta Inteligente</h2>
-                                <p className="text-slate-500">Integração para análise de umidade e temperatura de sementes em tempo real.</p>
+                                <h2 className="text-2xl font-bold text-white">Sistema GAC - Coleta Inteligente</h2>
+                                <p className="text-slate-400">Integração para análise de umidade e temperatura de sementes em tempo real.</p>
                             </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
-                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Umidade da Amostra</h3>
-                                <div className="text-5xl font-mono font-black text-blue-600 my-4 flex items-center justify-center gap-2">
-                                    13.4 <span className="text-xl text-slate-400 font-normal">%</span>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Umidade da Amostra</h3>
+                                <div className="text-5xl font-mono font-black text-blue-400 my-4 flex items-center justify-center gap-2">
+                                    13.4 <span className="text-xl text-slate-500 font-normal">%</span>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Última leitura: 10s atrás</p>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Última leitura: 10s atrás</p>
                             </div>
-                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
-                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Temperatura do Grão</h3>
-                                <div className="text-5xl font-mono font-black text-orange-500 my-4 flex items-center justify-center gap-2">
-                                    28.5 <span className="text-xl text-slate-400 font-normal">°C</span>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Temperatura do Grão</h3>
+                                <div className="text-5xl font-mono font-black text-orange-400 my-4 flex items-center justify-center gap-2">
+                                    28.5 <span className="text-xl text-slate-500 font-normal">°C</span>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Estável</p>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Estável</p>
                             </div>
-                            <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 text-center relative overflow-hidden">
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
-                                <h3 className="font-bold text-slate-600 uppercase text-xs tracking-wider mb-2">Peso Hectolitro</h3>
-                                <div className="text-5xl font-mono font-black text-emerald-600 my-4 flex items-center justify-center gap-2">
-                                    76.2 <span className="text-xl text-slate-400 font-normal">kg/hL</span>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Peso Hectolitro</h3>
+                                <div className="text-5xl font-mono font-black text-emerald-400 my-4 flex items-center justify-center gap-2">
+                                    76.2 <span className="text-xl text-slate-500 font-normal">kg/hL</span>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium bg-white inline-block px-2 py-1 rounded border border-slate-200">Padrão Exportação</p>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Padrão Exportação</p>
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-6 border-t border-slate-100">
-                            <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center gap-3">
+                        <div className="flex justify-end pt-6 border-t border-slate-700">
+                            <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-500 transition shadow-lg shadow-blue-900/50 flex items-center gap-3">
+                                <Icons.Activity className="w-5 h-5" />
+                                Sincronizar Nova Leitura GAC
+                            </button>
+                        </div>
+                    </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<OperatorApp />);
+    </script>
+</body>
+</html>                   </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </>
+                )}
+
+                {activeTab === 'gac' && (
+                    <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 animate-fade-in mb-8">
+                        <div className="flex items-center gap-4 mb-8 border-b border-slate-700 pb-6">
+                            <div className="p-4 bg-blue-500/10 rounded-full text-blue-400">
+                                <Icons.Cpu className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Sistema GAC - Coleta Inteligente</h2>
+                                <p className="text-slate-400">Integração para análise de umidade e temperatura de sementes em tempo real.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Umidade da Amostra</h3>
+                                <div className="text-5xl font-mono font-black text-blue-400 my-4 flex items-center justify-center gap-2">
+                                    13.4 <span className="text-xl text-slate-500 font-normal">%</span>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Última leitura: 10s atrás</p>
+                            </div>
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Temperatura do Grão</h3>
+                                <div className="text-5xl font-mono font-black text-orange-400 my-4 flex items-center justify-center gap-2">
+                                    28.5 <span className="text-xl text-slate-500 font-normal">°C</span>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Estável</p>
+                            </div>
+                            <div className="p-6 border border-slate-700 rounded-2xl bg-slate-900/50 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-2">Peso Hectolitro</h3>
+                                <div className="text-5xl font-mono font-black text-emerald-400 my-4 flex items-center justify-center gap-2">
+                                    76.2 <span className="text-xl text-slate-500 font-normal">kg/hL</span>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium bg-slate-800 inline-block px-2 py-1 rounded border border-slate-700">Padrão Exportação</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-slate-700">
+                            <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-500 transition shadow-lg shadow-blue-900/50 flex items-center gap-3 active:scale-95 transform">
                                 <Icons.Activity className="w-5 h-5" />
                                 Sincronizar Nova Leitura GAC
                             </button>

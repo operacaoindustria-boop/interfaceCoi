@@ -127,6 +127,9 @@
             <button onclick="switchMainView('rastreabilidade')" id="menu-rastreabilidade" class="nav-item">
                 <i data-lucide="map-pin" class="w-5 h-5"></i> Rastreabilidade
             </button>
+            <button onclick="switchMainView('transferencias')" id="menu-transferencias" class="nav-item">
+                <i data-lucide="arrow-right-left" class="w-5 h-5"></i> Transferência / Transbordo
+            </button>
             <button onclick="switchMainView('paradas')" id="menu-paradas" class="nav-item">
                 <i data-lucide="pause-circle" class="w-5 h-5"></i> Gestão de Paradas
             </button>
@@ -321,6 +324,38 @@
                 </main>
             </div>
 
+            <!-- 3.5 TRANSFERÊNCIAS -->
+            <div id="view-main-transferencias" class="h-full flex flex-col hidden">
+                <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
+                    <div id="view-transferencias" class="fade-in space-y-6">
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                            <div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                                <h3 class="font-bold text-white text-sm uppercase flex items-center gap-2">
+                                    <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-400"></i> Histórico de Transferências
+                                </h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold">
+                                        <tr>
+                                            <th class="p-4">Data/Hora</th>
+                                            <th class="p-4">Origem</th>
+                                            <th class="p-4">Tipo</th>
+                                            <th class="p-4">Produto</th>
+                                            <th class="p-4 text-right">Peso (kg)</th>
+                                            <th class="p-4">Responsável</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-transferencias" class="text-sm divide-y divide-slate-700 text-slate-300">
+                                        <tr><td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
             <!-- 4. LANÇAMENTO RETROATIVO (Mantido como view separada se necessário, mas não solicitado explicitamente no menu novo) -->
             <div id="view-main-lancamentoRetroativo" class="h-full flex flex-col hidden">
                 <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
@@ -379,7 +414,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { firebaseConfig } from './firebase_config.js';
 
         // Inicialização Firebase
@@ -388,6 +423,7 @@
 
         // Estado Global
         let silosData = [];
+        let transferenciasData = [];
 
         // Listener Firestore
         const q = query(collection(db, "mes_silos"));
@@ -400,12 +436,23 @@
             document.getElementById('last-update').innerText = new Date().toLocaleTimeString('pt-BR');
         });
 
+        // Listener Firestore Transferencias
+        const qTransf = query(collection(db, "mes_transferencias"), orderBy("timestamp", "desc"));
+        onSnapshot(qTransf, (snapshot) => {
+            transferenciasData = [];
+            snapshot.forEach(doc => {
+                transferenciasData.push(doc.data());
+            });
+            updateDashboard();
+        });
+
         function updateDashboard() {
             renderSilosGrid('preSecagem', 'PS');
             renderSilosGrid('armazenamento', 'AZ');
             renderSilosGrid('metalicos', 'MT');
             renderAcompanhamentoTable();
             renderRastreabilidadeTable();
+            renderTransferenciasTable();
         }
 
         function renderSilosGrid(viewId, prefix) {
@@ -528,11 +575,38 @@
             });
         }
 
+        function renderTransferenciasTable() {
+            const tbody = document.getElementById('table-transferencias');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            if (transferenciasData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">Nenhum registro encontrado.</td></tr>';
+                return;
+            }
+
+            transferenciasData.forEach(t => {
+                const dateStr = t.timestamp ? new Date(t.timestamp).toLocaleString('pt-BR') : '-';
+                const weight = t.weight ? parseFloat(t.weight).toLocaleString('pt-BR') : '0';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/50 transition-colors">
+                        <td class="p-4 font-mono text-slate-400">${dateStr}</td>
+                        <td class="p-4 font-bold text-slate-300">${t.originSilo || '-'}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded bg-purple-500/20 text-purple-400 text-xs font-bold border border-purple-500/30">${t.type || '-'}</span></td>
+                        <td class="p-4 text-white">${t.culture || '-'} <span class="text-slate-500 text-xs">${t.cultivar || ''}</span></td>
+                        <td class="p-4 text-right font-mono font-bold text-emerald-400">${weight}</td>
+                        <td class="p-4 text-slate-400 text-xs uppercase">${t.user || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
         // Expor função de troca de abas globalmente
         window.switchMainView = function(viewId) {
             // Hide all main views
             const views = [
-                'dashboard', 'acompanhamento', 'rastreabilidade', 'lancamentoRetroativo',
+                'dashboard', 'acompanhamento', 'rastreabilidade', 'transferencias', 'lancamentoRetroativo',
                 'paradas', 'relatorios', 'config-turnos', 'central-dados', 'config-usuarios', 'reset-zone'
             ];
             
@@ -556,6 +630,7 @@
                 'dashboard': 'Visão Geral de Armazenagem',
                 'acompanhamento': 'Acompanhamento de Coletas',
                 'rastreabilidade': 'Rastreabilidade de Produto',
+                'transferencias': 'Transferência / Transbordo',
                 'paradas': 'Gestão de Paradas',
                 'relatorios': 'Relatórios Gerenciais',
                 'config-turnos': 'Parâmetros por Turno',
