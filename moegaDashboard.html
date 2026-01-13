@@ -154,8 +154,13 @@
 
 <body class="h-screen flex overflow-hidden">
 
+    <!-- MOBILE OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity backdrop-blur-sm"></div>
+
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20 hidden md:flex">
+    <aside id="sidebar"
+        class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-50 fixed md:relative h-full transition-transform duration-300 -translate-x-full md:translate-x-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-800">
             <div class="bg-indigo-600 p-1.5 rounded-lg mr-3 shadow-lg shadow-indigo-500/20"><i data-lucide="factory"
                     class="text-white h-5 w-5"></i></div>
@@ -213,6 +218,8 @@
         <header
             class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 shrink-0">
             <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors"><i
+                        data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2" id="header-title"><i
                         data-lucide="bar-chart-3" class="text-indigo-500 w-5 h-5"></i> Visão Geral</h2>
                 <span
@@ -642,6 +649,7 @@
                                             <th class="p-4 border-b border-slate-700 text-indigo-400"><i
                                                     data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th>
                                             <th class="p-4 border-b border-slate-700">Pureza</th>
+                                            <th class="p-4 border-b border-slate-700">Destino</th>
                                             <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
                                             <th class="p-4 border-b border-slate-700 text-center">Ações</th>
                                         </tr>
@@ -703,10 +711,17 @@
                                 <table class="w-full text-left">
                                     <thead class="bg-slate-900 text-slate-400 text-xs uppercase font-bold sticky top-0">
                                         <tr>
-                                            <th class="p-3">Romaneio</th>
-                                            <th class="p-3">Fazenda</th>
-                                            <th class="p-3">Zona</th>
-                                            <th class="p-3 text-right">Peso</th>
+                                            <th class="p-4 border-b border-slate-700">Hora</th>
+                                            <th class="p-4 border-b border-slate-700">Romaneio</th>
+                                            <th class="p-4 border-b border-slate-700">Placa</th>
+                                            <th class="p-4 border-b border-slate-700">Moega</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="tractor" class="w-3 h-3 inline mr-1"></i> Fazenda</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i> Zona</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th>
+                                            <th class="p-4 border-b border-slate-700">Pureza</th>
+                                            <th class="p-4 border-b border-slate-700">Destino</th>
+                                            <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
+                                            <th class="p-4 border-b border-slate-700 text-center">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="trace-moega-table"
@@ -1538,8 +1553,10 @@
     </div>
 
     <!-- GENERIC CONFIRMATION MODAL -->
-    <div id="modal-confirmation" class="hidden fixed inset-0 z-[80] modal-backdrop flex items-center justify-center p-4">
-        <div class="bg-slate-800 border-2 border-amber-500/50 rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+    <div id="modal-confirmation"
+        class="hidden fixed inset-0 z-[80] modal-backdrop flex items-center justify-center p-4">
+        <div
+            class="bg-slate-800 border-2 border-amber-500/50 rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
             <div class="flex items-center gap-4 mb-4">
                 <div id="confirmation-icon-container" class="bg-amber-500/20 p-3 rounded-full text-amber-400">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
@@ -2524,6 +2541,49 @@
                 const estEl = document.getElementById('detail-estimativa');
                 if (timerEl) timerEl.innerText = formatMs(totalMs);
                 if (estEl) estEl.innerText = `Registros contabilizados: ${counted}`;
+
+                // --- CÁLCULO DE PRODUTIVIDADE (KPI) ---
+                const totalTons = totalKgCombined / 1000;
+                const totalHours = totalMs / 3600000;
+                let realRate = 0;
+                if (totalHours > 0.001) {
+                    realRate = totalTons / totalHours;
+                }
+
+                // Determinar produto para Meta
+                let currentProduct = 'DESCONHECIDO';
+                if (ciclo && ciclo.cargas && ciclo.cargas.length > 0) {
+                    currentProduct = ciclo.cargas[0].produto;
+                } else if (combined.length > 0) {
+                    currentProduct = combined[0].produto;
+                }
+
+                const metaRate = getMetaForProduct(currentProduct) || 0;
+
+                const kpiEl = document.getElementById('detail-kpi');
+                const metaEl = document.getElementById('detail-meta');
+                const barEl = document.getElementById('detail-bar-kpi');
+
+                if (kpiEl) kpiEl.innerText = realRate.toFixed(1);
+                if (metaEl) metaEl.innerText = metaRate;
+
+                if (barEl) {
+                    let pct = 0;
+                    if (metaRate > 0) {
+                        pct = Math.min(100, (realRate / metaRate) * 100);
+                    }
+                    barEl.style.width = `${pct}%`;
+
+                    // Cor da barra baseada na performance
+                    barEl.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-emerald-500');
+                    if (realRate >= metaRate) {
+                        barEl.classList.add('bg-emerald-500');
+                    } else if (realRate >= metaRate * 0.7) {
+                        barEl.classList.add('bg-yellow-500');
+                    } else {
+                        barEl.classList.add('bg-red-500');
+                    }
+                }
             } catch (e) { console.warn('Erro calculando tempo de operação:', e); }
         }
 
@@ -3204,7 +3264,7 @@
                     const avgHum = totalPesoHum > 0 ? (totalHum / totalPesoHum) : 0;
                     const humEl = document.getElementById('trace-moega-umidade');
                     if (humEl) humEl.innerHTML = avgHum > 0 ? `${avgHum.toFixed(2).replace('.', ',')}<span class="text-lg text-slate-500">%</span>` : '--<span class="text-lg text-slate-500">%</span>';
-                    
+
                     // Calcular Pureza Média Ponderada
                     let totalPurity = 0;
                     let totalPurityWeight = 0;
@@ -3247,6 +3307,7 @@
                                 zona: c.zona || l.zona || '-',
                                 talhao: c.talhao || l.talhao || '-',
                                 pureza: purezaVal,
+                                destino: c.destino || l.destino || '-',
                                 peso: Number(c.peso || 0)
                             });
                         });
@@ -3263,19 +3324,16 @@
                             zona: l.zona || '-',
                             talhao: l.talhao || '-',
                             pureza: purezaVal,
+                            destino: l.destino || '-',
                             peso: Number(l.peso || 0)
                         });
                     }
                 });
                 tbody.innerHTML = '';
-                if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="10" class="text-center p-6 text-slate-500">Nenhum registro para o período.</td></tr>';
+                if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-slate-500">Nenhum registro para o período.</td></tr>';
                 else rows.forEach(r => {
                     const idAttr = r.id || '';
-                    if (isMoegaView) {
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-3 font-bold">${r.romaneio}</td><td class="p-3">${r.fazenda}</td><td class="p-3">${r.zona}</td><td class="p-3 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td></tr>`;
-                    } else {
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.placa}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4">${r.pureza}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-center"><button onclick="deleteHistoricRecord('${idAttr}')" title="Excluir" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
-                    }
+                    tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4 text-slate-400 font-mono">${r.hora}</td><td class="p-4 font-bold">${r.romaneio}</td><td class="p-4">${r.placa}</td><td class="p-4">${r.moega}</td><td class="p-4">${r.fazenda}</td><td class="p-4">${r.zona}</td><td class="p-4">${r.talhao}</td><td class="p-4">${r.pureza}</td><td class="p-4 text-slate-300">${r.destino}</td><td class="p-4 text-right font-bold text-emerald-400 font-mono">${Number(r.peso || 0).toLocaleString('pt-BR')}</td><td class="p-4 text-center"><button onclick="deleteHistoricRecord('${idAttr}')" title="Excluir" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
                 });
                 lucide.createIcons();
             } catch (e) { console.warn('updateRastreabilidadeView error', e); }
@@ -3399,7 +3457,7 @@
                 } else {
                     logs.forEach(l => {
                         const dataHora = l.timestamp ? new Date(l.timestamp).toLocaleString('pt-BR') : (l.dataSaida ? `${l.dataSaida} ${l.horaSaida}` : '-');
-                        
+
                         // Lógica robusta para combinar Produto e Cultura
                         let produtoExibido = l.produto || '';
                         let culturaExibida = (l.cultura && l.cultura !== '-') ? l.cultura : '';
@@ -3595,6 +3653,13 @@
 
         window.abrirModalUsuario = function () { document.getElementById('modal-novo-usuario').classList.remove('hidden'); }
         window.fecharModalUsuario = function () { document.getElementById('modal-novo-usuario').classList.add('hidden'); }
+
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar) sidebar.classList.toggle('-translate-x-full');
+            if (overlay) overlay.classList.toggle('hidden');
+        }
 
         window.switchMainView = function (viewName) {
             activeMainView = viewName;

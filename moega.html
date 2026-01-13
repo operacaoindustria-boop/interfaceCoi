@@ -280,14 +280,18 @@
                     <div id="form-retro-single" class="space-y-6">
                         <div class="grid grid-cols-2 gap-6">
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Nº
-                                    Romaneio</label><input type="text" id="retro-romaneio"
-                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono placeholder-slate-600"
-                                    placeholder="00000"></div>
-                            <div><label
-                                    class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa</label><input
-                                    type="text" id="retro-placa"
+                                    Romaneio</label>
+                                <input type="text" inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="retro-romaneio"
+                                    class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono placeholder-slate-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    placeholder="00000">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa</label><input
+                                    type="text" id="retro-placa" oninput="formatarPlaca(this)"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono uppercase placeholder-slate-600"
-                                    placeholder="ABC-1234"></div>
+                                    placeholder="ABC-1234">
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div><label
@@ -300,7 +304,7 @@
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white text-sm">
                             </div>
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso
-                                    (Kg)</label><input type="number" id="retro-peso"
+                                    (Ton)</label><input type="number" id="retro-peso" step="0.001" placeholder="0.000"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-4 text-white font-mono font-bold text-lg bg-slate-900 border-slate-600 focus:border-indigo-500">
                             </div>
                         </div>
@@ -326,7 +330,8 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso Total
-                                    Acumulado (Kg)</label><input type="number" id="retro-batch-peso"
+                                    Acumulado (Ton)</label><input type="number" id="retro-batch-peso" step="0.001"
+                                    placeholder="0.000"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-mono font-bold text-xl bg-slate-900">
                             </div>
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Qtd.
@@ -363,24 +368,28 @@
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
                                     placeholder="Nome da fazenda"></div>
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Zona</label><input
-                                    type="text" id="retro-zona"
+                                    type="text" inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="retro-zona"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
                                     placeholder="Zona"></div>
                             <div><label
                                     class="text-xs text-slate-400 uppercase font-bold mb-1 block">Talhão</label><input
-                                    type="text" id="retro-talhao"
+                                    type="text" inputmode="numeric"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="retro-talhao"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase outline-none"
                                     placeholder="Talhão"></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Umidade
                                     (%)</label><input type="number" id="retro-umidade" step="0.1"
+                                    onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault()"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
                                     placeholder="Ex: 13.5"></div>
-                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Pureza
-                                    (%)</label><input type="number" id="retro-pureza" step="0.1"
+                            <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Impureza
+                                    (%)</label><input type="number" id="retro-impureza" step="0.1"
+                                    onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault()"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
-                                    placeholder="Ex: 99.5"></div>
+                                    placeholder="Ex: 1.0"></div>
                         </div>
                         <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Destino
                                 (Silo)</label><select id="retro-destino"
@@ -435,7 +444,7 @@
                         <div>
                             <label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Placa do
                                 Veículo</label>
-                            <input type="text" id="transf-placa"
+                            <input type="text" id="transf-placa" oninput="formatarPlaca(this)"
                                 class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white uppercase"
                                 placeholder="ABC-1234">
                         </div>
@@ -539,7 +548,7 @@
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white"
                                     placeholder="0"></div>
                             <div><label class="text-xs text-slate-400 uppercase font-bold mb-1 block">Peso Total
-                                    (Kg)</label><input type="number" id="transf-peso"
+                                    (Ton)</label><input type="number" id="transf-peso"
                                     class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-4 text-white font-mono font-bold text-lg bg-slate-900 border-slate-600 focus:border-orange-500"
                                     placeholder="0"></div>
                         </div>
@@ -583,168 +592,177 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div><label for="tpl_input-romaneio"
                             class="text-xs text-slate-500 uppercase font-bold mb-1 block">Nº Romaneio</label><input
-                            type="text" id="tpl_input-romaneio"
-                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"
+                            type="text" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            id="tpl_input-romaneio"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             placeholder="00000"></div>
                     <div><label for="tpl_input-placa"
                             class="text-xs text-slate-500 uppercase font-bold mb-1 block">Placa</label><input
-                            type="text" id="tpl_input-placa"
+                            type="text" id="tpl_input-placa" oninput="formatarPlaca(this)"
                             class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-lg font-bold text-white focus:border-blue-500 outline-none uppercase font-mono"
-                            placeholder="ABC-1234"></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div><label for="tpl_input-produto"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select
-                            id="tpl_input-produto" onchange="toggleCultivar()"
-                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none"
-                            aria-label="Produto">
-                            <option value="" disabled selected>Selecione...</option>
+                            placeholder="ABC-1234">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label for="tpl_input-produto"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Produto</label><select
+                                id="tpl_input-produto" onchange="toggleCultivar()"
+                                class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white font-bold outline-none"
+                                aria-label="Produto">
+                                <option value="" disabled selected>Selecione...</option>
+                            </select></div>
+                        <div id="tpl_container-cultivar" class="hidden"><label for="tpl_input-cultivar"
+                                class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span
+                                    id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock"
+                                        class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto"
+                                class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input
+                                type="text" id="tpl_input-cultivar"
+                                class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase">
+                        </div>
+                    </div>
+                    <!-- Rastreabilidade -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div><label for="tpl_input-fazenda"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input
+                                type="text" id="tpl_input-fazenda"
+                                class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                                placeholder="Nome da fazenda"></div>
+                        <div><label for="tpl_input-zona"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input
+                                type="text" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                id="tpl_input-zona"
+                                class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                                placeholder="Zona"></div>
+                        <div><label for="tpl_input-talhao"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input
+                                type="text" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                id="tpl_input-talhao"
+                                class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
+                                placeholder="Talhão"></div>
+                    </div>
+                    <!-- Qualidade -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label for="tpl_input-umidade"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input
+                                type="number" id="tpl_input-umidade" step="0.1"
+                                onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault()"
+                                class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
+                                placeholder="Ex: 13.5"></div>
+                        <div><label for="tpl_input-impureza"
+                                class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input
+                                type="number" id="tpl_input-impureza" step="0.1"
+                                onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault()"
+                                class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
+                                placeholder="Ex: 0.5"></div>
+                    </div>
+                    <div class="mb-4"><label for="tpl_input-peso"
+                            class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Ton)</label>
+                        <div class="relative"><input type="number" id="tpl_input-peso" step="0.001"
+                                class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all"
+                                placeholder="0.000"><span
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">TON</span>
+                        </div>
+                    </div>
+                    <div class="mb-6"><label for="tpl_input-destino"
+                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de
+                            Armazenagem</label><select id="tpl_input-destino"
+                            class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
+                            aria-label="Destino de Armazenagem">
+                            <option value="" disabled selected>Selecione o silo...</option>
                         </select></div>
-                    <div id="tpl_container-cultivar" class="hidden"><label for="tpl_input-cultivar"
-                            class="text-xs text-yellow-500 uppercase font-bold mb-1 block flex items-center gap-2">Cultivar<span
-                                id="tpl_lock-icon-cultivar" class="hidden text-amber-500"><i data-lucide="lock"
-                                    class="w-3 h-3"></i></span></label><span id="tpl_lock-icon-produto"
-                            class="hidden text-amber-500"><i data-lucide="lock" class="w-3 h-3"></i></span><input
-                            type="text" id="tpl_input-cultivar"
-                            class="w-full h-12 bg-slate-800 border border-yellow-600/50 rounded px-3 text-white font-bold outline-none uppercase">
-                    </div>
+                    <div class="flex gap-3"><button onclick="enviarDados()"
+                            class="flex-1 btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2"><i
+                                data-lucide="plus-circle" class="w-5 h-5"></i> Lançar Carga</button></div>
                 </div>
-                <!-- Rastreabilidade -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div><label for="tpl_input-fazenda"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Fazenda</label><input
-                            type="text" id="tpl_input-fazenda"
-                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
-                            placeholder="Nome da fazenda"></div>
-                    <div><label for="tpl_input-zona"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Zona</label><input type="text"
-                            id="tpl_input-zona"
-                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
-                            placeholder="Zona"></div>
-                    <div><label for="tpl_input-talhao"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Talhão</label><input
-                            type="text" id="tpl_input-talhao"
-                            class="w-full h-10 bg-slate-900 border border-slate-600 rounded px-3 text-sm text-white focus:border-blue-500 outline-none uppercase"
-                            placeholder="Talhão"></div>
-                </div>
-                <!-- Qualidade -->
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div><label for="tpl_input-umidade"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Umidade (%)</label><input
-                            type="number" id="tpl_input-umidade" step="0.1"
-                            class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
-                            placeholder="Ex: 13.5"></div>
-                    <div><label for="tpl_input-impureza"
-                            class="text-xs text-slate-500 uppercase font-bold mb-1 block">Impureza (%)</label><input
-                            type="number" id="tpl_input-impureza" step="0.1"
-                            class="w-full h-12 bg-slate-900 border border-slate-600 rounded px-3 text-white focus:border-blue-500 outline-none"
-                            placeholder="Ex: 0.5"></div>
-                </div>
-                <div class="mb-4"><label for="tpl_input-peso"
-                        class="text-xs text-emerald-500 uppercase font-bold mb-1 block">Peso Líquido (Kg)</label>
-                    <div class="relative"><input type="number" id="tpl_input-peso"
-                            class="w-full h-16 bg-slate-900 border-2 border-emerald-500/50 rounded px-4 text-3xl font-bold text-emerald-400 outline-none font-mono tracking-wider focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all"
-                            placeholder="Kg"><span
-                            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">KG</span></div>
-                </div>
-                <div class="mb-6"><label for="tpl_input-destino"
-                        class="text-xs text-slate-500 uppercase font-bold mb-1 block">Destino de
-                        Armazenagem</label><select id="tpl_input-destino"
-                        class="w-full h-12 bg-slate-800 border border-slate-600 rounded px-3 text-white outline-none"
-                        aria-label="Destino de Armazenagem">
-                        <option value="" disabled selected>Selecione o silo...</option>
-                    </select></div>
-                <div class="flex gap-3"><button onclick="enviarDados()"
-                        class="flex-1 btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2"><i
-                            data-lucide="plus-circle" class="w-5 h-5"></i> Lançar Carga</button></div>
-            </div>
 
-            <!-- TEMPLATE: GESTÃO DE CICLO -->
-            <div id="painel-gestao-container" class="hidden h-full flex flex-col relative">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-b border-slate-700 pb-4">
-                    <div>
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2"><span
-                                    id="tpl_status-dot" class="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></span>
-                                Moega <span id="tpl_lbl-ciclo-moega">00</span> <span id="tpl_lbl-estado-texto">em
-                                    Operação</span></h3>
-                            <button onclick="abrirModalPausa()"
-                                class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded border border-slate-600 flex items-center gap-1 transition-colors"><i
-                                    data-lucide="pause" class="w-3 h-3"></i> Pausar</button>
-                        </div>
-                        <div class="flex items-start gap-6 mt-3">
-                            <div>
-                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tempo Decorrido
-                                </p><span id="tpl_lbl-ciclo-tempo"
-                                    class="font-mono text-white text-xl font-bold">00:00:00</span>
+                <!-- TEMPLATE: GESTÃO DE CICLO -->
+                <div id="painel-gestao-container" class="hidden h-full flex flex-col relative">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-b border-slate-700 pb-4">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2"><span
+                                        id="tpl_status-dot"
+                                        class="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></span>
+                                    Moega <span id="tpl_lbl-ciclo-moega">00</span> <span id="tpl_lbl-estado-texto">em
+                                        Operação</span></h3>
+                                <button onclick="abrirModalPausa()"
+                                    class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded border border-slate-600 flex items-center gap-1 transition-colors"><i
+                                        data-lucide="pause" class="w-3 h-3"></i> Pausar</button>
                             </div>
-                            <div>
-                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Estimativa
-                                    Término</p><span id="tpl_lbl-ciclo-restante"
-                                    class="font-mono text-emerald-400 text-xl font-bold">--:--:--</span>
+                            <div class="flex items-start gap-6 mt-3">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tempo
+                                        Decorrido
+                                    </p><span id="tpl_lbl-ciclo-tempo"
+                                        class="font-mono text-white text-xl font-bold">00:00:00</span>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Estimativa
+                                        Término</p><span id="tpl_lbl-ciclo-restante"
+                                        class="font-mono text-emerald-400 text-xl font-bold">--:--:--</span>
+                                </div>
                             </div>
+                            <p class="text-xs text-slate-500 mt-3">Total Acumulado: <span id="tpl_lbl-ciclo-peso"
+                                    class="font-bold text-white text-lg">0</span> Ton</p>
                         </div>
-                        <p class="text-xs text-slate-500 mt-3">Total Acumulado: <span id="tpl_lbl-ciclo-peso"
-                                class="font-bold text-white text-lg">0</span> Kg</p>
-                    </div>
-                    <div
-                        class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 relative flex flex-col justify-center">
-                        <div id="tpl_overlay-kpi-pausa"
-                            class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
-                            <span class="text-xs font-bold text-slate-400 flex items-center gap-1"><i
-                                    data-lucide="snowflake" class="w-3 h-3"></i> KPIs CONGELADOS</span>
+                        <div
+                            class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 relative flex flex-col justify-center">
+                            <div id="tpl_overlay-kpi-pausa"
+                                class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                                <span class="text-xs font-bold text-slate-400 flex items-center gap-1"><i
+                                        data-lucide="snowflake" class="w-3 h-3"></i> KPIs CONGELADOS</span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Performance
+                                (Ton/h)</p>
+                            <div class="flex items-end justify-between mb-1"><span id="tpl_lbl-ciclo-kpi"
+                                    class="text-3xl font-bold text-white font-mono leading-none">0.0</span><span
+                                    class="text-xs text-slate-500 font-bold mb-1">Meta: <span id="tpl_lbl-meta-kpi"
+                                        class="text-slate-300">0</span> t/h</span></div>
+                            <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden relative">
+                                <div id="tpl_bar-kpi" class="h-full w-0 transition-all duration-1000 bg-slate-500">
+                                </div>
+                            </div>
+                            <p id="tpl_lbl-status-kpi" class="text-[10px] text-right mt-1 font-bold text-slate-500">
+                                CALCULANDO...</p>
                         </div>
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Performance
-                            (Ton/h)</p>
-                        <div class="flex items-end justify-between mb-1"><span id="tpl_lbl-ciclo-kpi"
-                                class="text-3xl font-bold text-white font-mono leading-none">0.0</span><span
-                                class="text-xs text-slate-500 font-bold mb-1">Meta: <span id="tpl_lbl-meta-kpi"
-                                    class="text-slate-300">0</span> t/h</span></div>
-                        <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden relative">
-                            <div id="tpl_bar-kpi" class="h-full w-0 transition-all duration-1000 bg-slate-500"></div>
+                    </div>
+                    <div class="flex-1 overflow-auto bg-slate-800 rounded-lg border border-slate-700 mb-6">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-700 text-slate-300 text-xs uppercase font-bold sticky top-0">
+                                <tr>
+                                    <th class="p-3">Hora</th>
+                                    <th class="p-3">Romaneio</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Cultivar</th>
+                                    <th class="p-3 text-right">Peso (Ton)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tpl_tabela-cargas-ciclo" class="text-sm text-slate-300"></tbody>
+                        </table>
+                    </div>
+                    <div id="botoes-acao-ciclo" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
+                        <button onclick="abrirFormularioAdicional()"
+                            class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"><i
+                                data-lucide="truck" class="w-5 h-5"></i> Adicionar Carga</button>
+                        <button onclick="encerrarCiclo()"
+                            class="bg-red-600/90 hover:bg-red-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg border border-red-500"><i
+                                data-lucide="power" class="w-5 h-5"></i> Encerrar Ciclo</button>
+                    </div>
+                    <div id="tpl_tela-pausa-ativa"
+                        class="hidden absolute inset-0 bg-slate-900 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-red-500/30">
+                        <div class="mb-6 p-6 bg-red-900/20 rounded-full animate-pulse"><i data-lucide="pause-circle"
+                                class="w-16 h-16 text-red-500"></i></div>
+                        <h2 class="text-3xl font-bold text-white mb-2">OPERAÇÃO PAUSADA</h2>
+                        <p class="text-slate-400 mb-8">Motivo: <span id="tpl_lbl-motivo-pausa"
+                                class="text-white font-bold uppercase">---</span></p>
+                        <div class="text-center mb-10">
+                            <p class="text-xs text-red-400 uppercase font-bold tracking-widest mb-1">Tempo Parado</p>
+                            <p id="tpl_lbl-timer-pausa" class="text-5xl font-mono font-bold text-red-500">00:00:00</p>
                         </div>
-                        <p id="tpl_lbl-status-kpi" class="text-[10px] text-right mt-1 font-bold text-slate-500">
-                            CALCULANDO...</p>
+                        <button onclick="retomarOperacao()"
+                            class="btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-lg font-bold text-xl uppercase tracking-wider flex items-center gap-3 shadow-lg hover:shadow-emerald-500/20"><i
+                                data-lucide="play" class="w-6 h-6 fill-current"></i> RETOMAR OPERAÇÃO</button>
                     </div>
                 </div>
-                <div class="flex-1 overflow-auto bg-slate-800 rounded-lg border border-slate-700 mb-6">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-700 text-slate-300 text-xs uppercase font-bold sticky top-0">
-                            <tr>
-                                <th class="p-3">Hora</th>
-                                <th class="p-3">Romaneio</th>
-                                <th class="p-3">Produto</th>
-                                <th class="p-3">Cultivar</th>
-                                <th class="p-3 text-right">Peso (Kg)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tpl_tabela-cargas-ciclo" class="text-sm text-slate-300"></tbody>
-                    </table>
-                </div>
-                <div id="botoes-acao-ciclo" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
-                    <button onclick="abrirFormularioAdicional()"
-                        class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"><i
-                            data-lucide="truck" class="w-5 h-5"></i> Adicionar Carga</button>
-                    <button onclick="encerrarCiclo()"
-                        class="bg-red-600/90 hover:bg-red-500 text-white py-4 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg border border-red-500"><i
-                            data-lucide="power" class="w-5 h-5"></i> Encerrar Ciclo</button>
-                </div>
-                <div id="tpl_tela-pausa-ativa"
-                    class="hidden absolute inset-0 bg-slate-900 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-red-500/30">
-                    <div class="mb-6 p-6 bg-red-900/20 rounded-full animate-pulse"><i data-lucide="pause-circle"
-                            class="w-16 h-16 text-red-500"></i></div>
-                    <h2 class="text-3xl font-bold text-white mb-2">OPERAÇÃO PAUSADA</h2>
-                    <p class="text-slate-400 mb-8">Motivo: <span id="tpl_lbl-motivo-pausa"
-                            class="text-white font-bold uppercase">---</span></p>
-                    <div class="text-center mb-10">
-                        <p class="text-xs text-red-400 uppercase font-bold tracking-widest mb-1">Tempo Parado</p>
-                        <p id="tpl_lbl-timer-pausa" class="text-5xl font-mono font-bold text-red-500">00:00:00</p>
-                    </div>
-                    <button onclick="retomarOperacao()"
-                        class="btn-industrial bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-lg font-bold text-xl uppercase tracking-wider flex items-center gap-3 shadow-lg hover:shadow-emerald-500/20"><i
-                            data-lucide="play" class="w-6 h-6 fill-current"></i> RETOMAR OPERAÇÃO</button>
-                </div>
-            </div>
 
     </main>
 
@@ -1120,6 +1138,14 @@
 
         // --- GLOBAL FUNCTIONS EXPORTED TO WINDOW ---
 
+        window.formatarPlaca = function (input) {
+            let valor = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (valor.length > 3) {
+                valor = valor.slice(0, 3) + '-' + valor.slice(3);
+            }
+            input.value = valor.slice(0, 8); // Limita a ABC-1234 ou ABC-1D23
+        }
+
         window.switchView = function (view) {
             const views = ['dashboard', 'retroactive', 'transfer'];
             views.forEach(v => {
@@ -1149,6 +1175,30 @@
                     input.classList.add('hidden');
                 }
             }
+        }
+
+        function clearRetroForm() {
+            // Campos de formulário
+            const ids = [
+                'retro-romaneio', 'retro-placa', 'retro-inicio', 'retro-fim', 'retro-peso',
+                'retro-batch-inicio', 'retro-batch-fim', 'retro-batch-peso', 'retro-batch-qtd', 'retro-batch-placas',
+                'retro-produto', 'retro-cultivar', 'retro-fazenda', 'retro-zona', 'retro-talhao',
+                'retro-umidade', 'retro-impureza', 'retro-destino', 'retro-moega-id'
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+
+            // Checkbox de pausa
+            const checkPausa = document.getElementById('check-pausa-retro');
+            if (checkPausa) { checkPausa.checked = false; if (window.togglePausaRetro) window.togglePausaRetro(); }
+
+            // Reseta a seleção visual da moega
+            retroMoegaSelected = null;
+            document.querySelectorAll('.btn-retro-moega').forEach(b => b.classList.remove('bg-blue-600', 'text-white', 'border-blue-500'));
+
+            if (window.countPlates) window.countPlates();
         }
 
         window.salvarTransferencia = async function () {
@@ -1207,7 +1257,7 @@
                     lote: lote.trim().toUpperCase(),
                     embalagem: embalagem.trim(),
                     qtdEmbalagem: qtdEmbalagem || 0,
-                    peso: peso,
+                    peso: peso * 1000,
                     operador: operador.trim(),
                     motorista: motorista.trim(),
                     timestamp: new Date().toISOString(),
@@ -1278,6 +1328,7 @@
                 btn.className = `${baseClass} ${colorClass}`;
                 btn.onclick = () => window.selectMoega(i);
                 btn.innerHTML = `<span class="text-3xl font-bold text-slate-200">0${i}</span><span class="text-[10px] ${statusColor} font-bold uppercase tracking-widest">${statusText}</span>${infoHTML}`;
+
                 container.appendChild(btn);
             }
             lucide.createIcons();
@@ -1285,7 +1336,6 @@
 
         window.selectMoega = function (id) {
             moegaSelecionada = id;
-            window.renderMoegaButtons();
 
             document.getElementById('placeholder-selecao')?.classList.add('hidden');
             document.getElementById('action-panel')?.classList.remove('hidden');
@@ -1298,10 +1348,12 @@
             } else {
                 renderNewEntryForm(id);
             }
+
+            window.renderMoegaButtons(); // Refresh icons after content update
         }
 
         // --- ENVIAR DADOS COM CONFIRMAÇÃO ---
-        window.enviarDados = function () {
+        window.enviarDados = async function () {
             if (!userId) return notify('Aguarde autenticação...', 'erro');
 
             const panel = document.getElementById('panel-content');
@@ -1309,7 +1361,7 @@
             // Collect Data
             const romaneio = panel.querySelector('#input-romaneio').value;
             const placa = panel.querySelector('#input-placa').value;
-            const peso = parseFloat(panel.querySelector('#input-peso').value);
+            const pesoInput = parseFloat(panel.querySelector('#input-peso').value);
 
             let produto, cultivar;
             if (activeCycles[moegaSelecionada]) {
@@ -1328,8 +1380,41 @@
             const impureza = panel.querySelector('#input-impureza').value || '0';
             const destino = panel.querySelector('#input-destino').value || '-';
 
-            if (!romaneio || !placa || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
-            if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+            if (!romaneio || !placa || !pesoInput || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+            if (Number.isNaN(pesoInput) || pesoInput <= 0) return notify('Peso inválido.', 'erro');
+
+            // --- VERIFICAÇÃO DE SILO (IMPEDE ABERTURA DO MODAL SE INCOMPATÍVEL) ---
+            if (destino && destino !== '-') {
+                try {
+                    const siloRef = doc(db, "mes_silos", destino);
+                    const siloDoc = await getDoc(siloRef);
+
+                    if (siloDoc.exists()) {
+                        const siloData = siloDoc.data();
+                        const siloHasProduct = siloData.cultura && siloData.cultura !== 'Vazio';
+
+                        if (siloHasProduct) {
+                            // Verifica Cultura
+                            if (siloData.cultura !== produto) {
+                                return notify(`Silo ${destino} contém ${siloData.cultura}. A carga é ${produto}.`, 'erro');
+                            }
+                            // Verifica Cultivar (Variedade)
+                            const sCultivar = (siloData.cultivar || '').trim().toUpperCase();
+                            const pCultivar = (cultivar || '').trim().toUpperCase();
+                            if (sCultivar !== pCultivar) {
+                                return notify(`Silo ${destino} contém cultivar ${siloData.cultivar}. A carga é ${cultivar}.`, 'erro');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao verificar silo:", e);
+                    return notify('Erro ao verificar silo de destino.', 'erro');
+                }
+            }
+
+            // Converte Toneladas para Kg para armazenamento interno
+            const pesoKg = pesoInput * 1000;
+
             const umNum = parseFloat(panel.querySelector('#input-umidade').value);
             if (isNaN(umNum) || umNum < 5 || umNum > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
             const impNum = parseFloat(panel.querySelector('#input-impureza').value);
@@ -1338,7 +1423,7 @@
             // Store pending data
             pendingData = {
                 timestamp: new Date().toISOString(),
-                romaneio, placa, produto, cultivar, peso,
+                romaneio, placa, produto, cultivar, peso: pesoKg,
                 fazenda, zona, talhao, umidade, impureza, destino
             };
 
@@ -1349,7 +1434,7 @@
             document.getElementById('conf-romaneio').innerText = romaneio;
             document.getElementById('conf-placa').innerText = placa;
             document.getElementById('conf-produto').innerText = `${produto} (${cultivar || '-'})`;
-            document.getElementById('conf-peso').innerText = `${peso} Kg`;
+            document.getElementById('conf-peso').innerText = `${pesoInput.toFixed(3)} Ton`;
             document.getElementById('conf-fazenda').innerText = fazenda;
             document.getElementById('conf-zona').innerText = zona;
             document.getElementById('conf-talhao').innerText = talhao;
@@ -1422,6 +1507,14 @@
                                 // 1. Validação de Cultura
                                 if (siloData.cultura !== pendingData.produto) {
                                     notify(`Silo ${siloDestinoId} já contém ${siloData.cultura}. Esvazie o silo ou envie a mesma cultura.`, 'erro');
+                                    fecharModalConfirmacao();
+                                    return;
+                                }
+                                // 1.1 Validação de Cultivar (Variedade)
+                                const sCultivar = (siloData.cultivar || '').trim().toUpperCase();
+                                const pCultivar = (pendingData.cultivar || '').trim().toUpperCase();
+                                if (sCultivar !== pCultivar) {
+                                    notify(`Silo ${siloDestinoId} contém cultivar ${siloData.cultivar}. A carga é ${pendingData.cultivar}.`, 'erro');
                                     fecharModalConfirmacao();
                                     return;
                                 }
@@ -1637,7 +1730,7 @@
 
                 panel.querySelector('#lbl-ciclo-moega').innerText = id.toString().padStart(2, '0');
                 const total = ciclo.cargas.reduce((a, b) => a + Number(b.peso), 0);
-                panel.querySelector('#lbl-ciclo-peso').innerText = total.toLocaleString('pt-BR');
+                panel.querySelector('#lbl-ciclo-peso').innerText = (total / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
                 const statusEl = panel.querySelector('#lbl-estado-texto');
                 const dot = panel.querySelector('#status-dot');
@@ -1654,7 +1747,7 @@
                 const tbody = panel.querySelector('#tabela-cargas-ciclo');
                 tbody.innerHTML = '';
                 [...ciclo.cargas].reverse().forEach(c => {
-                    tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="p-3 font-mono text-slate-400">${new Date(c.timestamp).toLocaleTimeString('pt-BR').substring(0, 5)}</td><td class="p-3 font-bold text-white">${c.romaneio}</td><td class="p-3">${c.produto}</td><td class="p-3 text-xs">${c.cultivar || '-'}</td><td class="p-3 text-right font-bold text-emerald-400">${c.peso}</td></tr>`;
+                    tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="p-3 font-mono text-slate-400">${new Date(c.timestamp).toLocaleTimeString('pt-BR').substring(0, 5)}</td><td class="p-3 font-bold text-white">${c.romaneio}</td><td class="p-3">${c.produto}</td><td class="p-3 text-xs">${c.cultivar || '-'}</td><td class="p-3 text-right font-bold text-emerald-400">${(c.peso / 1000).toFixed(3)}</td></tr>`;
                 });
             }
         }
@@ -1668,7 +1761,7 @@
             const imp = panel.querySelector('#input-impureza')?.value;
             const produto = panel.querySelector('#input-produto')?.value;
             if (!rom || !placa || !produto) return false;
-            if (isNaN(peso) || peso < 100) return false;
+            if (isNaN(peso) || peso <= 0) return false;
             if (isNaN(um) || um < 5 || um > 30) return false;
             if (isNaN(parseFloat(imp))) return false;
             return true;
@@ -1722,13 +1815,13 @@
                 const fim = document.getElementById('retro-fim')?.value;
                 const peso = Number(document.getElementById('retro-peso')?.value);
                 const um = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : NaN;
-                const pureza = document.getElementById('retro-pureza')?.value;
+                const impureza = document.getElementById('retro-impureza')?.value;
                 const produto = document.getElementById('retro-produto')?.value || null;
                 if (!inicio || !fim || !produto) return false;
                 if (new Date(fim).getTime() < new Date(inicio).getTime()) return false;
                 if (isNaN(peso) || peso < 100) return false;
                 if (isNaN(um) || um < 5 || um > 30) return false;
-                if (pureza !== undefined && pureza !== '' && isNaN(Number(pureza))) return false;
+                if (impureza !== undefined && impureza !== '' && isNaN(Number(impureza))) return false;
                 return true;
             } else {
                 const inicio = document.getElementById('retro-batch-inicio')?.value;
@@ -1736,20 +1829,20 @@
                 const peso = Number(document.getElementById('retro-batch-peso')?.value);
                 const qtd = Number(document.getElementById('retro-batch-qtd')?.value);
                 const um = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : NaN;
-                const pureza = document.getElementById('retro-pureza')?.value;
+                const impureza = document.getElementById('retro-impureza')?.value;
                 if (!inicio || !fim || !peso || !qtd) return false;
                 if (new Date(fim).getTime() < new Date(inicio).getTime()) return false;
                 if (isNaN(peso) || peso < 100) return false;
                 if (isNaN(um) || um < 5 || um > 30) return false;
-                if (pureza !== undefined && pureza !== '' && isNaN(Number(pureza))) return false;
+                if (impureza !== undefined && impureza !== '' && isNaN(Number(impureza))) return false;
                 return true;
             }
         }
 
         function attachRetroValidation() {
             const btn = document.querySelector('button[onclick="salvarRetroativo()"]');
-            const fields = ['retro-inicio', 'retro-fim', 'retro-peso', 'retro-umidade', 'retro-pureza', 'retro-produto', 'retro-batch-inicio', 'retro-batch-fim', 'retro-batch-peso', 'retro-batch-qtd'];
-            const check = () => { if (btn) btn.disabled = !validateRetroForm(); };
+            const fields = ['retro-inicio', 'retro-fim', 'retro-peso', 'retro-umidade', 'retro-impureza', 'retro-produto', 'retro-batch-inicio', 'retro-batch-fim', 'retro-batch-peso', 'retro-batch-qtd'];
+            const check = () => { if (btn) btn.disabled = false; };
             fields.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', check); if (el) el.addEventListener('change', check); });
             // também escuta mudança de modo retro
             const btnModeS = document.getElementById('btn-mode-single');
@@ -1771,9 +1864,11 @@
             setTimeout(() => {
                 const prodInput = panel.querySelector('#input-produto');
                 const cultInput = panel.querySelector('#input-cultivar');
+                const destInput = panel.querySelector('#input-destino');
 
                 if (prodInput) { prodInput.value = ciclo.cargas[0].produto; prodInput.disabled = true; }
                 if (cultInput) { cultInput.value = ciclo.cargas[0].cultivar; cultInput.disabled = true; }
+                if (destInput) { destInput.value = ciclo.cargas[0].destino; destInput.disabled = true; }
 
                 panel.querySelector('#aviso-trava-qualidade').classList.remove('hidden');
                 panel.querySelector('#container-cultivar').classList.remove('hidden');
@@ -2037,6 +2132,7 @@
             try {
                 const mode = retroMode || 'single';
                 const colLogs = collection(db, 'moega_historico_descargas');
+                const destino = document.getElementById('retro-destino').value;
 
                 if (mode === 'single') {
                     const moega = document.getElementById('retro-moega-id').value;
@@ -2044,21 +2140,23 @@
                     const placa = document.getElementById('retro-placa').value || 'N/A';
                     const inicioVal = document.getElementById('retro-inicio').value;
                     const fimVal = document.getElementById('retro-fim').value;
-                    const peso = Number(document.getElementById('retro-peso').value) || 0;
+                    const pesoInput = Number(document.getElementById('retro-peso').value) || 0;
                     const produto = document.getElementById('retro-produto').value || '-';
                     const cultivar = document.getElementById('retro-cultivar').value || '-';
                     const fazenda = document.getElementById('retro-fazenda')?.value || '-';
                     const zona = document.getElementById('retro-zona')?.value || '-';
                     const talhao = document.getElementById('retro-talhao')?.value || '-';
                     const umidade = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : undefined;
-                    const pureza = document.getElementById('retro-pureza')?.value ? Number(document.getElementById('retro-pureza').value) : undefined;
+                    const impureza = document.getElementById('retro-impureza')?.value ? Number(document.getElementById('retro-impureza').value) : undefined;
 
-                    if (!moega || !inicioVal || !fimVal || !peso || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+                    if (!moega || !inicioVal || !fimVal || !pesoInput || !produto) return notify('Preencha os campos obrigatórios', 'erro');
                     // Validações adicionais
                     if (new Date(fimVal).getTime() < new Date(inicioVal).getTime()) return notify('Data final não pode ser anterior à data inicial', 'erro');
-                    if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+                    if (Number.isNaN(pesoInput) || pesoInput <= 0) return notify('Peso inválido.', 'erro');
                     if (umidade === undefined || isNaN(umidade) || umidade < 5 || umidade > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
-                    if (pureza !== undefined && isNaN(pureza)) return notify('Pureza deve ser numérica', 'erro');
+                    if (impureza !== undefined && isNaN(impureza)) return notify('Impureza deve ser numérica', 'erro');
+
+                    const pesoKg = pesoInput * 1000;
 
                     // coletar pausas se houver
                     const pausas = [];
@@ -2075,19 +2173,20 @@
                         moega: Number(moega),
                         produto,
                         cultivar,
-                        peso,
+                        peso: pesoKg,
                         inicio: new Date(inicioVal).toISOString(),
                         fim: new Date(fimVal).toISOString(),
                         statusFinal: 'CORRIGIDO',
                         romaneio,
                         placa,
-                        cargas: [{ romaneio, placa, produto, cultivar, peso, timestamp: new Date(fimVal).toISOString(), fazenda, zona, talhao, umidade, pureza }],
+                        cargas: [{ romaneio, placa, produto, cultivar, peso: pesoKg, timestamp: new Date(fimVal).toISOString(), fazenda, zona, talhao, umidade, impureza, destino }],
                         pausas: pausas,
                         fazenda,
                         zona,
                         talhao,
                         umidade,
-                        pureza,
+                        impureza,
+                        destino,
                         createdBy: auth.currentUser.uid
                     };
 
@@ -2097,7 +2196,7 @@
                     // batch
                     const inicioVal = document.getElementById('retro-batch-inicio').value;
                     const fimVal = document.getElementById('retro-batch-fim').value;
-                    const peso = Number(document.getElementById('retro-batch-peso').value) || 0;
+                    const pesoInput = Number(document.getElementById('retro-batch-peso').value) || 0;
                     const qtd = Number(document.getElementById('retro-batch-qtd').value) || 0;
                     const placasText = document.getElementById('retro-batch-placas').value || '';
                     const placas = placasText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length > 0);
@@ -2107,21 +2206,23 @@
                     const zona = document.getElementById('retro-zona')?.value || '-';
                     const talhao = document.getElementById('retro-talhao')?.value || '-';
                     const umidade = document.getElementById('retro-umidade')?.value ? Number(document.getElementById('retro-umidade').value) : undefined;
-                    const pureza = document.getElementById('retro-pureza')?.value ? Number(document.getElementById('retro-pureza').value) : undefined;
+                    const impureza = document.getElementById('retro-impureza')?.value ? Number(document.getElementById('retro-impureza').value) : undefined;
                     const moega = Number(document.getElementById('retro-moega-id').value) || null;
 
-                    if (!inicioVal || !fimVal || !peso || !qtd || !produto) return notify('Preencha os campos obrigatórios', 'erro');
+                    if (!inicioVal || !fimVal || !pesoInput || !qtd || !produto) return notify('Preencha os campos obrigatórios', 'erro');
                     // Validações batch
                     if (new Date(fimVal).getTime() < new Date(inicioVal).getTime()) return notify('Data final não pode ser anterior à data inicial', 'erro');
-                    if (Number.isNaN(peso) || peso < 100) return notify('Peso inválido. Deve ser >= 100 Kg', 'erro');
+                    if (Number.isNaN(pesoInput) || pesoInput <= 0) return notify('Peso inválido.', 'erro');
                     if (umidade === undefined || isNaN(umidade) || umidade < 5 || umidade > 30) return notify('Umidade inválida. Informe valor entre 5% e 30%', 'erro');
-                    if (pureza !== undefined && isNaN(pureza)) return notify('Pureza deve ser numérica', 'erro');
+                    if (impureza !== undefined && isNaN(impureza)) return notify('Impureza deve ser numérica', 'erro');
+
+                    const pesoKg = pesoInput * 1000;
 
                     const resumo = {
                         moega: moega,
                         produto,
                         cultivar,
-                        peso,
+                        peso: pesoKg,
                         inicio: new Date(inicioVal).toISOString(),
                         fim: new Date(fimVal).toISOString(),
                         statusFinal: 'CORRIGIDO',
@@ -2134,7 +2235,8 @@
                         zona,
                         talhao,
                         umidade,
-                        pureza,
+                        impureza,
+                        destino,
                         createdBy: auth.currentUser.uid
                     };
 
@@ -2143,7 +2245,6 @@
                 }
 
                 // --- ATUALIZAÇÃO DO SILO DE DESTINO (PRESECAGEM) ---
-                const destino = document.getElementById('retro-destino').value;
                 if (destino) {
                     const siloRef = doc(db, "mes_silos", destino);
                     const siloDoc = await getDoc(siloRef);
@@ -2154,7 +2255,7 @@
                         zona: document.getElementById('retro-zona')?.value || '-',
                         talhao: document.getElementById('retro-talhao')?.value || '-',
                         umidade: document.getElementById('retro-umidade')?.value || '0',
-                        impureza: document.getElementById('retro-pureza')?.value || '0',
+                        impureza: document.getElementById('retro-impureza')?.value || '0',
                         cultura: document.getElementById('retro-produto').value || '-',
                         cultivar: document.getElementById('retro-cultivar').value || '-',
                         timestamp: new Date(mode === 'single' ? document.getElementById('retro-fim').value : document.getElementById('retro-batch-fim').value).toISOString(),
@@ -2164,11 +2265,11 @@
                     if (mode === 'single') {
                         cargaData.romaneio = document.getElementById('retro-romaneio').value || 'N/A';
                         cargaData.placa = document.getElementById('retro-placa').value || 'N/A';
-                        cargaData.peso = Number(document.getElementById('retro-peso').value) || 0;
+                        cargaData.peso = (Number(document.getElementById('retro-peso').value) || 0) * 1000;
                     } else {
                         cargaData.romaneio = 'LOTE RETROATIVO';
                         cargaData.placa = 'MULTIPLAS';
-                        cargaData.peso = Number(document.getElementById('retro-batch-peso').value) || 0;
+                        cargaData.peso = (Number(document.getElementById('retro-batch-peso').value) || 0) * 1000;
                         cargaData.qtdVeiculos = Number(document.getElementById('retro-batch-qtd').value) || 0;
                     }
 
@@ -2197,18 +2298,7 @@
                     }
                 }
 
-                // limpa formulário
-                document.getElementById('retro-romaneio').value = '';
-                document.getElementById('retro-placa').value = '';
-                document.getElementById('retro-inicio').value = '';
-                document.getElementById('retro-fim').value = '';
-                document.getElementById('retro-peso').value = '';
-                document.getElementById('retro-batch-peso').value = '';
-                document.getElementById('retro-batch-qtd').value = '';
-                document.getElementById('retro-batch-placas').value = '';
-                document.getElementById('container-pausas-retro').innerHTML = '';
-                document.getElementById('check-pausa-retro').checked = false;
-                document.getElementById('retro-destino').value = '';
+                clearRetroForm();
 
             } catch (e) {
                 console.error('Erro ao salvar retroativo', e);
