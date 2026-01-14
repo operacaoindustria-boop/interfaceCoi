@@ -139,9 +139,8 @@
 
         /* Modal */
         html {
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
             text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
         }
 
         .modal-backdrop {
@@ -202,7 +201,7 @@
                     class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 text-slate-300 font-bold">
                     OP</div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate">Usuário Logado</p>
+                    <p id="sidebar-user-email" class="text-sm font-medium text-white truncate">Usuário Logado</p>
                     <p class="text-xs text-slate-500 truncate">Turno A - Logado</p>
                 </div>
                 <a href="menu.html" class="p-2 text-slate-400 hover:text-white transition-colors" title="Sair"><i
@@ -218,8 +217,8 @@
         <header
             class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 shrink-0">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors"><i
-                        data-lucide="menu" class="w-6 h-6"></i></button>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors"
+                    aria-label="Menu Lateral" title="Menu"><i data-lucide="menu" class="w-6 h-6"></i></button>
                 <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2" id="header-title"><i
                         data-lucide="bar-chart-3" class="text-indigo-500 w-5 h-5"></i> Visão Geral</h2>
                 <span
@@ -325,18 +324,18 @@
                         <!-- Filtro: data inicial, data final, turno (Visão Geral) -->
                         <div class="flex items-center gap-3 mt-4 mb-4">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Data Início</label>
-                                <input type="date" id="filter-start"
+                                <label for="filter-start" class="text-xs text-slate-400">Data Início</label>
+                                <input type="date" id="filter-start" title="Data Início"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Data Fim</label>
-                                <input type="date" id="filter-end"
+                                <label for="filter-end" class="text-xs text-slate-400">Data Fim</label>
+                                <input type="date" id="filter-end" title="Data Fim"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Turno</label>
-                                <select id="filter-turno"
+                                <label for="filter-turno" class="text-xs text-slate-400">Turno</label>
+                                <select id="filter-turno" title="Turno"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                                     <option value="ALL">Todos</option>
                                     <option value="A">Turno A</option>
@@ -493,18 +492,18 @@
                         <!-- Filtro (Moega detalhe): data inicial, data final, turno -->
                         <div class="flex items-center gap-3 mt-4 mb-4">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Data Início</label>
-                                <input type="date" id="filter-start-moega"
+                                <label for="filter-start-moega" class="text-xs text-slate-400">Data Início</label>
+                                <input type="date" id="filter-start-moega" title="Data Início Moega"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Data Fim</label>
-                                <input type="date" id="filter-end-moega"
+                                <label for="filter-end-moega" class="text-xs text-slate-400">Data Fim</label>
+                                <input type="date" id="filter-end-moega" title="Data Fim Moega"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400">Turno</label>
-                                <select id="filter-turno-moega"
+                                <label for="filter-turno-moega" class="text-xs text-slate-400">Turno</label>
+                                <select id="filter-turno-moega" title="Turno Moega"
                                     class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                                     <option value="ALL">Todos</option>
                                     <option value="A">Turno A</option>
@@ -569,18 +568,20 @@
                         <!-- Filtros Rastreabilidade -->
                         <div class="flex items-center gap-3 mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Início</label><input type="date"
-                                    id="filter-start-trace"
+                                <label for="filter-start-trace"
+                                    class="text-xs text-slate-400 font-bold">Início</label><input type="date"
+                                    id="filter-start-trace" title="Início Rastreabilidade"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Fim</label><input type="date"
-                                    id="filter-end-trace"
+                                <label for="filter-end-trace" class="text-xs text-slate-400 font-bold">Fim</label><input
+                                    type="date" id="filter-end-trace" title="Fim Rastreabilidade"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Turno</label><select
-                                    id="filter-turno-trace"
+                                <label for="filter-turno-trace"
+                                    class="text-xs text-slate-400 font-bold">Turno</label><select
+                                    id="filter-turno-trace" title="Turno Rastreabilidade"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                     <option value="ALL">Todos</option>
                                     <option value="A">A</option>
@@ -665,18 +666,21 @@
                             <!-- Filtros Moega Rastreabilidade -->
                             <div class="flex items-center justify-center gap-3 mb-4">
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Início</label>
-                                    <input type="date" id="filter-start-trace-moega"
+                                    <label for="filter-start-trace-moega"
+                                        class="text-xs text-slate-400 font-bold">Início</label>
+                                    <input type="date" id="filter-start-trace-moega" title="Início Moega Trace"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Fim</label>
-                                    <input type="date" id="filter-end-trace-moega"
+                                    <label for="filter-end-trace-moega"
+                                        class="text-xs text-slate-400 font-bold">Fim</label>
+                                    <input type="date" id="filter-end-trace-moega" title="Fim Moega Trace"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Turno</label>
-                                    <select id="filter-turno-trace-moega"
+                                    <label for="filter-turno-trace-moega"
+                                        class="text-xs text-slate-400 font-bold">Turno</label>
+                                    <select id="filter-turno-trace-moega" title="Turno Moega Trace"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                         <option value="ALL">Todos</option>
                                         <option value="A">A</option>
@@ -715,9 +719,12 @@
                                             <th class="p-4 border-b border-slate-700">Romaneio</th>
                                             <th class="p-4 border-b border-slate-700">Placa</th>
                                             <th class="p-4 border-b border-slate-700">Moega</th>
-                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="tractor" class="w-3 h-3 inline mr-1"></i> Fazenda</th>
-                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i> Zona</th>
-                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i
+                                                    data-lucide="tractor" class="w-3 h-3 inline mr-1"></i> Fazenda</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i
+                                                    data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i> Zona</th>
+                                            <th class="p-4 border-b border-slate-700 text-indigo-400"><i
+                                                    data-lucide="grid" class="w-3 h-3 inline mr-1"></i> Talhão</th>
                                             <th class="p-4 border-b border-slate-700">Pureza</th>
                                             <th class="p-4 border-b border-slate-700">Destino</th>
                                             <th class="p-4 border-b border-slate-700 text-right">Peso (Kg)</th>
@@ -745,13 +752,13 @@
                         <!-- Filtros -->
                         <div class="flex items-center gap-3 mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Início</label>
-                                <input type="date" id="filter-start-transf"
+                                <label for="filter-start-transf" class="text-xs text-slate-400 font-bold">Início</label>
+                                <input type="date" id="filter-start-transf" title="Início Transferência"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Fim</label>
-                                <input type="date" id="filter-end-transf"
+                                <label for="filter-end-transf" class="text-xs text-slate-400 font-bold">Fim</label>
+                                <input type="date" id="filter-end-transf" title="Fim Transferência"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <button id="btn-filter-transf"
@@ -830,18 +837,20 @@
                         <!-- Filtros Paradas -->
                         <div class="flex items-center gap-3 mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Início</label><input type="date"
-                                    id="filter-start-stop"
+                                <label for="filter-start-stop"
+                                    class="text-xs text-slate-400 font-bold">Início</label><input type="date"
+                                    id="filter-start-stop" title="Início Paradas"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Fim</label><input type="date"
-                                    id="filter-end-stop"
+                                <label for="filter-end-stop" class="text-xs text-slate-400 font-bold">Fim</label><input
+                                    type="date" id="filter-end-stop" title="Fim Paradas"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Turno</label><select
-                                    id="filter-turno-stop"
+                                <label for="filter-turno-stop"
+                                    class="text-xs text-slate-400 font-bold">Turno</label><select id="filter-turno-stop"
+                                    title="Turno Paradas"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                     <option value="ALL">Todos</option>
                                     <option value="A">A</option>
@@ -931,18 +940,21 @@
                             <!-- Filtros Moega Paradas -->
                             <div class="flex items-center gap-3">
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Início</label>
-                                    <input type="date" id="filter-start-stop-moega"
+                                    <label for="filter-start-stop-moega"
+                                        class="text-xs text-slate-400 font-bold">Início</label>
+                                    <input type="date" id="filter-start-stop-moega" title="Início Moega Paradas"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Fim</label>
-                                    <input type="date" id="filter-end-stop-moega"
+                                    <label for="filter-end-stop-moega"
+                                        class="text-xs text-slate-400 font-bold">Fim</label>
+                                    <input type="date" id="filter-end-stop-moega" title="Fim Moega Paradas"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-slate-300">
-                                    <label class="text-xs text-slate-400 font-bold">Turno</label>
-                                    <select id="filter-turno-stop-moega"
+                                    <label for="filter-turno-stop-moega"
+                                        class="text-xs text-slate-400 font-bold">Turno</label>
+                                    <select id="filter-turno-stop-moega" title="Turno Moega Paradas"
                                         class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                         <option value="ALL">Todos</option>
                                         <option value="A">A</option>
@@ -1025,18 +1037,21 @@
                         <!-- Filtros Relatórios -->
                         <div class="flex items-center gap-3 mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Início</label><input type="date"
-                                    id="filter-start-report"
+                                <label for="filter-start-report"
+                                    class="text-xs text-slate-400 font-bold">Início</label><input type="date"
+                                    id="filter-start-report" title="Início Relatório"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Fim</label><input type="date"
-                                    id="filter-end-report"
+                                <label for="filter-end-report"
+                                    class="text-xs text-slate-400 font-bold">Fim</label><input type="date"
+                                    id="filter-end-report" title="Fim Relatório"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                             </div>
                             <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <label class="text-xs text-slate-400 font-bold">Turno</label><select
-                                    id="filter-turno-report"
+                                <label for="filter-turno-report"
+                                    class="text-xs text-slate-400 font-bold">Turno</label><select
+                                    id="filter-turno-report" title="Turno Relatório"
                                     class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white">
                                     <option value="ALL">Todos</option>
                                     <option value="A">A</option>
@@ -1051,7 +1066,8 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">OEE Estimado</p>
-                                <h3 class="text-3xl font-mono font-bold text-emerald-400 mt-1">87.5%</h3>
+                                <h3 id="report-kpi-oee" class="text-3xl font-mono font-bold text-emerald-400 mt-1">--%
+                                </h3>
                             </div>
                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">Comparativo Diário</p>
@@ -1059,15 +1075,17 @@
                             </div>
                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">MTBF</p>
-                                <h3 class="text-3xl font-mono font-bold text-blue-400 mt-1">4h 15m</h3>
+                                <h3 id="report-kpi-mtbf" class="text-3xl font-mono font-bold text-blue-400 mt-1">--</h3>
                             </div>
                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">MTTR</p>
-                                <h3 class="text-3xl font-mono font-bold text-amber-400 mt-1">12m</h3>
+                                <h3 id="report-kpi-mttr" class="text-3xl font-mono font-bold text-amber-400 mt-1">--
+                                </h3>
                             </div>
                             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">Ritmo Médio</p>
-                                <h3 class="text-3xl font-mono font-bold text-white mt-1">62 t/h</h3>
+                                <h3 id="report-kpi-ritmo" class="text-3xl font-mono font-bold text-white mt-1">-- t/h
+                                </h3>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -1583,7 +1601,6 @@
 
         lucide.createIcons();
 
-        let METAS_PRODUTIVIDADE = {};
         // Chart instances
         let chartTrend = null;
         let chartStopPareto = null;
@@ -1597,13 +1614,16 @@
         let chartDispersion = null;
         let chartReportDailyMini = null;
         // Moega specific
+        let chartReportMoegaTrend = null;
+        let chartReportMoegaPareto = null;
         let chartMoegaTrend = null;
         let chartMoegaEfficiency = null;
-        const DEFAULTS = { 'BRAQUIARIA': 30, 'CROTALARIA': 40, 'FEIJAO_GUANDU': 70, 'FEIJAO_PORCO': 50, 'MILHETO': 40, 'SOJA': 80 };
+        let METAS_PRODUTIVIDADE = { 'BRAQUIARIA': 30, 'CROTALARIA': 40, 'FEIJAO_GUANDU': 70, 'FEIJAO_PORCO': 50, 'MILHETO': 40, 'SOJA': 80 };
         const moegasConfig = [1, 2, 3, 4];
         let activeTab = 'visao-geral', activeMainView = 'dashboard';
 
         let ciclosAtivos = {};
+        let currentReportTab = 'report-geral';
         let historicoDescargas = [];
         let historicoTransferencias = [];
         let db;
@@ -1612,7 +1632,7 @@
 
         function initFirebase() {
             if (!firebaseConfig) {
-                console.error("Firebase config is missing in firebase_config.js");
+                console.error("Firebase config is missing.");
                 mostrarAlerta("Configuração do Firebase não encontrada. A aplicação não funcionará online.");
                 // Fallback to offline/mock data if needed
                 document.querySelector('#header-title + span').classList.replace('bg-emerald-500/10', 'bg-red-500/10');
@@ -1623,19 +1643,40 @@
             }
 
             const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
+            db = getFirestore(app); // Assign to global db variable
             const auth = getAuth(app);
 
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     console.log("User is authenticated:", user.uid);
                     document.getElementById('login-modal')?.classList.add('hidden');
+
+                    const userEmailEl = document.getElementById('sidebar-user-email');
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+
                     initFirestoreListeners();
                 } else {
                     console.log("User is not authenticated. Showing login modal.");
                     // Show a lightweight login modal instead of redirecting
                     document.getElementById('login-modal')?.classList.remove('hidden');
                 }
+            });
+
+            // Listener para metas de produtividade
+            const configRef = doc(db, 'moega_config', 'culturas');
+            onSnapshot(configRef, (docSnap) => {
+                if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
+                    METAS_PRODUTIVIDADE = docSnap.data();
+                    console.log("Metas de produtividade atualizadas do Firestore:", METAS_PRODUTIVIDADE);
+                } else {
+                    console.log("Nenhuma configuração de meta encontrada, usando e salvando defaults.");
+                    setDoc(configRef, METAS_PRODUTIVIDADE).catch(e => console.error("Erro ao salvar metas default:", e));
+                }
+                // Re-renderiza a lista de culturas se a view estiver ativa
+                if (activeMainView === 'config-culturas') {
+                    renderCulturesList();
+                }
+                atualizarDashboard();
             });
         }
 
@@ -1653,14 +1694,24 @@
 
             // Listener for recent finished discharges
             const historicoRef = collection(db, 'moega_historico_descargas');
-            const q = query(historicoRef, orderBy("fim", "desc"), limit(50));
+            // Removido orderBy do banco para evitar bloqueio por falta de índice e aumentado limite
+            const q = query(historicoRef, limit(100));
             onSnapshot(q, (snapshot) => {
                 historicoDescargas = [];
                 snapshot.forEach(d => {
                     historicoDescargas.push(Object.assign({ id: d.id }, d.data()));
                 });
+                // Ordenação feita no cliente para garantir exibição
+                historicoDescargas.sort((a, b) => {
+                    const dateA = a.fim ? new Date(a.fim).getTime() : (a.inicio ? new Date(a.inicio).getTime() : 0);
+                    const dateB = b.fim ? new Date(b.fim).getTime() : (b.inicio ? new Date(b.inicio).getTime() : 0);
+                    return dateB - dateA;
+                });
                 console.log("Discharge history updated:", historicoDescargas);
                 atualizarDashboard();
+            }, (error) => {
+                console.error("Erro ao carregar histórico:", error);
+                // Não trava a aplicação, apenas loga o erro
             });
 
             // Listener for Transfers
@@ -1703,87 +1754,6 @@
             try { const raw = localStorage.getItem(CUSTOM_CULTIVARES_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; }
         }
         function saveCustomCultivarsForDashboard(obj) { try { localStorage.setItem(CUSTOM_CULTIVARES_KEY, JSON.stringify(obj || {})); } catch (e) { console.warn('save custom cultivars failed', e); } }
-
-        function setConfigTab(tabId) {
-            // tabs
-            ['config-lista', 'config-novo', 'config-cultivares'].forEach(t => {
-                const btn = document.getElementById(`tab-${t}`);
-                if (btn) btn.classList.toggle('tab-active', t === tabId);
-            });
-            // views
-            ['config-view-lista', 'config-view-novo', 'config-view-cultivares'].forEach(v => {
-                const el = document.getElementById(v);
-                if (!el) return;
-                el.classList.toggle('hidden', v !== `config-view-${tabId.split('-')[1]}`);
-            });
-            // refresh data when switching to list or cultivars
-            if (tabId === 'config-lista') renderCulturesList();
-            if (tabId === 'config-cultivares') renderCultivaresView();
-        }
-
-        function renderCulturesList() {
-            const tbody = document.getElementById('config-culturas-body');
-            if (!tbody) return;
-            let arr = loadCultures();
-            // fallback: if no cultures saved in dashboard, try to load from moega.html (localStorage key 'moega_culturas')
-            if ((!arr || arr.length === 0) && localStorage.getItem('moega_culturas')) {
-                try {
-                    const raw = JSON.parse(localStorage.getItem('moega_culturas')) || [];
-                    // Normalize to expected format {name, goal}
-                    arr = raw.map(r => ({ name: r.name || r, goal: r.goal || r.meta || null }));
-                } catch (e) { console.warn('failed parse moega_culturas fallback', e); }
-            }
-            tbody.innerHTML = '';
-            if (!arr.length) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-500">Nenhuma cultura cadastrada.</td></tr>';
-                return;
-            }
-            arr.forEach((c, idx) => {
-                const name = c.name || '';
-                const goal = (c.goal !== undefined && c.goal !== null) ? c.goal : '';
-                tbody.innerHTML += `<tr class="hover:bg-slate-800/50"><td class="p-4">${name}</td><td class="p-4">${goal}</td><td class="p-4 text-right"><button onclick="editCulture(${idx})" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded mr-2">Editar</button><button onclick="deleteCulture(${idx})" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded">Excluir</button></td></tr>`;
-            });
-        }
-
-        function addNewCulture() {
-            const nameEl = document.getElementById('new-culture-name');
-            const goalEl = document.getElementById('new-culture-goal');
-            if (!nameEl || !goalEl) return mostrarAlerta('Campos inválidos');
-            const name = String(nameEl.value || '').trim();
-            const goal = Number(goalEl.value || 0);
-            if (!name) return mostrarAlerta('Informe o nome da cultura');
-            if (!(goal > 0)) return mostrarAlerta('Informe uma meta válida (>0)');
-            const arr = loadCultures();
-            // avoid duplicates
-            if (arr.some(x => x.name.toUpperCase() === name.toUpperCase())) return mostrarAlerta('Cultura já cadastrada');
-            arr.push({ name, goal });
-            saveCultures(arr);
-            nameEl.value = '';
-            goalEl.value = '';
-            mostrarAlerta('Cultura adicionada');
-            setConfigTab('config-lista');
-        }
-
-        function editCulture(index) {
-            const arr = loadCultures();
-            const item = arr[index];
-            if (!item) return;
-            const newName = prompt('Nome da Cultura', item.name);
-            if (newName === null) return; // cancel
-            const newGoalRaw = prompt('Meta (t/h)', String(item.goal || ''));
-            if (newGoalRaw === null) return;
-            const newGoal = Number(newGoalRaw);
-            if (!newName.trim() || !(newGoal > 0)) return mostrarAlerta('Valores inválidos');
-            item.name = newName.trim(); item.goal = newGoal;
-            saveCultures(arr); renderCulturesList(); mostrarAlerta('Cultura atualizada');
-        }
-
-        function deleteCulture(index) {
-            if (!confirm('Confirma exclusão desta cultura?')) return;
-            const arr = loadCultures();
-            arr.splice(index, 1);
-            saveCultures(arr); renderCulturesList(); mostrarAlerta('Cultura removida');
-        }
 
         // --- Cultivares view ---
         function renderCultivaresView() {
@@ -2179,34 +2149,35 @@
             }
             // Render more detailed table with delete action
             logs.forEach(log => {
-                const inicio = log.inicio ? new Date(log.inicio) : null;
-                const fim = log.fim ? new Date(log.fim) : null;
-                const statusHtml = '<span class="px-2 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">Finalizado</span>';
-                const produtoText = log.produto ? `${log.produto} ${log.cultivar ? (' - ' + log.cultivar) : ''}` : '---';
+                try {
+                    const inicio = log.inicio ? new Date(log.inicio) : null;
+                    const fim = log.fim ? new Date(log.fim) : null;
+                    const statusHtml = '<span class="px-2 py-1 text-xs font-bold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">Finalizado</span>';
+                    const produtoText = log.produto ? `${log.produto} ${log.cultivar ? (' - ' + log.cultivar) : ''}` : '---';
 
-                // Fonte preferencial: campos de nível superior no documento de histórico.
-                // Fallback: usar a primeira carga em `log.cargas[0]` quando disponível (compatibilidade com registros antigos).
-                const src = (Array.isArray(log.cargas) && log.cargas.length > 0) ? log.cargas[0] : {};
+                    // Fonte preferencial: campos de nível superior no documento de histórico.
+                    // Fallback: usar a primeira carga em `log.cargas[0]` quando disponível (compatibilidade com registros antigos).
+                    const src = (Array.isArray(log.cargas) && log.cargas.length > 0) ? log.cargas[0] : {};
 
-                const purezaVal = (log.pureza !== undefined && log.pureza !== null) ? log.pureza : ((log.impureza !== undefined && log.impureza !== null) ? log.impureza : (src.pureza !== undefined && src.pureza !== null ? src.pureza : (src.impureza !== undefined && src.impureza !== null ? src.impureza : '-')));
-                const umidadeVal = (log.umidade !== undefined && log.umidade !== null) ? log.umidade : (src.umidade !== undefined && src.umidade !== null ? src.umidade : '0');
-                const fazendaVal = (log.fazenda !== undefined && log.fazenda !== null) ? log.fazenda : (src.fazenda !== undefined && src.fazenda !== null ? src.fazenda : '-');
-                const zonaVal = (log.zona !== undefined && log.zona !== null) ? log.zona : (src.zona !== undefined && src.zona !== null ? src.zona : '-');
-                const talhaoVal = (log.talhao !== undefined && log.talhao !== null) ? log.talhao : (src.talhao !== undefined && src.talhao !== null ? src.talhao : '-');
-                const destinoVal = src.destino || '-';
+                    const purezaVal = (log.pureza !== undefined && log.pureza !== null) ? log.pureza : ((log.impureza !== undefined && log.impureza !== null) ? log.impureza : (src.pureza !== undefined && src.pureza !== null ? src.pureza : (src.impureza !== undefined && src.impureza !== null ? src.impureza : '-')));
+                    const umidadeVal = (log.umidade !== undefined && log.umidade !== null) ? log.umidade : (src.umidade !== undefined && src.umidade !== null ? src.umidade : '0');
+                    const fazendaVal = (log.fazenda !== undefined && log.fazenda !== null) ? log.fazenda : (src.fazenda !== undefined && src.fazenda !== null ? src.fazenda : '-');
+                    const zonaVal = (log.zona !== undefined && log.zona !== null) ? log.zona : (src.zona !== undefined && src.zona !== null ? src.zona : '-');
+                    const talhaoVal = (log.talhao !== undefined && log.talhao !== null) ? log.talhao : (src.talhao !== undefined && src.talhao !== null ? src.talhao : '-');
+                    const destinoVal = log.destino || src.destino || '-';
 
-                let romaneioContent = log.romaneio || src.romaneio || '---';
-                if (romaneioContent === 'Múltiplos' || (Array.isArray(log.cargas) && log.cargas.length > 1)) {
-                    romaneioContent = `<button onclick="showRomaneiosForLog('${log.id}')" class="text-indigo-400 hover:text-indigo-300 font-bold underline decoration-dashed underline-offset-4 transition-colors" title="Ver lista de romaneios">Múltiplos</button>`;
-                }
+                    let romaneioContent = log.romaneio || src.romaneio || '---';
+                    if (romaneioContent === 'Múltiplos' || (Array.isArray(log.cargas) && log.cargas.length > 1)) {
+                        romaneioContent = `<button onclick="showRomaneiosForLog('${log.id}')" class="text-indigo-400 hover:text-indigo-300 font-bold underline decoration-dashed underline-offset-4 transition-colors" title="Ver lista de romaneios">Múltiplos</button>`;
+                    }
 
-                // Peso: preferir log.peso (resumo); se inexistente e houver cargas, somar
-                let pesoDisplay = Number(log.peso || 0);
-                if ((!pesoDisplay || pesoDisplay === 0) && Array.isArray(log.cargas) && log.cargas.length > 0) {
-                    pesoDisplay = log.cargas.reduce((s, c) => s + (Number(c.peso) || 0), 0);
-                }
+                    // Peso: preferir log.peso (resumo); se inexistente e houver cargas, somar
+                    let pesoDisplay = Number(log.peso || 0);
+                    if ((!pesoDisplay || pesoDisplay === 0) && Array.isArray(log.cargas) && log.cargas.length > 0) {
+                        pesoDisplay = log.cargas.reduce((s, c) => s + (Number(c.peso) || 0), 0);
+                    }
 
-                tbody.innerHTML += `
+                    tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/50">
                         <td class="p-4 text-slate-400 font-mono">${inicio ? inicio.toLocaleTimeString('pt-BR') : '--:--'}</td>
                         <td class="p-4 text-slate-400 font-mono">${fim ? fim.toLocaleTimeString('pt-BR') : '--:--'}</td>
@@ -2223,6 +2194,7 @@
                         <td class="p-4 text-center"><button onclick="deleteHistoricRecord('${log.id}')" title="Apagar" class="text-red-400 hover:text-white"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
                     </tr>
                 `;
+                } catch (err) { console.error("Erro ao renderizar linha da tabela:", err, log); }
             });
             lucide.createIcons();
         }
@@ -2744,6 +2716,24 @@
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
                     });
                 }
+
+                const ctxReportMoegaTrend = document.getElementById('chart-report-moega-trend');
+                if (ctxReportMoegaTrend && !chartReportMoegaTrend) {
+                    chartReportMoegaTrend = new Chart(ctxReportMoegaTrend.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: [], datasets: [{ label: 'Real (t/h)', data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.1)', fill: true }, { label: 'Meta (t/h)', data: [], borderColor: '#34d399', borderDash: [5, 5] }] },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                    });
+                }
+
+                const ctxReportMoegaPareto = document.getElementById('chart-report-moega-pareto');
+                if (ctxReportMoegaPareto && !chartReportMoegaPareto) {
+                    chartReportMoegaPareto = new Chart(ctxReportMoegaPareto.getContext('2d'), {
+                        type: 'bar',
+                        data: { labels: [], datasets: [{ label: 'Minutos', data: [], backgroundColor: '#f59e0b' }] },
+                        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+                    });
+                }
             } catch (e) { console.warn('initCharts error', e); }
         }
 
@@ -2761,7 +2751,47 @@
                         chartTrend.data.datasets[0].data = trend.real;
                         chartTrend.data.datasets[1].data = trend.meta;
                         chartTrend.update();
-                        if (chartReportDailyMini) { chartReportDailyMini.data.labels = trend.labels; chartReportDailyMini.data.datasets[0].data = trend.real; chartReportDailyMini.update(); }
+                    }
+
+                    // Report Specifics (Daily Aggregation & KPIs)
+                    updateReportKPIs(historicoDescargas);
+                    const dailyData = buildDailyReportData(historicoDescargas);
+
+                    if (chartReportDailyMini) {
+                        chartReportDailyMini.data.labels = dailyData.labels;
+                        chartReportDailyMini.data.datasets[0].data = dailyData.real;
+                        chartReportDailyMini.update();
+                    }
+
+                    // Moega Report Specifics
+                    if (activeMainView === 'relatorios' && currentReportTab.startsWith('report-m')) {
+                        const mId = currentReportTab.split('-')[1].replace('m', '');
+                        const moegaLogs = historicoDescargas.filter(h => String(h.moega) === String(mId));
+
+                        updateMoegaReportKPIs(moegaLogs);
+
+                        const trendData = buildMoegaReportTrend(moegaLogs);
+                        if (chartReportMoegaTrend) {
+                            chartReportMoegaTrend.data.labels = trendData.labels;
+                            chartReportMoegaTrend.data.datasets[0].data = trendData.real;
+                            chartReportMoegaTrend.data.datasets[1].data = trendData.meta;
+                            chartReportMoegaTrend.update();
+                        }
+
+                        const paretoData = buildMoegaReportPareto(moegaLogs);
+                        if (chartReportMoegaPareto) {
+                            chartReportMoegaPareto.data.labels = paretoData.labels;
+                            chartReportMoegaPareto.data.datasets[0].data = paretoData.data;
+                            chartReportMoegaPareto.update();
+                        }
+                    }
+
+                    // Se estiver na aba de relatórios, atualiza o gráfico principal de tendência com dados diários
+                    if (activeTab === 'report-geral' && chartTrend) {
+                        chartTrend.data.labels = dailyData.labels;
+                        chartTrend.data.datasets[0].data = dailyData.real;
+                        chartTrend.data.datasets[1].data = dailyData.meta;
+                        chartTrend.update();
                     }
 
                     // Stop Pareto
@@ -2887,6 +2917,197 @@
             return { labels: labels.reverse(), real: real.reverse(), meta: meta.reverse() };
         }
 
+        function buildDailyReportData(logs) {
+            // Agrega dados por dia (Média de Ritmo Real vs Média de Meta)
+            const days = {};
+            logs.forEach(l => {
+                const ts = l.fim || l.inicio;
+                if (!ts) return;
+                const dateKey = new Date(ts).toLocaleDateString('pt-BR');
+
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas) ? l.cargas.reduce((s, c) => s + Number(c.peso || 0), 0) : 0);
+                const tons = pesoKg / 1000;
+
+                const inicio = l.inicio ? new Date(l.inicio).getTime() : null;
+                const fim = l.fim ? new Date(l.fim).getTime() : null;
+                let hours = 0.000001;
+
+                // Descontar pausas para ritmo líquido
+                let pauseMs = sumPausesDuration(l.pausas, fim);
+                if (inicio && fim) hours = Math.max((fim - inicio - pauseMs) / 3600000, 0.000001);
+
+                const ritmo = tons / hours;
+                const metaVal = getMetaForProduct(l.produto) || 0;
+
+                if (!days[dateKey]) days[dateKey] = { sumRitmo: 0, sumMeta: 0, count: 0 };
+                days[dateKey].sumRitmo += ritmo;
+                days[dateKey].sumMeta += metaVal;
+                days[dateKey].count += 1;
+            });
+
+            const labels = Object.keys(days).sort((a, b) => {
+                const [da, ma, ya] = a.split('/');
+                const [db, mb, yb] = b.split('/');
+                return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+            });
+
+            const real = labels.map(d => Number((days[d].sumRitmo / days[d].count).toFixed(2)));
+            const meta = labels.map(d => Number((days[d].sumMeta / days[d].count).toFixed(2)));
+
+            return { labels, real, meta };
+        }
+
+        function updateReportKPIs(logs) {
+            let totalOperatingMs = 0;
+            let totalStopMs = 0;
+            let stopCount = 0;
+            let totalTons = 0;
+            let weightedMetaSum = 0; // Para OEE Performance
+
+            logs.forEach(l => {
+                const inicio = l.inicio ? new Date(l.inicio).getTime() : null;
+                const fim = l.fim ? new Date(l.fim).getTime() : null;
+                if (!inicio || !fim) return;
+
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas) ? l.cargas.reduce((s, c) => s + Number(c.peso || 0), 0) : 0);
+                const tons = pesoKg / 1000;
+                totalTons += tons;
+
+                const pauseMs = sumPausesDuration(l.pausas, fim);
+                totalStopMs += pauseMs;
+
+                const duration = Math.max(0, fim - inicio);
+                const netDuration = Math.max(0, duration - pauseMs);
+                totalOperatingMs += netDuration;
+
+                if (Array.isArray(l.pausas)) stopCount += l.pausas.length;
+
+                const meta = getMetaForProduct(l.produto) || 60; // Default meta if missing
+                weightedMetaSum += (meta * tons);
+            });
+
+            // Ritmo Médio Global
+            const totalHours = totalOperatingMs / 3600000;
+            const ritmoMedio = totalHours > 0 ? (totalTons / totalHours) : 0;
+
+            // MTBF (Mean Time Between Failures) = Tempo Operação / Nº Paradas
+            const mtbfHours = stopCount > 0 ? (totalHours / stopCount) : totalHours;
+
+            // MTTR (Mean Time To Repair) = Tempo Parado / Nº Paradas
+            const mttrMinutes = stopCount > 0 ? (totalStopMs / 60000) / stopCount : 0;
+
+            // OEE
+            // Disponibilidade = Tempo Operando / (Tempo Operando + Tempo Parado)
+            const availability = (totalOperatingMs + totalStopMs) > 0 ? totalOperatingMs / (totalOperatingMs + totalStopMs) : 0;
+
+            // Performance = Ritmo Real / Meta Média Ponderada
+            const avgMeta = totalTons > 0 ? weightedMetaSum / totalTons : 60;
+            const performance = avgMeta > 0 ? ritmoMedio / avgMeta : 0;
+
+            // Qualidade (Assumindo 100% por enquanto ou usar impureza se quiser refinar)
+            const quality = 1.0;
+
+            const oee = availability * performance * quality * 100;
+
+            // Update DOM
+            const elOee = document.getElementById('report-kpi-oee');
+            const elMtbf = document.getElementById('report-kpi-mtbf');
+            const elMttr = document.getElementById('report-kpi-mttr');
+            const elRitmo = document.getElementById('report-kpi-ritmo');
+
+            if (elOee) elOee.innerText = `${oee.toFixed(1)}%`;
+            if (elMtbf) elMtbf.innerText = `${mtbfHours.toFixed(1)}h`;
+            if (elMttr) elMttr.innerText = `${mttrMinutes.toFixed(0)}m`;
+            if (elRitmo) elRitmo.innerText = `${ritmoMedio.toFixed(1)} t/h`;
+        }
+
+        function updateMoegaReportKPIs(logs) {
+            let totalOperatingMs = 0;
+            let totalStopMs = 0;
+            let stopCount = 0;
+            let totalTons = 0;
+            let weightedMetaSum = 0;
+
+            logs.forEach(l => {
+                const inicio = l.inicio ? new Date(l.inicio).getTime() : null;
+                const fim = l.fim ? new Date(l.fim).getTime() : null;
+                if (!inicio || !fim) return;
+
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas) ? l.cargas.reduce((s, c) => s + Number(c.peso || 0), 0) : 0);
+                const tons = pesoKg / 1000;
+                totalTons += tons;
+
+                const pauseMs = sumPausesDuration(l.pausas, fim);
+                totalStopMs += pauseMs;
+
+                const duration = Math.max(0, fim - inicio);
+                const netDuration = Math.max(0, duration - pauseMs);
+                totalOperatingMs += netDuration;
+
+                if (Array.isArray(l.pausas)) stopCount += l.pausas.length;
+
+                const meta = getMetaForProduct(l.produto) || 60;
+                weightedMetaSum += (meta * tons);
+            });
+
+            const totalHours = totalOperatingMs / 3600000;
+            const ritmoMedio = totalHours > 0 ? (totalTons / totalHours) : 0;
+
+            const availability = (totalOperatingMs + totalStopMs) > 0 ? totalOperatingMs / (totalOperatingMs + totalStopMs) : 0;
+            const avgMeta = totalTons > 0 ? weightedMetaSum / totalTons : 60;
+            const performance = avgMeta > 0 ? ritmoMedio / avgMeta : 0;
+            const oee = availability * performance * 100;
+
+            const elOee = document.getElementById('report-moega-oee');
+            const elProd = document.getElementById('report-moega-prod');
+            const elStop = document.getElementById('report-moega-stop');
+
+            if (elOee) elOee.innerText = `${oee.toFixed(1)}%`;
+            if (elProd) elProd.innerText = `${ritmoMedio.toFixed(1)} t/h`;
+            if (elStop) elStop.innerText = formatMs(totalStopMs);
+        }
+
+        function buildMoegaReportTrend(logs) {
+            const sortedLogs = [...logs].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+            const labels = [], real = [], meta = [];
+            sortedLogs.forEach(l => {
+                const fim = l.fim ? new Date(l.fim) : null;
+                const inicio = l.inicio ? new Date(l.inicio) : null;
+                const pesoKg = l.peso && Number(l.peso) ? Number(l.peso) : (Array.isArray(l.cargas) ? l.cargas.reduce((s, c) => s + Number(c.peso || 0), 0) : 0);
+                const tons = pesoKg / 1000;
+                let hours = 0.000001;
+                let pauseMs = sumPausesDuration(l.pausas, fim ? fim.getTime() : Date.now());
+                if (inicio && fim) hours = Math.max((fim.getTime() - inicio.getTime() - pauseMs) / 3600000, 0.000001);
+                const ritmo = tons / hours;
+                const metaVal = getMetaForProduct(l.produto) || 0;
+                labels.push(fim ? fim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-');
+                real.push(Number(ritmo.toFixed(2)));
+                meta.push(metaVal);
+            });
+            return { labels, real, meta };
+        }
+
+        function buildMoegaReportPareto(logs) {
+            const durations = {};
+            logs.forEach(l => {
+                if (Array.isArray(l.pausas)) {
+                    l.pausas.forEach(p => {
+                        const motivo = p.motivo || 'Outros';
+                        const inicio = p.inicio ? new Date(p.inicio).getTime() : null;
+                        const fim = p.fim ? new Date(p.fim).getTime() : (l.fim ? new Date(l.fim).getTime() : Date.now());
+                        if (inicio) {
+                            const durationMinutes = (fim - inicio) / 60000;
+                            durations[motivo] = (durations[motivo] || 0) + durationMinutes;
+                        }
+                    });
+                }
+            });
+            const sortedDurations = Object.entries(durations).sort(([, a], [, b]) => b - a);
+            const labels = sortedDurations.map(entry => entry[0]);
+            const data = sortedDurations.map(entry => Number(entry[1].toFixed(2)));
+            return { labels, data };
+        }
+
         function buildParetoData() {
             const durations = {};
             const now = Date.now();
@@ -3006,7 +3227,7 @@
         function getMetaForProduct(prodName) {
             if (!prodName) return null;
             const key = productKey(prodName);
-            return METAS_PRODUTIVIDADE[key] || DEFAULTS[key] || null;
+            return METAS_PRODUTIVIDADE[key] || null;
         }
 
         function productKey(name) {
@@ -3623,6 +3844,7 @@
         }
 
         window.setReportTab = function (tabId) {
+            currentReportTab = tabId;
             document.querySelectorAll('#view-main-relatorios .dashboard-tab').forEach(b => b.classList.toggle('tab-active', b.id === `tab-${tabId}`));
             const isGeral = tabId === 'report-geral';
             document.getElementById('report-view-geral').classList.toggle('hidden', !isGeral);
@@ -3631,6 +3853,7 @@
                 const mId = tabId.split('-')[1].replace('m', '');
                 document.getElementById('report-moega-title').innerText = `MOEGA 0${mId} - RELATÓRIO`;
             }
+            updateCharts();
         }
 
         window.setTurnoTab = function (tabId) {
@@ -3654,7 +3877,7 @@
         window.abrirModalUsuario = function () { document.getElementById('modal-novo-usuario').classList.remove('hidden'); }
         window.fecharModalUsuario = function () { document.getElementById('modal-novo-usuario').classList.add('hidden'); }
 
-        window.toggleSidebar = function() {
+        window.toggleSidebar = function () {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             if (sidebar) sidebar.classList.toggle('-translate-x-full');
@@ -3708,6 +3931,95 @@
             }
         }
 
+        // --- Culture Management Functions ---
+        window.setConfigTab = function (tabId) {
+            ['config-lista', 'config-novo', 'config-cultivares'].forEach(id => {
+                const view = document.getElementById(id.replace('config-', 'config-view-'));
+                const tab = document.getElementById(`tab-${id}`);
+                if (view) view.classList.toggle('hidden', id !== tabId);
+                if (tab) tab.classList.toggle('tab-active', id === tabId);
+            });
+            if (tabId === 'config-lista') renderCulturesList();
+            if (tabId === 'config-cultivares') renderCultivaresView();
+        }
+
+        function renderCulturesList() {
+            const tbody = document.getElementById('config-culturas-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (Object.keys(METAS_PRODUTIVIDADE).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-500">Nenhuma cultura cadastrada.</td></tr>';
+                return;
+            }
+            Object.entries(METAS_PRODUTIVIDADE).sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, goal]) => {
+                const safeKey = key.replace(/'/g, "\\'");
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-4 font-bold">${key}</td>
+                        <td class="p-4">
+                            <input type="number" id="goal-input-${key}" value="${goal}" class="bg-slate-700 border border-slate-600 rounded px-2 py-1 w-24 text-center font-mono">
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="saveCultureGoal('${safeKey}')" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded mr-2 font-bold">Salvar</button>
+                            <button onclick="deleteCulture('${safeKey}')" class="text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1.5 rounded font-bold">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addNewCulture() {
+            const nameEl = document.getElementById('new-culture-name');
+            const goalEl = document.getElementById('new-culture-goal');
+            const name = (nameEl.value || '').trim().toUpperCase();
+            const goal = Number(goalEl.value);
+
+            if (!name) return mostrarAlerta('Nome da cultura é obrigatório.');
+            if (isNaN(goal) || goal <= 0) return mostrarAlerta('A meta deve ser um número maior que zero.');
+
+            const key = productKey(name);
+            if (METAS_PRODUTIVIDADE[key]) return mostrarAlerta('Esta cultura já existe.');
+
+            try {
+                const configRef = doc(db, 'moega_config', 'culturas');
+                await updateDoc(configRef, { [key]: goal });
+                mostrarAlerta('Cultura adicionada com sucesso!');
+                nameEl.value = '';
+                goalEl.value = '';
+                setConfigTab('config-lista');
+            } catch (e) {
+                console.error("Erro ao adicionar cultura:", e);
+                mostrarAlerta('Erro ao salvar. Verifique o console.');
+            }
+        }
+
+        async function saveCultureGoal(cultureKey) {
+            const inputEl = document.getElementById(`goal-input-${cultureKey}`);
+            const newGoal = Number(inputEl.value);
+            if (isNaN(newGoal) || newGoal <= 0) return mostrarAlerta('A meta deve ser um número maior que zero.');
+
+            try {
+                const configRef = doc(db, 'moega_config', 'culturas');
+                await updateDoc(configRef, { [cultureKey]: newGoal });
+                mostrarAlerta(`Meta para ${cultureKey} atualizada!`);
+            } catch (e) {
+                console.error("Erro ao salvar meta:", e);
+                mostrarAlerta('Erro ao salvar. Verifique o console.');
+            }
+        }
+
+        async function deleteCulture(cultureKey) {
+            if (!confirm(`Tem certeza que deseja excluir a cultura "${cultureKey}"?`)) return;
+            try {
+                const configRef = doc(db, 'moega_config', 'culturas');
+                await updateDoc(configRef, { [cultureKey]: deleteField() });
+                mostrarAlerta(`Cultura ${cultureKey} removida.`);
+            } catch (e) {
+                console.error("Erro ao excluir cultura:", e);
+                mostrarAlerta('Erro ao excluir. Verifique o console.');
+            }
+        }
+
         window.mostrarAlerta = function (msg) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-msg');
@@ -3721,7 +4033,7 @@
         // --- Romaneios modal handlers ---
         function buildRomaneiosList() {
             const modalList = document.getElementById('modal-romaneios-list');
-            if (!modalList) return;
+            if (!modalList) return; // Corrigido para não quebrar se o modal não estiver no DOM
             // use filtered logs
             const logs = applyFiltersToLogs(historicoDescargas, activeFilters);
             modalList.innerHTML = '';
