@@ -148,6 +148,67 @@
             -webkit-backdrop-filter: blur(2px);
             backdrop-filter: blur(2px);
         }
+
+        .back-to-menu-dashboard {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 9999;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2, 6, 23, 0.9);
+            border: 1px solid rgba(100, 116, 139, 0.15);
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+            transition: transform .12s ease, background .12s ease, color .12s ease;
+        }
+
+        .back-to-menu-dashboard:hover {
+            transform: translateY(-3px);
+            background: rgba(30, 41, 59, 0.95);
+            color: #fff;
+        }
+
+        .back-to-menu-dashboard svg {
+            display: block;
+        }
+
+        /* KPI highlight animation */
+        @keyframes kpiFlash {
+            0% {
+                box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 12px rgba(96, 165, 250, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+            }
+        }
+
+        .kpi-highlight {
+            animation: kpiFlash 1.6s ease-in-out;
+            border-radius: 8px;
+        }
+
+        /* Gauge center label */
+        .gauge-center {
+            position: absolute;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 120px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -1595,7 +1656,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy, limit, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, limit, deleteDoc, doc, updateDoc, setDoc, deleteField, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { firebaseConfig } from './firebase_config.js';
 
@@ -3982,7 +4043,7 @@
 
             try {
                 const configRef = doc(db, 'moega_config', 'culturas');
-                await updateDoc(configRef, { [key]: goal });
+                await setDoc(configRef, { [key]: goal }, { merge: true });
                 mostrarAlerta('Cultura adicionada com sucesso!');
                 nameEl.value = '';
                 goalEl.value = '';
@@ -4000,7 +4061,7 @@
 
             try {
                 const configRef = doc(db, 'moega_config', 'culturas');
-                await updateDoc(configRef, { [cultureKey]: newGoal });
+                await setDoc(configRef, { [cultureKey]: newGoal }, { merge: true });
                 mostrarAlerta(`Meta para ${cultureKey} atualizada!`);
             } catch (e) {
                 console.error("Erro ao salvar meta:", e);
@@ -4091,6 +4152,14 @@
             lucide.createIcons();
         }
 
+        // Expose functions to window for onclick handlers
+        window.saveCultureGoal = saveCultureGoal;
+        window.deleteCulture = deleteCulture;
+        window.addNewCulture = addNewCulture;
+        window.addCustomCultivar = addCustomCultivar;
+        window.deleteCustomCultivar = deleteCustomCultivar;
+        window.closeRomaneiosModal = closeRomaneiosModal;
+
         document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
 
@@ -4117,68 +4186,6 @@
                     class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded">Fechar</button></div>
         </div>
     </div>
-    <style>
-        .back-to-menu-dashboard {
-            position: fixed;
-            left: 16px;
-            bottom: 16px;
-            z-index: 9999;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(2, 6, 23, 0.9);
-            border: 1px solid rgba(100, 116, 139, 0.15);
-            border-radius: 10px;
-            color: #cbd5e1;
-            text-decoration: none;
-            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
-            transition: transform .12s ease, background .12s ease, color .12s ease;
-        }
-
-        .back-to-menu-dashboard:hover {
-            transform: translateY(-3px);
-            background: rgba(30, 41, 59, 0.95);
-            color: #fff;
-        }
-
-        .back-to-menu-dashboard svg {
-            display: block;
-        }
-
-        /* KPI highlight animation */
-        @keyframes kpiFlash {
-            0% {
-                box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.3);
-            }
-
-            50% {
-                box-shadow: 0 0 0 12px rgba(96, 165, 250, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
-            }
-        }
-
-        .kpi-highlight {
-            animation: kpiFlash 1.6s ease-in-out;
-            border-radius: 8px;
-        }
-
-        /* Gauge center label */
-        .gauge-center {
-            position: absolute;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 120px;
-            height: 120px;
-            text-align: center;
-        }
-    </style>
 </body>
 
 </html>
