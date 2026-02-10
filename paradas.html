@@ -481,21 +481,13 @@
                     locationGroups[locKey] = (locationGroups[locKey] || 0) + item.valor;
                 });
                 
-                workingData.forEach(d => {
-                    const passSector = selectedSector === 'Todos' || d.setor === selectedSector;
-                    const passShift = selectedShift === 'Todos' || d.turno === selectedShift;
-                    let passDate = true;
-                    if (startDate && d.isoDate < startDate) passDate = false;
-                    if (endDate && d.isoDate > endDate) passDate = false;
-
-                    if (passSector && passShift && passDate) {
-                        stats['Todos'].horas += d.valor;
-                        stats['Todos'].count += 1;
-                        
-                        if (!stats[d.setor]) stats[d.setor] = { horas: 0, count: 0, percent: 0 };
-                        stats[d.setor].horas += d.valor;
-                        stats[d.setor].count += 1;
-                    }
+                filteredData.forEach(d => {
+                    stats['Todos'].horas += d.valor;
+                    stats['Todos'].count += 1;
+                    
+                    if (!stats[d.setor]) stats[d.setor] = { horas: 0, count: 0, percent: 0 };
+                    stats[d.setor].horas += d.valor;
+                    stats[d.setor].count += 1;
                 });
                 
                 const totalGlobal = stats['Todos'].horas;
