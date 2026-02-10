@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,33 +9,58 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
         .glass-header {
             background: rgba(255, 255, 255, 0.90);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         .animate-fade-in {
             animation: fadeIn 0.8s ease-out forwards;
         }
     </style>
 </head>
+
 <body class="bg-slate-50 text-slate-900 flex h-screen overflow-hidden">
 
-    <aside class="w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 transition-all duration-300 flex-shrink-0">
+    <aside
+        class="w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 transition-all duration-300 flex-shrink-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-blue-900/50">
+            <div
+                class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-blue-900/50">
                 M
             </div>
             <div>
@@ -44,136 +70,171 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            
+
             <!-- 1. PLANEJAMENTO -->
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Planejamento</p>
-            
-            <a href="operacional_planning_input.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+
+            <a href="operacional_planning_input.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="clipboard-list" class="w-5 h-5 mr-3 text-blue-500 group-hover:text-blue-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Planejamento PMP</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Entrada Diária</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="operacional_planning_input.html?page=dashboard" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="operacional_planning_input.html?page=dashboard"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3 text-green-500 group-hover:text-green-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Planejamento PMP</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">KPIs & Metas</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+            </a>
+
+            <a href="paradas.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+                <i data-lucide="pause-circle" class="w-5 h-5 mr-3 text-red-500 group-hover:text-red-400"></i>
+                <div class="flex-1">
+                    <span class="block font-medium">Paradas Indústria</span>
+                    <span class="text-xs text-slate-500 group-hover:text-slate-400">Acompanhamento de Paradas</span>
+                </div>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
             <!-- 2. RECEPÇÃO & MOEGA -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Recepção & Moega</p>
 
-            <a href="moega.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="moega.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="truck" class="w-5 h-5 mr-3 text-blue-500 group-hover:text-blue-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Operação Moega / Recepção</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Entrada de Grãos</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="moegaDashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="moegaDashboard.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3 text-indigo-500 group-hover:text-indigo-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Moega / Recepção</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Monitoramento 24h</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
             <!-- 3. PRÉ-SECAGEM -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Pré-Secagem & Silos</p>
 
-            <a href="presecagem.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="presecagem.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="container" class="w-5 h-5 mr-3 text-teal-500 group-hover:text-teal-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Operação Pré - Secagens / Silos</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Armazenagem</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="dashboardPresecagem.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="dashboardPresecagem.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="line-chart" class="w-5 h-5 mr-3 text-teal-500 group-hover:text-teal-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Pré - Secagens / Silos</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Gestão Visual</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
             <!-- 4. SECAGEM -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Secagem</p>
 
-            <a href="secador.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="secador.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="thermometer" class="w-5 h-5 mr-3 text-orange-500 group-hover:text-orange-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Operação Secagem</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Controle Térmico</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="dashboardSecador.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="dashboardSecador.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="activity" class="w-5 h-5 mr-3 text-rose-500 group-hover:text-rose-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Secagem</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Curvas de Calor</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
             <!-- 5. SILOS PULMÃO -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Silos Pulmão</p>
 
-            <a href="controle.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="controle.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="database" class="w-5 h-5 mr-3 text-yellow-500 group-hover:text-yellow-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Controle de Silos Pulmão</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Estoque Intermediário</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="dashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="dashboard.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="pie-chart" class="w-5 h-5 mr-3 text-purple-500 group-hover:text-purple-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Silos Pulmão</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Níveis e Status</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
             <!-- 6. EXPEDIÇÃO -->
             <div class="my-4 border-t border-slate-800"></div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ensaque</p>
 
-            <a href="ensaque.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="ensaque.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="package" class="w-5 h-5 mr-3 text-cyan-500 group-hover:text-cyan-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Operação Ensaque</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Produção Ensaque</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
 
-            <a href="ensaqueDashboard.html" class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
+            <a href="ensaqueDashboard.html"
+                class="group flex items-center px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors">
                 <i data-lucide="truck" class="w-5 h-5 mr-3 text-indigo-500 group-hover:text-indigo-400"></i>
                 <div class="flex-1">
                     <span class="block font-medium">Dash. Ensaque</span>
                     <span class="text-xs text-slate-500 group-hover:text-slate-400">Gestão Ensaque</span>
                 </div>
-                <span class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
+                <span
+                    class="bg-slate-800 text-slate-400 py-0.5 px-2 rounded text-[10px] border border-slate-700"></span>
             </a>
         </nav>
 
@@ -189,7 +250,7 @@
     </aside>
 
     <div class="flex-1 flex flex-col relative overflow-hidden bg-slate-900">
-        
+
         <header class="h-16 glass-header absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6">
             <div class="flex items-center">
                 <i data-lucide="sprout" class="w-5 h-5 text-green-600 mr-3"></i>
@@ -197,7 +258,7 @@
             </div>
 
             <div class="flex items-center space-x-6">
-                
+
                 <div class="hidden md:block text-right border-r border-slate-300 pr-6">
                     <p class="text-xs font-bold text-slate-500" id="current-time">--:--</p>
                 </div>
@@ -207,17 +268,23 @@
                         <p class="text-sm font-bold text-slate-800" id="user-name">Carregando...</p>
                         <p class="text-xs text-slate-600" id="user-role">Acesso Verificado</p>
                     </div>
-                    <div class="w-10 h-10 rounded-full bg-white border-2 border-blue-500 shadow-sm flex items-center justify-center text-blue-700 font-bold relative">
+                    <div
+                        class="w-10 h-10 rounded-full bg-white border-2 border-blue-500 shadow-sm flex items-center justify-center text-blue-700 font-bold relative">
                         <span id="user-initials">...</span>
-                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full">
+                        </div>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-2 pl-2">
-                    <button id="btn-logout-1" class="p-2 text-slate-600 hover:text-blue-600 hover:bg-white/50 rounded-lg transition-colors tooltip" title="Trocar Login">
+                    <button id="btn-logout-1"
+                        class="p-2 text-slate-600 hover:text-blue-600 hover:bg-white/50 rounded-lg transition-colors tooltip"
+                        title="Trocar Login">
                         <i data-lucide="users" class="w-5 h-5"></i>
                     </button>
-                    <button id="btn-logout-2" class="p-2 text-slate-600 hover:text-red-600 hover:bg-white/50 rounded-lg transition-colors tooltip" title="Sair do Sistema">
+                    <button id="btn-logout-2"
+                        class="p-2 text-slate-600 hover:text-red-600 hover:bg-white/50 rounded-lg transition-colors tooltip"
+                        title="Sair do Sistema">
                         <i data-lucide="log-out" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -225,34 +292,39 @@
         </header>
 
         <main class="flex-1 relative w-full h-full flex flex-col justify-center items-center text-center">
-            
+
             <div class="absolute inset-0 z-0">
-                <img src="https://images.unsplash.com/photo-1622284920258-00632b496733?q=80&w=2070&auto=format&fit=crop" 
-                     alt="Indústria de Beneficiamento de Sementes" 
-                     class="w-full h-full object-cover opacity-60" />
+                <img src="https://images.unsplash.com/photo-1622284920258-00632b496733?q=80&w=2070&auto=format&fit=crop"
+                    alt="Indústria de Beneficiamento de Sementes" class="w-full h-full object-cover opacity-60" />
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/10"></div>
             </div>
 
             <div class="relative z-10 p-8 max-w-5xl animate-fade-in">
-                
-                <div class="inline-flex items-center justify-center p-3 mb-6 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
+
+                <div
+                    class="inline-flex items-center justify-center p-3 mb-6 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
                     <i data-lucide="wheat" class="w-8 h-8 text-yellow-400 mr-3"></i>
-                    <span class="text-white font-semibold tracking-wider uppercase text-sm">Tecnologia em Sementes</span>
+                    <span class="text-white font-semibold tracking-wider uppercase text-sm">Tecnologia em
+                        Sementes</span>
                 </div>
 
                 <h2 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg">
                     Bem-Vindo ao Centro de Controle.
                 </h2>
-                
-                <p class="text-lg md:text-2xl text-slate-200 mb-10 leading-relaxed font-light drop-shadow-md max-w-4xl mx-auto">
-                    Monitore o Recebimento, Pré Secagem, Secagem Final, Beneficiamento e Ensaque em Tempo Real Através do Menu Lateral.
+
+                <p
+                    class="text-lg md:text-2xl text-slate-200 mb-10 leading-relaxed font-light drop-shadow-md max-w-4xl mx-auto">
+                    Monitore o Recebimento, Pré Secagem, Secagem Final, Beneficiamento e Ensaque em Tempo Real Através
+                    do Menu Lateral.
                 </p>
 
-                <div class="inline-flex items-center space-x-6 bg-slate-950/80 backdrop-blur rounded-full px-8 py-3 border border-slate-700">
+                <div
+                    class="inline-flex items-center space-x-6 bg-slate-950/80 backdrop-blur rounded-full px-8 py-3 border border-slate-700">
                     <div class="flex items-center">
                         <span class="relative flex h-3 w-3 mr-3">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                         </span>
                         <span class="text-slate-300 text-sm font-medium">Unidade Operante</span>
                     </div>
@@ -295,7 +367,7 @@
         auth.onAuthStateChanged(user => {
             if (user) {
                 const email = user.email;
-                const displayName = email.split('@')[0]; 
+                const displayName = email.split('@')[0];
                 const initials = displayName.substring(0, 2).toUpperCase();
 
                 document.getElementById('user-name').textContent = displayName;
@@ -322,4 +394,5 @@
 
     </script>
 </body>
+
 </html>
