@@ -1,3 +1,4 @@
+// ...existing code...
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -45,12 +46,21 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(226, 232, 240, 0.8);
         }
+
+        .pulse-indicator {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
     <div id="root"></div>
 
-    <!-- Firebase SDKs (Compat version to match window.FirebaseTools pattern) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -112,15 +122,15 @@
         const ArrowLeftIcon = ({ className }) => <IconWrapper className={className}><path d="M19 12H5M12 19l-7-7 7-7"/></IconWrapper>;
         const LogOutIcon = ({ className }) => <IconWrapper className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconWrapper>;
         const CloudIcon = ({ className }) => <IconWrapper className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></IconWrapper>;
+        const CheckCircleIcon = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconWrapper>;
 
         // Cores
         const COLORS = ['#059669', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#4f46e5', '#0891b2', '#be185d', '#15803d'];
         const SHIFT_COLORS = { 'A': '#3b82f6', 'B': '#8b5cf6', 'C': '#10b981', 'Geral': '#94a3b8' };
 
-        // Componente Customizado Melhorado para Treemap
+        // Componente Customizado para Treemap
         const CustomizedTreemapContent = (props) => {
           const { root, depth, x, y, width, height, index, payload, colors, rank, name, value } = props;
-          
           const fontSize = Math.min(width / 5, height / 3, 12);
           const showText = width > 40 && height > 30;
 
@@ -142,25 +152,10 @@
               />
               {depth === 1 && showText ? (
                 <>
-                    <text
-                        x={x + width / 2}
-                        y={y + height / 2 - 6}
-                        textAnchor="middle"
-                        fill="#fff"
-                        fontSize={fontSize}
-                        fontWeight="bold"
-                        style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.6)', pointerEvents: 'none' }}
-                    >
+                    <text x={x + width / 2} y={y + height / 2 - 6} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold" style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.6)', pointerEvents: 'none' }}>
                         {name.split(' ')[0]} 
                     </text>
-                    <text
-                        x={x + width / 2}
-                        y={y + height / 2 + 8}
-                        textAnchor="middle"
-                        fill="rgba(255,255,255,0.9)"
-                        fontSize={fontSize * 0.9}
-                        style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)', pointerEvents: 'none' }}
-                    >
+                    <text x={x + width / 2} y={y + height / 2 + 8} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={fontSize * 0.9} style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)', pointerEvents: 'none' }}>
                         {value}h
                     </text>
                 </>
@@ -188,44 +183,142 @@
             const [selectedShift, setSelectedShift] = useState('Todos');
             const [startDate, setStartDate] = useState(''); 
             const [endDate, setEndDate] = useState('');     
-            const [data, setData] = useState([]);
-            const [activeTab, setActiveTab] = useState('custom');
-            const [dataSource, setDataSource] = useState(''); 
-            const [isLoading, setIsLoading] = useState(false);
+            const [csvInput, setCsvInput] = useState(() => {
+                const saved = localStorage.getItem('dashboardParetoData');
+                return saved || '';
+            });
+            const [isLoading, setIsLoading] = useState(true);
             const [error, setError] = useState(null);
             const [lastUpdated, setLastUpdated] = useState(null);
-            const [autoRefresh, setAutoRefresh] = useState(false);
+            const [firebaseConnected, setFirebaseConnected] = useState(false);
 
             const fileInputRef = useRef(null);
 
-            // Amostra inicial
-            const initialCsvData = `UBS,Setor,Linha,Responsável,Turno,Data INICIO da Parada,Hora Início Parada,Código do Motivo da Parada ,Categoria,Descrição,Agrupamento,Descrição Detalhada da Parada,Parada Geral/ Equipamento,Numero da TAG,"Numero da O.S",Data FINAL da Parada,Hora FINAL Parada,Tempo da parada
-UBS ATTO,Recepção,Moega 1,Gilvan,B,27/01/2026,19:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,05:00:00,10:00:00
-UBS ATTO,Recepção,Moega 2,Gilvan,B,27/01/2026,19:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,05:00:00,10:00:00
-UBS ATTO,Recepção,Moega 3,Gilvan,B,27/01/2026,19:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,05:00:00,10:00:00
-UBS ATTO,Recepção,Moega 4,Gilvan,B,27/01/2026,19:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,05:00:00,10:00:00
-UBS ATTO,Recepção,Moega 1,Fábio,A,28/01/2026,09:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,19:00:00,10:00:00
-UBS ATTO,Recepção,Moega 2,Fábio,A,28/01/2026,09:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,19:00:00,10:00:00
-UBS ATTO,Recepção,Moega 3,Fábio,A,28/01/2026,09:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,19:00:00,10:00:00
-UBS ATTO,Recepção,Moega 4,Fábio,A,28/01/2026,09:00:00,7,Operacional,Falta de matéria prima,Insumos,Falta de Matéria Prima / Sementes,GERAL,,,28/01/2026,19:00:00,10:00:00
-UBS ATTO,Pré-secagem,Pré-secagem 6,Fábio,A,28/01/2026,07:00:00,5,Manutenção,Manutenção,Manutenção,Rosca Varredora não está acionando completamente,GERAL,PS-06,213772,28/01/2026,15:00:00,8:00:00
-UBS ATTO,Pré-secagem,Pré-secagem 6,Rafaela,B,28/01/2026,15:00,5,Manutenção,Manutenção,Manutenção,Rosca Varredora não está acionando completamente,GERAL,PS-06,213772,28/01/2026,23:00:00,8:00:00
-UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção,Manutenção,Manutenção,Rosca Varredora não está acionando completamente,GERAL,PS-06,213772,29/01/2026,07:00:00,8:00:00`;
-
-            const [csvInput, setCsvInput] = useState(() => {
-                const saved = localStorage.getItem('dashboardParetoData');
-                return saved || initialCsvData;
-            });
-
-            // Verificar URL para auto-login
+            // ✅ LISTENER DO FIRESTORE PARA CHUNKS (com tratamento de permissão e fallback)
             useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                const apiUrl = params.get('api');
-                if (apiUrl) {
-                    setDataSource(apiUrl);
-                    setActiveTab('live');
-                    setAutoRefresh(true);
-                }
+                console.log("🔌 Iniciando listener do Firestore...");
+                setIsLoading(true);
+                setError(null);
+
+                const metadataRef = FirebaseTools.db.collection("paradas_industria").doc("metadata");
+                const unsubscribe = metadataRef.onSnapshot(
+                    async (metadataDoc) => {
+                        try {
+                            if (!metadataDoc.exists) {
+                                console.log("⚠️ Documento 'metadata' não encontrado. Tentando fallback 'dados_atuais'...");
+                                // fallback para documento único
+                                try {
+                                    const doc = await FirebaseTools.db.collection("paradas_industria").doc("dados_atuais").get();
+                                    if (doc.exists && doc.data().csvContent) {
+                                        setCsvInput(doc.data().csvContent);
+                                        setLastUpdated(doc.data().lastUpdated ? new Date(doc.data().lastUpdated) : new Date());
+                                        setFirebaseConnected(true);
+                                        setError(null);
+                                    } else {
+                                        setFirebaseConnected(false);
+                                    }
+                                } catch (fbErr) {
+                                    console.error("Erro no fallback dados_atuais:", fbErr);
+                                    if (fbErr && (fbErr.code === 'permission-denied' || /permission|insufficient/i.test(fbErr.message || ''))) {
+                                        setError("Permissão negada ao acessar o Firestore. Verifique regras de segurança ou autenticação.");
+                                    } else {
+                                        setError("Erro ao carregar dados do Firestore. Usando dados locais.");
+                                    }
+                                    setFirebaseConnected(false);
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                                return;
+                            }
+
+                            const metadata = metadataDoc.data();
+                            // se metadata tiver csvContent (formato antigo) usa direto
+                            if (metadata.csvContent) {
+                                setCsvInput(metadata.csvContent);
+                                setLastUpdated(metadata.lastUpdated ? new Date(metadata.lastUpdated) : new Date());
+                                setFirebaseConnected(true);
+                                setError(null);
+                                setIsLoading(false);
+                                return;
+                            }
+
+                            // se metadata indicar chunks
+                            const totalChunks = metadata.totalChunks || 0;
+                            if (totalChunks > 0) {
+                                console.log(`📦 metadata indica ${totalChunks} chunks. Carregando...`);
+                                let fullData = '';
+                                for (let i = 0; i < totalChunks; i++) {
+                                    try {
+                                        const chunkDoc = await FirebaseTools.db.collection("paradas_industria").doc(`chunk_${i}`).get();
+                                        if (chunkDoc.exists && chunkDoc.data() && chunkDoc.data().data) {
+                                            fullData += chunkDoc.data().data;
+                                        } else {
+                                            console.warn(`Chunk ${i} ausente ou sem campo 'data'.`);
+                                        }
+                                    } catch (chunkErr) {
+                                        console.error(`Erro ao ler chunk_${i}:`, chunkErr);
+                                        // se for permissão, propaga para tratar centralmente
+                                        if (chunkErr && (chunkErr.code === 'permission-denied' || /permission|insufficient/i.test(chunkErr.message || ''))) {
+                                            throw chunkErr;
+                                        }
+                                        // caso contrário, continua tentando os próximos chunks
+                                    }
+                                }
+                                setCsvInput(fullData);
+                                setLastUpdated(metadata.lastUpdated ? new Date(metadata.lastUpdated) : new Date());
+                                setFirebaseConnected(true);
+                                setError(null);
+                                setIsLoading(false);
+                                return;
+                            }
+
+                            // se não houver csvContent nem chunks, tenta fallback "dados_atuais"
+                            try {
+                                const doc = await FirebaseTools.db.collection("paradas_industria").doc("dados_atuais").get();
+                                if (doc.exists && doc.data().csvContent) {
+                                    setCsvInput(doc.data().csvContent);
+                                    setLastUpdated(doc.data().lastUpdated ? new Date(doc.data().lastUpdated) : new Date());
+                                    setFirebaseConnected(true);
+                                    setError(null);
+                                } else {
+                                    console.log("⚠️ Nenhum dado estruturado encontrado no Firestore.");
+                                    setFirebaseConnected(false);
+                                }
+                            } catch (fbErr) {
+                                console.error("Erro no fallback dados_atuais:", fbErr);
+                                if (fbErr && (fbErr.code === 'permission-denied' || /permission|insufficient/i.test(fbErr.message || ''))) {
+                                    setError("Permissão negada ao acessar o Firestore. Verifique regras de segurança ou autenticação.");
+                                } else {
+                                    setError("Erro ao carregar dados do Firestore. Usando dados locais.");
+                                }
+                                setFirebaseConnected(false);
+                            } finally {
+                                setIsLoading(false);
+                            }
+                        } catch (err) {
+                            console.error("❌ Erro ao carregar metadata/chunks:", err);
+                            if (err && (err.code === 'permission-denied' || /permission|insufficient/i.test(err.message || ''))) {
+                                setError("Permissão negada ao acessar o Firestore. Verifique regras de segurança ou autenticação.");
+                            } else {
+                                setError("Erro ao carregar dados do Firestore. Usando dados locais.");
+                            }
+                            setFirebaseConnected(false);
+                            setIsLoading(false);
+                        }
+                    },
+                    (error) => {
+                        console.error("❌ Erro ao ouvir Firestore:", error);
+                        if (error && (error.code === 'permission-denied' || /permission|insufficient/i.test(error.message || ''))) {
+                            setError("Permissão negada ao acessar o Firestore. Verifique regras de segurança ou autenticação.");
+                        } else {
+                            setError("Falha ao conectar ao Firestore. Usando dados locais.");
+                        }
+                        setFirebaseConnected(false);
+                        setIsLoading(false);
+                    }
+                );
+
+                return () => unsubscribe();
             }, []);
 
             useEffect(() => {
@@ -288,10 +381,10 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                         }
                         const getVal = (idx) => (parts[idx]) ? cleanCell(parts[idx]) : '';
 
-                        let setor = getVal(1) || 'Geral';
+                        let setor = getVal(1) ? getVal(1).trim() : '';
                         let linha = getVal(2) || '-';
                         let responsavel = getVal(3) || '-';
-                        let turno = getVal(4) || 'Geral';
+                        let turno = getVal(4) || 'Não Informado';
                         let dataStr = getVal(5) || '';
                         let horaIni = getVal(6) || '';
                         let categoria = getVal(8) || 'Outros';
@@ -303,7 +396,7 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                         let valor = parseTimeToHours(tempoStr);
                         let isoDate = parseDateToISO(dataStr);
 
-                        if (!setor || setor === 'Geral' && !valor) return null;
+                        if (!setor || setor === '' || !valor) return null;
                         
                         return { setor, linha, motivo, detalhe, categoria, valor, turno, dataStr, isoDate, horaIni, responsavel, tag, os };
                     }).filter(item => item && item.valor > 0 && item.setor && item.setor.trim() !== '');
@@ -321,77 +414,18 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     setCsvInput(e.target.result);
-                    setActiveTab('custom');
                     setSelectedSector('Todos');
                 };
                 reader.readAsText(file);
             };
 
-            const triggerFileUpload = () => { fileInputRef.current.click(); };
-
-            const fetchSheetData = async (isAuto = false) => {
-                if (!dataSource) return;
-                if (!isAuto) setIsLoading(true);
-                setError(null);
-                try {
-                    const encodedUrl = encodeURIComponent(dataSource);
-                    const cacheBuster = new Date().getTime();
-                    const proxyUrl = `https://corsproxy.io/?${encodedUrl}&t=${cacheBuster}`;
-                    const response = await fetch(proxyUrl);
-                    if (!response.ok) throw new Error(`Erro na conexão (${response.status}).`);
-                    const text = await response.text();
-                    
-                    try {
-                        const jsonData = JSON.parse(text);
-                         if (Array.isArray(jsonData)) {
-                            const finalData = jsonData.map(row => ({
-                                setor: row['Setor'] || 'Geral',
-                                linha: row['Linha'] || '-',
-                                motivo: row['Descrição'] || 'Não Informado',
-                                categoria: row['Categoria'] || 'Outros',
-                                detalhe: row['Agrupamento'] || '',
-                                valor: parseTimeToHours(row['Tempo da parada'] || '00:00:00'),
-                                turno: row['Turno'] || 'Geral',
-                                dataStr: row['Data INICIO da Parada'] || '',
-                                isoDate: parseDateToISO(row['Data INICIO da Parada'] || ''),
-                                horaIni: row['Hora Início Parada'] || '',
-                                responsavel: row['Responsável'] || '-',
-                                tag: row['Numero da TAG'] || '-',
-                                os: row['Numero da O.S'] || '-'
-                            })).filter(d => d.valor > 0);
-                            setData(finalData);
-                         } else {
-                             setData(parseDataInput(text));
-                         }
-                    } catch (e) {
-                         setData(parseDataInput(text));
-                    }
-
-                    setLastUpdated(new Date());
-                    if (isAuto) setError(null);
-                } catch (err) {
-                    if (!isAuto || !error) setError(err.message);
-                    if (isAuto) setAutoRefresh(false);
-                } finally {
-                    setIsLoading(false);
-                }
+            const handleCsvChange = (value) => {
+                setCsvInput(value);
             };
 
-            const doFetch = useCallback(() => fetchSheetData(true), [dataSource]);
-
-            useEffect(() => {
-                let interval;
-                if (autoRefresh && dataSource.startsWith('http')) {
-                    fetchSheetData(false); // First fetch
-                    interval = setInterval(doFetch, 30000);
-                }
-                return () => clearInterval(interval);
-            }, [autoRefresh, dataSource, doFetch]);
-
             const workingData = useMemo(() => {
-                if (activeTab === 'live' && data.length > 0) return data;
                 return parseDataInput(csvInput);
-            }, [activeTab, data, csvInput]);
+            }, [csvInput]);
 
             // --- Cálculos Estatísticos ---
             const { sectorStats, shiftsList, pieData, timelineData, shiftComparisonData, tagData, locationData, detailedTableData, treemapData, totalHoras } = useMemo(() => {
@@ -408,7 +442,6 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                     if(d.turno) shifts.add(d.turno);
                 });
 
-                // Filtragem principal
                 let filteredData = workingData;
                 if (selectedSector !== 'Todos') filteredData = filteredData.filter(d => d.setor === selectedSector);
                 if (selectedShift !== 'Todos') filteredData = filteredData.filter(d => d.turno === selectedShift);
@@ -448,14 +481,14 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                     locationGroups[locKey] = (locationGroups[locKey] || 0) + item.valor;
                 });
                 
-                // Cards Setores (Recalcula com base nos filtros de DATA e TURNO, mas IGNORA setor)
                 workingData.forEach(d => {
+                    const passSector = selectedSector === 'Todos' || d.setor === selectedSector;
                     const passShift = selectedShift === 'Todos' || d.turno === selectedShift;
                     let passDate = true;
                     if (startDate && d.isoDate < startDate) passDate = false;
                     if (endDate && d.isoDate > endDate) passDate = false;
 
-                    if (passShift && passDate) {
+                    if (passSector && passShift && passDate) {
                         stats['Todos'].horas += d.valor;
                         stats['Todos'].count += 1;
                         
@@ -491,7 +524,7 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                     });
 
                 const finalShiftData = Object.entries(shiftGroups)
-                    .map(([name, horas]) => ({ name: `Turno ${name}`, horas: parseFloat(horas.toFixed(1)) }));
+                    .map(([name, horas]) => ({ name, horas: parseFloat(horas.toFixed(1)) }));
 
                 const finalTagData = Object.entries(tagGroups)
                     .map(([name, horas]) => ({ name, horas: parseFloat(horas.toFixed(1)) }))
@@ -590,134 +623,161 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
             };
 
             return (
-                <div className="min-h-screen bg-slate-100 text-slate-800 p-4 md:p-8 font-sans">
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800 p-4 md:p-8 font-sans">
                     {/* Header */}
-                    <header className="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-600">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                                <SproutIcon className="h-8 w-8 text-emerald-600" />
-                                Monitoramento Industrial - ATTO Sementes
-                            </h1>
-                            <p className="text-slate-500 text-sm mt-1">Análise de Paradas, Eficiência e Manutenção</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={() => { setCsvInput(''); localStorage.removeItem('dashboardParetoData'); }} className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-red-100">
-                                <TrashIcon className="h-4 w-4" /> Limpar Dados
-                            </button>
-                            <label className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 shadow-md cursor-pointer">
-                                <UploadIcon className="h-4 w-4" /> Importar CSV
-                                <input type="file" accept=".csv,.txt,.tsv" onChange={handleFileChange} className="hidden" />
-                            </label>
+                    <header className="mb-8 bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl shadow-xl border-l-4 border-emerald-500">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                                    <SproutIcon className="h-10 w-10 text-emerald-400" />
+                                    Monitoramento Industrial
+                                </h1>
+                                <p className="text-slate-300 text-sm md:text-base mt-2 flex flex-wrap items-center gap-2">
+                                    📊 Análise de Paradas | Eficiência | Manutenção
+                                    {firebaseConnected && (
+                                        <>
+                                            <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                                                <CloudIcon className="h-4 w-4 pulse-indicator" /> 
+                                                Sincronizado
+                                            </span>
+                                            {lastUpdated && <span className="text-xs text-slate-400">• {lastUpdated.toLocaleTimeString('pt-BR')}</span>}
+                                        </>
+                                    )}
+                                    {!firebaseConnected && csvInput && (
+                                        <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                                            <AlertCircleIcon className="h-4 w-4" /> 
+                                            Dados Locais
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                                <button onClick={() => window.location.href = 'menu.html'} className="px-4 py-2 bg-slate-600 text-white hover:bg-slate-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-slate-700 shadow-sm hover:shadow-md">
+                                    ← Menu
+                                </button>
+                                <button onClick={() => window.location.href = 'sicronizar.html'} className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-blue-700 shadow-sm hover:shadow-md">
+                                    🔄 Sincronizar
+                                </button>
+                                <button onClick={() => { setCsvInput(''); localStorage.removeItem('dashboardParetoData'); }} className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-red-300 shadow-sm hover:shadow-md">
+                                    <TrashIcon className="h-4 w-4" /> Limpar
+                                </button>
+                                <label className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 shadow-md cursor-pointer hover:shadow-lg">
+                                    <UploadIcon className="h-4 w-4" /> Importar CSV
+                                    <input type="file" accept=".csv,.txt,.tsv" onChange={handleFileChange} className="hidden" />
+                                </label>
+                            </div>
                         </div>
                     </header>
 
-                    {/* Área de Colagem */}
-                    <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                        <details>
-                            <summary className="cursor-pointer font-bold text-slate-700 flex items-center gap-2 select-none">
-                                <TableIcon className="h-4 w-4 text-emerald-600"/> Área de Input de Dados (Colar do Excel)
-                            </summary>
-                            <div className="mt-3 animate-in fade-in">
-                                <p className="text-xs text-slate-500 mb-2">Cole aqui as linhas da sua planilha. O sistema detecta automaticamente as colunas (Setor, Linha, Motivo, Tempo...).</p>
-                                <textarea 
-                                    value={csvInput} 
-                                    onChange={(e) => handleCsvChange(e.target.value)} 
-                                    className="w-full h-40 p-3 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50" 
-                                    placeholder="Cole seus dados aqui..." 
-                                />
-                                <div className="flex justify-between items-center mt-1">
-                                    <p className="text-xs text-slate-400">Total de registros processados: <span className="font-bold text-slate-600">{workingData.length}</span></p>
-                                </div>
-                            </div>
-                        </details>
-                    </div>
+                    {isLoading && (
+                        <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                            <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                            Conectando ao Firestore...
+                        </div>
+                    )}
 
-                    {/* Filtros em Cards */}
-                    <div className="mb-6">
-                         <div className="flex flex-col sm:flex-row justify-between items-end mb-3 gap-4">
-                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                <FactoryIcon className="h-4 w-4"/> Setores (Agrupados)
+                    {error && (
+                        <div className="mb-4 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                            <AlertCircleIcon className="h-4 w-4" />
+                            {error}
+                        </div>
+                    )}
+
+                    {firebaseConnected && !isLoading && (
+                        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4" />
+                            ✅ Dados sincronizados com sucesso!
+                        </div>
+                    )}
+
+                    {!firebaseConnected && (
+                        <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <details>
+                                <summary className="cursor-pointer font-bold text-slate-700 flex items-center gap-2 select-none">
+                                    <TableIcon className="h-4 w-4 text-emerald-600"/> Colar Dados (Excel)
+                                </summary>
+                                <div className="mt-3 animate-in fade-in">
+                                    <p className="text-xs text-slate-500 mb-2">Cole dados da planilha ou abra <a href="sicronizar.html" className="text-emerald-600 font-bold hover:underline">sincronizar.html</a></p>
+                                    <textarea 
+                                        value={csvInput} 
+                                        onChange={(e) => handleCsvChange(e.target.value)} 
+                                        className="w-full h-40 p-3 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50" 
+                                        placeholder="Cole dados aqui..." 
+                                    />
+                                </div>
+                            </details>
+                        </div>
+                    )}
+
+                    {/* Filtros */}
+                    <div className="mb-8">
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-6 gap-4">
+                            <h3 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                <FactoryIcon className="h-5 w-5 text-emerald-600"/> Setores
                             </h3>
-                            
-                            <div className="flex gap-3 items-center flex-wrap">
-                                {/* Filtro de Intervalo de Datas (DE - ATÉ) */}
-                                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-200">
-                                    <span className="text-xs font-bold text-slate-400 uppercase flex items-center"><CalendarIcon className="h-3 w-3 mr-1"/> De:</span>
-                                    <input 
-                                        type="date" 
-                                        value={startDate} 
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="bg-transparent text-sm font-bold text-emerald-700 outline-none cursor-pointer border-none p-0 w-28"
-                                    />
-                                    <span className="text-xs font-bold text-slate-400 uppercase ml-2">Até:</span>
-                                    <input 
-                                        type="date" 
-                                        value={endDate} 
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="bg-transparent text-sm font-bold text-emerald-700 outline-none cursor-pointer border-none p-0 w-28"
-                                    />
+                            <div className="flex gap-3 items-center flex-wrap w-full lg:w-auto">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                                    <CalendarIcon className="h-4 w-4 text-slate-500"/>
+                                    <span className="text-xs font-bold text-slate-600 uppercase">De:</span>
+                                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-sm font-semibold text-emerald-700 outline-none cursor-pointer border-none p-0 w-32" />
+                                    <span className="text-xs font-bold text-slate-600 uppercase ml-3">Até:</span>
+                                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-sm font-semibold text-emerald-700 outline-none cursor-pointer border-none p-0 w-32" />
                                     {(startDate || endDate) && (
-                                        <button 
-                                            onClick={() => { setStartDate(''); setEndDate(''); }}
-                                            className="text-red-400 hover:text-red-600 ml-1 p-1 rounded-full hover:bg-red-50"
-                                            title="Limpar datas"
-                                        >
-                                            <XIcon className="h-3 w-3" />
+                                        <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-red-400 hover:text-red-600 ml-2 p-1 rounded-full hover:bg-red-50 transition-colors">
+                                            <XIcon className="h-4 w-4" />
                                         </button>
                                     )}
                                 </div>
-
-                                {/* Filtro de Turno */}
-                                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-200">
-                                    <span className="text-xs font-bold text-slate-400 uppercase"><FilterIcon className="h-3 w-3 inline mr-1"/> Turno:</span>
-                                    <select value={selectedShift} onChange={(e) => setSelectedShift(e.target.value)} className="bg-transparent text-sm font-bold text-emerald-700 outline-none cursor-pointer">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                                    <FilterIcon className="h-4 w-4 text-slate-500"/>
+                                    <span className="text-xs font-bold text-slate-600 uppercase">Turno:</span>
+                                    <select value={selectedShift} onChange={(e) => setSelectedShift(e.target.value)} className="bg-transparent text-sm font-semibold text-emerald-700 outline-none cursor-pointer border-none p-0">
                                         <option value="Todos">Todos</option>
                                         {shiftsList.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                             {sectorStats.map((sector) => (
-                                <button key={sector.name} onClick={() => setSelectedSector(sector.name)} className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden group ${selectedSector === sector.name ? 'bg-emerald-600 border-emerald-700 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-400 hover:shadow-sm'}`}>
-                                    <div className="text-xs font-bold uppercase opacity-80 mb-1 flex justify-between">
-                                        <span>{sector.name}</span>
-                                        {sector.name !== 'Todos' && <span className={`text-[10px] px-1.5 rounded-full font-bold ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>{sector.percent}%</span>}
+                                <button key={sector.name} onClick={() => setSelectedSector(sector.name)} className={`p-4 rounded-xl border-2 transition-all transform hover:scale-105 ${selectedSector === sector.name ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 border-emerald-800 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400 hover:shadow-md'}`}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-xs font-bold uppercase tracking-wide">{sector.name}</span>
+                                        {sector.name !== 'Todos' && <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>{sector.percent}%</span>}
                                     </div>
-                                    <div className="text-2xl font-bold">{sector.horas}<span className="text-xs font-normal ml-1">h</span></div>
-                                    <div className="text-[10px] opacity-70 mt-1 flex items-center gap-1"><ActivityIcon className="h-3 w-3"/> {sector.count} paradas</div>
+                                    <div className="text-3xl font-bold mb-2">{sector.horas}<span className="text-xs font-normal ml-1 opacity-80">h</span></div>
+                                    <div className="text-xs opacity-70 flex items-center gap-1"><ActivityIcon className="h-3 w-3"/> {sector.count} paradas</div>
                                 </button>
                             ))}
                         </div>
                     </div>
                     
-                    {/* KPIs Rápidos */}
+                    {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wide">Total Horas Paradas</span>
+                            <span className="text-xs text-slate-400 uppercase font-bold">Total Horas</span>
                             <div className="text-2xl font-bold text-slate-800 mt-1">{totalHoras} h</div>
-                            {(startDate || endDate) && <div className="text-xs text-blue-500 mt-1">Filtro de data ativo</div>}
                         </div>
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wide">Qtd. de Paradas</span>
+                            <span className="text-xs text-slate-400 uppercase font-bold">Qtd Paradas</span>
                             <div className="text-2xl font-bold text-slate-800 mt-1">{detailedTableData.length}</div>
                         </div>
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wide">Tempo Médio (MTTR)</span>
+                            <span className="text-xs text-slate-400 uppercase font-bold">MTTR</span>
                             <div className="text-2xl font-bold text-slate-800 mt-1">{mttr} h</div>
                         </div>
-                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold tracking-wide">Maior Ofensor</span>
-                            <div className="text-sm font-bold text-slate-800 truncate mt-1" title={chartData[0]?.name}>{chartData[0]?.name || '-'}</div>
-                            <div className="text-xs text-red-500 font-bold">{chartData[0]?.horas}h ({Math.round((chartData[0]?.horas/totalHoras)*100) || 0}%)</div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                            <span className="text-xs text-slate-400 uppercase font-bold">Maior Ofensor</span>
+                            <div className="text-sm font-bold text-slate-800 truncate mt-1">{chartData[0]?.name || '-'}</div>
+                            <div className="text-xs text-red-500 font-bold">{chartData[0]?.horas}h</div>
                         </div>
                     </div>
 
-                    {/* Linha 1: Evolução Temporal + Comparativo Turnos */}
+                    {/* Gráficos */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
                             <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <TrendingUpIcon className="h-4 w-4 text-emerald-600"/> Evolução Diária de Paradas (Horas)
+                                <TrendingUpIcon className="h-4 w-4 text-emerald-600"/> Evolução Diária
                             </h3>
                             {timelineData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="90%">
@@ -735,12 +795,12 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                         <Area type="monotone" dataKey="horas" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorHours)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
-                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados temporais</div>}
+                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                         </div>
 
                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
                             <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <ClockIcon className="h-4 w-4 text-blue-600"/> Impacto por Turno
+                                <ClockIcon className="h-4 w-4 text-blue-600"/> Turnos
                             </h3>
                             {shiftComparisonData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="90%">
@@ -748,7 +808,7 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                         <XAxis type="number" hide />
                                         <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 11, fill: '#64748b'}} />
-                                        <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px'}} />
+                                        <Tooltip cursor={{fill: 'transparent'}} />
                                         <Bar dataKey="horas" radius={[0, 4, 4, 0]} barSize={24}>
                                             {shiftComparisonData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name.replace('Turno ', '')] || '#94a3b8'} />
@@ -756,25 +816,24 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
-                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados de turno</div>}
+                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                         </div>
                     </div>
 
-                    {/* Linha 2: Pareto Principal + Novo Painel à Direita */}
+                    {/* Pareto + Árvore */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        {/* Pareto (Esquerda) */}
                         <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[600px]">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <FactoryIcon className="h-5 w-5 text-emerald-600"/> Pareto: Principais Motivos
+                                    <FactoryIcon className="h-5 w-5 text-emerald-600"/> Pareto
                                 </h3>
-                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{totalHoras}h Total</span>
+                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{totalHoras}h</span>
                             </div>
                             <ResponsiveContainer width="100%" height="85%">
                                 <ComposedChart data={chartData} margin={{top: 10, right: 10, bottom: 40, left: 0}}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{fontSize: 10, fill: '#64748b'}} />
-                                    <YAxis yAxisId="left" stroke="#64748b" tick={{fontSize: 11}} label={{ value: 'Horas', angle: -90, position: 'insideLeft', fill: '#94a3b8' }} />
+                                    <YAxis yAxisId="left" stroke="#64748b" tick={{fontSize: 11}} />
                                     <YAxis yAxisId="right" orientation="right" stroke="#ef4444" unit="%" tick={{fontSize: 11}} />
                                     <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
                                     <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4,4,0,0]}>
@@ -785,23 +844,15 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                             </ResponsiveContainer>
                         </div>
 
-                        {/* Coluna Direita: Mapa de Árvore e Ranking */}
                         <div className="flex flex-col gap-6 h-[600px]">
-                             {/* Treemap */}
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
                                 <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <LayersIcon className="h-4 w-4 text-purple-600"/> Distribuição Hierárquica
+                                    <LayersIcon className="h-4 w-4 text-purple-600"/> Hierarquia
                                 </h3>
                                 <div className="flex-1">
                                     {treemapData.length > 0 ? (
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <Treemap
-                                                data={treemapData}
-                                                dataKey="size"
-                                                stroke="#fff"
-                                                fill="#8884d8"
-                                                content={<CustomizedTreemapContent colors={COLORS} />}
-                                            >
+                                            <Treemap data={treemapData} dataKey="size" stroke="#fff" fill="#8884d8" content={<CustomizedTreemapContent colors={COLORS} />}>
                                                 <Tooltip content={<CustomTooltip />} />
                                             </Treemap>
                                         </ResponsiveContainer>
@@ -809,39 +860,35 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                 </div>
                             </div>
                             
-                            {/* Ranking de Locais (NOVO) */}
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
                                 <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <MapPinIcon className="h-4 w-4 text-red-500"/> Top Pontos de Parada (Local)
+                                    <MapPinIcon className="h-4 w-4 text-red-500"/> Locais
                                 </h3>
-                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto pr-2">
                                     {locationData.length > 0 ? (
-                                         <div className="space-y-3">
+                                        <div className="space-y-3">
                                             {locationData.map((loc, i) => (
                                                 <div key={i} className="flex flex-col">
                                                     <div className="flex justify-between text-xs mb-1">
-                                                        <span className="font-bold text-slate-700 truncate w-36" title={loc.name}>{i+1}. {loc.name}</span>
+                                                        <span className="font-bold text-slate-700 truncate w-36">{i+1}. {loc.name}</span>
                                                         <span className="font-bold text-slate-900">{loc.horas}h</span>
                                                     </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                        <div 
-                                                            className="bg-red-500 h-1.5 rounded-full" 
-                                                            style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}
-                                                        ></div>
+                                                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                                        <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
                                                     </div>
                                                 </div>
                                             ))}
-                                         </div>
+                                        </div>
                                     ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Tabela Detalhada */}
+                    {/* Tabela */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
-                        <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
-                            <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600"/> Detalhamento Completo das Paradas</h3>
+                        <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20">
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600"/> Detalhes</h3>
                         </div>
                         <div className="overflow-y-auto flex-1 p-0">
                             <table className="w-full text-sm text-left">
@@ -849,9 +896,9 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                     <tr>
                                         <th className="px-4 py-3 bg-slate-50 w-24">Data</th>
                                         <th className="px-4 py-3 bg-slate-50 w-20">Início</th>
-                                        <th className="px-4 py-3 bg-slate-50">Local (Linha)</th>
-                                        <th className="px-4 py-3 bg-slate-50">Motivo (Descrição)</th>
-                                        <th className="px-4 py-3 bg-slate-50">Motivo Detalhado</th>
+                                        <th className="px-4 py-3 bg-slate-50">Local</th>
+                                        <th className="px-4 py-3 bg-slate-50">Motivo</th>
+                                        <th className="px-4 py-3 bg-slate-50">Detalhado</th>
                                         <th className="px-4 py-3 bg-slate-50">Resp.</th>
                                         <th className="px-4 py-3 bg-slate-50">OS</th>
                                         <th className="px-4 py-3 text-right bg-slate-50">Duração</th>
@@ -863,9 +910,9 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                                             <td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.dataStr}</td>
                                             <td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.horaIni}</td>
                                             <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px]">{item.linha}</td>
-                                            <td className="px-4 py-2 text-slate-600 truncate max-w-[200px]" title={item.motivo}>{item.motivo}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px]" title={item.detalhe}>{item.detalhe || '-'}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[100px]">{item.responsavel}</td>
+                                            <td className="px-4 py-2 text-slate-600 truncate max-w-[200px]">{item.motivo}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px]">{item.detalhe || '-'}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs truncate">{item.responsavel}</td>
                                             <td className="px-4 py-2 text-slate-500 text-xs font-mono">{item.os}</td>
                                             <td className="px-4 py-2 text-right text-slate-900 font-bold font-mono bg-slate-50/50">{item.valor.toFixed(2)}h</td>
                                         </tr>
@@ -874,7 +921,6 @@ UBS ATTO,Pré-secagem,Pré-secagem 6,Gilvan,B,28/01/2026,23:00:00,5,Manutenção
                             </table>
                         </div>
                     </div>
-
                 </div>
             );
         }

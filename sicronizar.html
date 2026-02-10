@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sincronizador - Paradas Indústria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-emerald-600 mb-2">🔄 Sincronizador de Paradas</h1>
+            <p class="text-slate-600 mb-6">Copie os dados da planilha Google Sheets e sincronize com Firestore</p>
+
+            <!-- Status -->
+            <div id="status" class="mb-6 hidden p-4 rounded-lg"></div>
+
+            <!-- Input -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-slate-700 mb-2">Cole aqui os dados da planilha (Ctrl+V):</label>
+                <textarea 
+                    id="csvInput" 
+                    class="w-full h-40 p-4 border-2 border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                    placeholder="Cole os dados aqui..."
+                ></textarea>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex gap-3">
+                <button 
+                    onclick="sincronizar()" 
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-colors"
+                >
+                    ✅ Sincronizar com Firestore
+                </button>
+                <button 
+                    onclick="limpar()" 
+                    class="px-6 bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-3 rounded-lg transition-colors"
+                >
+                    🗑️ Limpar
+                </button>
+            </div>
+
+            <!-- Informações -->
+            <div id="info" class="mt-6 text-sm text-slate-600"></div>
+        </div>
+
+        <!-- Link para Dashboard -->
+        <div class="mt-6 text-center">
+            <a href="paradas.html" class="text-emerald-600 font-bold hover:underline">← Voltar ao Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
+            authDomain: "integracaocoi.firebaseapp.com",
+            projectId: "integracaocoi",
+            storageBucket: "integracaocoi.firebasestorage.app",
+            messagingSenderId: "177203745489",
+            appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Autenticar anonimamente ao carregar
+        auth.signInAnonymously().catch(error => {
+            console.error('Erro ao autenticar anonimamente:', error);
+        });
+
+        function mostrarStatus(mensagem, tipo) {
+            const status = document.getElementById('status');
+            status.textContent = mensagem;
+            status.className = `p-4 rounded-lg mb-6 ${
+                tipo === 'sucesso' ? 'bg-emerald-100 border border-emerald-300 text-emerald-800' :
+                tipo === 'erro' ? 'bg-red-100 border border-red-300 text-red-800' :
+                'bg-blue-100 border border-blue-300 text-blue-800'
+            }`;
+            status.classList.remove('hidden');
+        }
+
+        async function sincronizar() {
+            try {
+                const csvInput = document.getElementById('csvInput').value.trim();
+                
+                if (!csvInput) {
+                    mostrarStatus('❌ Cole os dados antes de sincronizar!', 'erro');
+                    return;
+                }
+
+                mostrarStatus('⏳ Sincronizando...', 'carregando');
+
+                // Dividir dados em chunks de 500KB
+                const lines = csvInput.split('\n');
+                const chunkSize = 500000; // 500KB
+                let currentChunk = '';
+                let chunkIndex = 0;
+                const chunks = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    if ((currentChunk + line).length > chunkSize && currentChunk.length > 0) {
+                        chunks.push(currentChunk);
+                        currentChunk = line + '\n';
+                    } else {
+                        currentChunk += line + '\n';
+                    }
+                }
+                
+                if (currentChunk.length > 0) {
+                    chunks.push(currentChunk);
+                }
+
+                // Salvar chunks no Firestore
+                const batch = db.batch();
+                const metadataRef = db.collection('paradas_industria').doc('metadata');
+                
+                batch.set(metadataRef, {
+                    totalChunks: chunks.length,
+                    lastUpdated: new Date().toISOString(),
+                    updatedBy: 'Sincronizador Manual',
+                    totalLinhas: lines.length,
+                    totalBytes: csvInput.length
+                });
+
+                // Salvar cada chunk
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunkRef = db.collection('paradas_industria').doc(`chunk_${i}`);
+                    batch.set(chunkRef, {
+                        data: chunks[i],
+                        index: i,
+                        size: chunks[i].length
+                    });
+                }
+
+                await batch.commit();
+
+                mostrarStatus('✅ Dados sincronizados com sucesso! Atualize o dashboard.', 'sucesso');
+                
+                document.getElementById('info').innerHTML = `
+                    <p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+                    <p><strong>Total de Linhas:</strong> ${lines.length}</p>
+                    <p><strong>Chunks Salvos:</strong> ${chunks.length}</p>
+                    <p><strong>Tamanho Total:</strong> ${(csvInput.length / 1024).toFixed(2)} KB</p>
+                `;
+            } catch (error) {
+                mostrarStatus(`❌ Erro: ${error.message}`, 'erro');
+                console.error(error);
+            }
+        }
+
+        function limpar() {
+            document.getElementById('csvInput').value = '';
+            document.getElementById('status').classList.add('hidden');
+            document.getElementById('info').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
