@@ -1,24 +1,25 @@
 // ...existing code...
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Industrial - ATTO Sementes</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
+
     <!-- Prop-types -->
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
-    
+
     <!-- Recharts -->
     <script crossorigin src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
-    
+
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -32,15 +33,45 @@
     </script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .animate-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .animate-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -52,11 +83,19 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
         }
     </style>
 </head>
+
 <body class="bg-slate-100 text-slate-800">
     <div id="root"></div>
 
@@ -79,15 +118,15 @@
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        
+
         window.FirebaseTools = { auth: firebase.auth(), db: firebase.firestore(), ...firebase.firestore, ...firebase.auth };
     </script>
 
     <script type="text/babel">
         const { useState, useMemo, useRef, useEffect, useCallback } = React;
-        const { 
-            BarChart, Bar, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-            ResponsiveContainer, ComposedChart, Cell, PieChart, Pie, Treemap 
+        const {
+            BarChart, Bar, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+            ResponsiveContainer, ComposedChart, Cell, PieChart, Pie, Treemap
         } = Recharts;
 
         // --- Ícones (SVG Inline) ---
@@ -97,71 +136,182 @@
             </svg>
         );
 
-        const UploadIcon = ({ className }) => <IconWrapper className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconWrapper>;
-        const TableIcon = ({ className }) => <IconWrapper className={className}><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-5"/><path d="M9 3v18"/><path d="M12 9h7"/><path d="M3 9h18"/></IconWrapper>;
-        const SproutIcon = ({ className }) => <IconWrapper className={className}><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></IconWrapper>;
-        const LinkIcon = ({ className }) => <IconWrapper className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></IconWrapper>;
-        const RefreshCwIcon = ({ className }) => <IconWrapper className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconWrapper>;
-        const AlertCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconWrapper>;
-        const WifiIcon = ({ className }) => <IconWrapper className={className}><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></IconWrapper>;
-        const ClipboardCopyIcon = ({ className }) => <IconWrapper className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></IconWrapper>;
-        const FactoryIcon = ({ className }) => <IconWrapper className={className}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></IconWrapper>;
-        const FilterIcon = ({ className }) => <IconWrapper className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></IconWrapper>;
-        const PlayCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></IconWrapper>;
-        const PauseCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></IconWrapper>;
-        const ActivityIcon = ({ className }) => <IconWrapper className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></IconWrapper>;
-        const PieChartIcon = ({ className }) => <IconWrapper className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></IconWrapper>;
-        const TrendingUpIcon = ({ className }) => <IconWrapper className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconWrapper>;
-        const WrenchIcon = ({ className }) => <IconWrapper className={className}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></IconWrapper>;
-        const ClockIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconWrapper>;
-        const TrashIcon = ({ className }) => <IconWrapper className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></IconWrapper>;
-        const MapPinIcon = ({ className }) => <IconWrapper className={className}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></IconWrapper>;
-        const LayersIcon = ({ className }) => <IconWrapper className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></IconWrapper>;
-        const CalendarIcon = ({ className }) => <IconWrapper className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></IconWrapper>;
-        const XIcon = ({ className }) => <IconWrapper className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconWrapper>;
-        const ArrowLeftIcon = ({ className }) => <IconWrapper className={className}><path d="M19 12H5M12 19l-7-7 7-7"/></IconWrapper>;
-        const LogOutIcon = ({ className }) => <IconWrapper className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconWrapper>;
-        const CloudIcon = ({ className }) => <IconWrapper className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></IconWrapper>;
-        const CheckCircleIcon = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconWrapper>;
+        const UploadIcon = ({ className }) => <IconWrapper className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></IconWrapper>;
+        const TableIcon = ({ className }) => <IconWrapper className={className}><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-5" /><path d="M9 3v18" /><path d="M12 9h7" /><path d="M3 9h18" /></IconWrapper>;
+        const SproutIcon = ({ className }) => <IconWrapper className={className}><path d="M7 20h10" /><path d="M10 20c5.5-2.5.8-6.4 3-10" /><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" /><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" /></IconWrapper>;
+        const LinkIcon = ({ className }) => <IconWrapper className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></IconWrapper>;
+        const RefreshCwIcon = ({ className }) => <IconWrapper className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></IconWrapper>;
+        const AlertCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></IconWrapper>;
+        const WifiIcon = ({ className }) => <IconWrapper className={className}><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></IconWrapper>;
+        const ClipboardCopyIcon = ({ className }) => <IconWrapper className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></IconWrapper>;
+        const FactoryIcon = ({ className }) => <IconWrapper className={className}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M17 18h1" /><path d="M12 18h1" /><path d="M7 18h1" /></IconWrapper>;
+        const FilterIcon = ({ className }) => <IconWrapper className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></IconWrapper>;
+        const PlayCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></IconWrapper>;
+        const PauseCircleIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10" /><line x1="10" y1="15" x2="10" y2="9" /><line x1="14" y1="15" x2="14" y2="9" /></IconWrapper>;
+        const ActivityIcon = ({ className }) => <IconWrapper className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></IconWrapper>;
+        const PieChartIcon = ({ className }) => <IconWrapper className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></IconWrapper>;
+        const TrendingUpIcon = ({ className }) => <IconWrapper className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></IconWrapper>;
+        const WrenchIcon = ({ className }) => <IconWrapper className={className}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></IconWrapper>;
+        const ClockIcon = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></IconWrapper>;
+        const TrashIcon = ({ className }) => <IconWrapper className={className}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></IconWrapper>;
+        const MapPinIcon = ({ className }) => <IconWrapper className={className}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></IconWrapper>;
+        const LayersIcon = ({ className }) => <IconWrapper className={className}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></IconWrapper>;
+        const CalendarIcon = ({ className }) => <IconWrapper className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></IconWrapper>;
+        const XIcon = ({ className }) => <IconWrapper className={className}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></IconWrapper>;
+        const ArrowLeftIcon = ({ className }) => <IconWrapper className={className}><path d="M19 12H5M12 19l-7-7 7-7" /></IconWrapper>;
+        const LogOutIcon = ({ className }) => <IconWrapper className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></IconWrapper>;
+        const CloudIcon = ({ className }) => <IconWrapper className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" /></IconWrapper>;
+        const CheckCircleIcon = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></IconWrapper>;
 
         // Cores
         const COLORS = ['#059669', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#4f46e5', '#0891b2', '#be185d', '#15803d'];
         const SHIFT_COLORS = { 'A': '#3b82f6', 'B': '#8b5cf6', 'C': '#10b981', 'Geral': '#94a3b8' };
 
+        // --- Helper de Formatação de Tempo (HH:MM) ---
+        const formatDuration = (val) => {
+            const num = parseFloat(val);
+            if (isNaN(num)) return '00:00';
+            const totalMinutes = Math.round(num * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        };
+
+        // --- Helper de Formatação de Tempo Tabela (HH HR MM MN) ---
+        const formatDurationTable = (val) => {
+            const num = parseFloat(val);
+            if (isNaN(num)) return '00 HR 00 MN';
+            const totalMinutes = Math.round(num * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${hours.toString().padStart(2, '0')} HR ${minutes.toString().padStart(2, '0')} MN`;
+        };
+
+        // --- Componente Modal de Detalhes do Local ---
+        const LocationModal = ({ isOpen, onClose, locationName, data }) => {
+            if (!isOpen) return null;
+
+            const stats = useMemo(() => {
+                let total = 0;
+                const cats = { 'Manutenção': 0, 'Operacional': 0, 'Gestão': 0, 'Outros': 0 };
+                const reasons = {};
+
+                data.forEach(d => {
+                    total += d.valor;
+                    let cat = d.categoria || 'Outros';
+                    // Normalização simples de categorias se necessário
+                    if (/mec|manut/i.test(cat)) cat = 'Manutenção';
+                    else if (/op/i.test(cat)) cat = 'Operacional';
+                    else if (/ges/i.test(cat)) cat = 'Gestão';
+                    else cat = 'Outros';
+
+                    cats[cat] = (cats[cat] || 0) + d.valor;
+
+                    const reason = d.motivo || 'Não Informado';
+                    reasons[reason] = (reasons[reason] || 0) + d.valor;
+                });
+
+                const sortedReasons = Object.entries(reasons)
+                    .map(([name, value]) => ({ name, value }))
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 10);
+
+                const pieData = Object.entries(cats)
+                    .map(([name, value]) => ({ name, value }))
+                    .filter(i => i.value > 0);
+
+                return { total, cats, sortedReasons, pieData };
+            }, [data]);
+
+            return (
+                <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-slate-800 p-4 flex justify-between items-center shrink-0">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <MapPinIcon className="h-6 w-6 text-red-500" />
+                                {locationName}
+                            </h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                                <XIcon className="h-8 w-8" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Total Parado</p><p className="text-2xl font-bold text-slate-800">{formatDuration(stats.total)}</p></div>
+                                <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Operacional</p><p className="text-xl font-bold text-blue-600">{formatDuration(stats.cats['Operacional'])}</p></div>
+                                <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Manutenção</p><p className="text-xl font-bold text-orange-600">{formatDuration(stats.cats['Manutenção'])}</p></div>
+                                <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Gestão</p><p className="text-xl font-bold text-purple-600">{formatDuration(stats.cats['Gestão'])}</p></div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Distribuição por Categoria</h3>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                                {stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                                            </Pie>
+                                            <Tooltip formatter={(value) => formatDuration(value)} />
+                                            <Legend />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Top Motivos (Pareto)</h3>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={stats.sortedReasons} layout="vertical" margin={{ left: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                            <XAxis type="number" hide />
+                                            <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10 }} />
+                                            <Tooltip formatter={(value) => formatDuration(value)} />
+                                            <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div className="p-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-700">Detalhamento de Paradas - {locationName}</h3></div><div className="overflow-x-auto max-h-96"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0"><tr><th className="px-4 py-3">Data</th><th className="px-4 py-3">Hora</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Categoria</th><th className="px-4 py-3 text-right">Duração</th></tr></thead><tbody className="divide-y divide-slate-100">{data.map((item, idx) => (<tr key={idx} className="hover:bg-slate-50"><td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.dataStr}</td><td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.horaIni}</td><td className="px-4 py-2 text-slate-700">{item.motivo}</td><td className="px-4 py-2 text-slate-500 text-xs">{item.categoria}</td><td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td></tr>))}</tbody></table></div></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Componente Customizado para Treemap
         const CustomizedTreemapContent = (props) => {
-          const { root, depth, x, y, width, height, index, payload, colors, rank, name, value } = props;
-          const fontSize = Math.min(width / 5, height / 3, 12);
-          const showText = width > 40 && height > 30;
+            const { root, depth, x, y, width, height, index, payload, colors, rank, name, value } = props;
+            const fontSize = Math.min(width / 5, height / 3, 12);
+            const showText = width > 40 && height > 30;
 
-          return (
-            <g>
-              <rect
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                style={{
-                  fill: depth < 2 ? colors[Math.floor(index % colors.length)] : 'rgba(255,255,255,0)',
-                  stroke: '#fff',
-                  strokeWidth: 2 / (depth + 1e-10),
-                  strokeOpacity: 1 / (depth + 1e-10),
-                  rx: 4, 
-                  ry: 4,
-                }}
-              />
-              {depth === 1 && showText ? (
-                <>
-                    <text x={x + width / 2} y={y + height / 2 - 6} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold" style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.6)', pointerEvents: 'none' }}>
-                        {name.split(' ')[0]} 
-                    </text>
-                    <text x={x + width / 2} y={y + height / 2 + 8} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={fontSize * 0.9} style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)', pointerEvents: 'none' }}>
-                        {value}h
-                    </text>
-                </>
-              ) : null}
-            </g>
-          );
+            return (
+                <g>
+                    <rect
+                        x={x}
+                        y={y}
+                        width={width}
+                        height={height}
+                        style={{
+                            fill: depth < 2 ? colors[Math.floor(index % colors.length)] : 'rgba(255,255,255,0)',
+                            stroke: '#fff',
+                            strokeWidth: 2 / (depth + 1e-10),
+                            strokeOpacity: 1 / (depth + 1e-10),
+                            rx: 4,
+                            ry: 4,
+                        }}
+                    />
+                    {depth === 1 && showText ? (
+                        <>
+                            <text x={x + width / 2} y={y + height / 2 - 6} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold" style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.6)', pointerEvents: 'none' }}>
+                                {name.split(' ')[0]}
+                            </text>
+                            <text x={x + width / 2} y={y + height / 2 + 8} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={fontSize * 0.9} style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)', pointerEvents: 'none' }}>
+                                {formatDuration(value)}
+                            </text>
+                        </>
+                    ) : null}
+                </g>
+            );
         };
 
         const CustomTooltip = ({ active, payload }) => {
@@ -170,8 +320,8 @@
                 return (
                     <div className="glass-tooltip p-3 rounded-lg border border-slate-200 shadow-xl text-xs z-50">
                         <p className="font-bold text-slate-800 mb-1 text-sm">{data.name}</p>
-                        <p className="text-emerald-600 font-semibold">Tempo: <span className="text-slate-700">{data.value || data.size}h</span></p>
-                        {data.root && <p className="text-slate-500 mt-1">Total Geral: {data.root.value}h</p>}
+                        <p className="text-emerald-600 font-semibold">Tempo: <span className="text-slate-700">{formatDuration(data.value || data.size)}</span></p>
+                        {data.root && <p className="text-slate-500 mt-1">Total Geral: {formatDuration(data.root.value)}</p>}
                     </div>
                 );
             }
@@ -181,8 +331,18 @@
         function App() {
             const [selectedSector, setSelectedSector] = useState('Todos');
             const [selectedShift, setSelectedShift] = useState('Todos');
-            const [startDate, setStartDate] = useState(''); 
-            const [endDate, setEndDate] = useState('');     
+            
+            // Inicializa com a data de ontem para evitar travamento por excesso de dados
+            const [startDate, setStartDate] = useState(() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                return d.toLocaleDateString('en-CA');
+            });
+            const [endDate, setEndDate] = useState(() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                return d.toLocaleDateString('en-CA');
+            });
             const [csvInput, setCsvInput] = useState(() => {
                 const saved = localStorage.getItem('dashboardParetoData');
                 return saved || '';
@@ -191,6 +351,7 @@
             const [error, setError] = useState(null);
             const [lastUpdated, setLastUpdated] = useState(null);
             const [firebaseConnected, setFirebaseConnected] = useState(false);
+            const [selectedLocation, setSelectedLocation] = useState(null);
 
             const fileInputRef = useRef(null);
 
@@ -211,6 +372,7 @@
                                     const doc = await FirebaseTools.db.collection("paradas_industria").doc("dados_atuais").get();
                                     if (doc.exists && doc.data().csvContent) {
                                         setCsvInput(doc.data().csvContent);
+                                        localStorage.setItem('dashboardParetoData', doc.data().csvContent);
                                         setLastUpdated(doc.data().lastUpdated ? new Date(doc.data().lastUpdated) : new Date());
                                         setFirebaseConnected(true);
                                         setError(null);
@@ -235,6 +397,7 @@
                             // se metadata tiver csvContent (formato antigo) usa direto
                             if (metadata.csvContent) {
                                 setCsvInput(metadata.csvContent);
+                                localStorage.setItem('dashboardParetoData', metadata.csvContent);
                                 setLastUpdated(metadata.lastUpdated ? new Date(metadata.lastUpdated) : new Date());
                                 setFirebaseConnected(true);
                                 setError(null);
@@ -265,6 +428,7 @@
                                     }
                                 }
                                 setCsvInput(fullData);
+                                localStorage.setItem('dashboardParetoData', fullData);
                                 setLastUpdated(metadata.lastUpdated ? new Date(metadata.lastUpdated) : new Date());
                                 setFirebaseConnected(true);
                                 setError(null);
@@ -277,6 +441,7 @@
                                 const doc = await FirebaseTools.db.collection("paradas_industria").doc("dados_atuais").get();
                                 if (doc.exists && doc.data().csvContent) {
                                     setCsvInput(doc.data().csvContent);
+                                    localStorage.setItem('dashboardParetoData', doc.data().csvContent);
                                     setLastUpdated(doc.data().lastUpdated ? new Date(doc.data().lastUpdated) : new Date());
                                     setFirebaseConnected(true);
                                     setError(null);
@@ -330,11 +495,12 @@
                 if (!timeStr || typeof timeStr !== 'string') return 0;
                 try {
                     const cleanTime = timeStr.trim();
-                    const parts = cleanTime.split(':');
-                    if (parts.length >= 2) {
+                    if (cleanTime.includes(':')) {
+                        const parts = cleanTime.split(':');
                         const hours = parseInt(parts[0], 10) || 0;
                         const minutes = parseInt(parts[1], 10) || 0;
-                        return hours + (minutes / 60);
+                        const seconds = parts[2] ? parseInt(parts[2], 10) : 0;
+                        return hours + (minutes / 60) + (seconds / 3600);
                     }
                     const floatVal = parseFloat(cleanTime.replace(',', '.'));
                     if (!isNaN(floatVal)) return floatVal;
@@ -365,13 +531,48 @@
                     let firstLine = lines[0];
                     const delimiter = firstLine.includes('\t') ? '\t' : ',';
                     const cleanCell = (cell) => cell ? cell.replace(/^"|"$/g, '').trim() : '';
-                    
-                    const headerKeywords = ['setor', 'linha', 'motivo', 'descrição', 'tempo', 'turno', 'responsável', 'data'];
-                    const isHeader = headerKeywords.some(keyword => firstLine.toLowerCase().includes(keyword));
-                    const dataStartIndex = isHeader ? 1 : 0;
+
+                    // Detecção inteligente de formato (Backend vs Raw Excel)
+                    const lowerHeader = firstLine.toLowerCase();
+                    const isBackendFormat = lowerHeader.includes('setor') && lowerHeader.includes('tempo parada') && lowerHeader.includes('desc detalhada');
+
+                    let idx = {};
+
+                    if (isBackendFormat) {
+                        // Mapeamento dinâmico para dados vindos do Firestore/Functions
+                        const headers = firstLine.split(delimiter).map(h => cleanCell(h).toLowerCase());
+                        const getIdx = (key) => headers.findIndex(h => h.includes(key));
+
+                        idx = {
+                            setor: getIdx('setor'),
+                            linha: getIdx('linha'),
+                            responsavel: getIdx('responsável'),
+                            turno: getIdx('turno'),
+                            data: getIdx('data início'),
+                            hora: getIdx('hora início'),
+                            motivo: getIdx('descrição'),
+                            categoria: getIdx('categoria'),
+                            detalhe: getIdx('desc detalhada'),
+                            tag: getIdx('tag'),
+                            os: getIdx('o.s'),
+                            tempo: getIdx('tempo parada')
+                        };
+                    } else {
+                        // Mapeamento fixo para Colar do Excel (Raw)
+                        // Ajustado: Descrição Detalhada é índice 11 (L), não 10 (K - Agrupamento)
+                        idx = {
+                            setor: 1, linha: 2, responsavel: 3, turno: 4, data: 5, hora: 6,
+                            categoria: 8, motivo: 9, detalhe: 11, tag: 13, os: 14, tempo: 17
+                        };
+                    }
+
+                    const dataStartIndex = (isBackendFormat || lowerHeader.includes('setor')) ? 1 : 0;
 
                     const processedData = lines.slice(dataStartIndex).map(line => {
                         if (!line.trim()) return null;
+
+                        // Ignorar linhas de cabeçalho repetidas (evita duplicação ao colar múltiplos blocos)
+                        if (line.toLowerCase().includes('setor') && line.toLowerCase().includes('tempo')) return null;
 
                         let parts;
                         if (delimiter === '\t') {
@@ -379,28 +580,34 @@
                         } else {
                             parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                         }
-                        const getVal = (idx) => (parts[idx]) ? cleanCell(parts[idx]) : '';
 
-                        let setor = getVal(1) ? getVal(1).trim() : '';
-                        let linha = getVal(2) || '-';
-                        let responsavel = getVal(3) || '-';
-                        let turno = getVal(4) || 'Não Informado';
-                        let dataStr = getVal(5) || '';
-                        let horaIni = getVal(6) || '';
-                        let categoria = getVal(8) || 'Outros';
-                        let motivo = getVal(9) || 'Não Informado';
-                        let detalhe = getVal(10) || ''; 
-                        let tag = getVal(13) || '-';
-                        let os = getVal(14) || '-';
-                        let tempoStr = getVal(17) || getVal(parts.length - 1);
+                        const getVal = (i) => (i !== undefined && i >= 0 && parts[i]) ? cleanCell(parts[i]) : '';
+
+                        let setor = getVal(idx.setor);
+                        let linha = getVal(idx.linha) || '-';
+                        let responsavel = getVal(idx.responsavel) || '-';
+                        let turno = getVal(idx.turno) || 'Não Informado';
+                        let dataStr = getVal(idx.data) || '';
+                        let horaIni = getVal(idx.hora) || '';
+                        let categoria = getVal(idx.categoria) || 'Outros';
+                        let motivo = getVal(idx.motivo) || 'Não Informado';
+                        let detalhe = getVal(idx.detalhe) || '';
+                        let tag = getVal(idx.tag) || '-';
+                        let os = getVal(idx.os) || '-';
+
+                        // Fallback robusto para tempo
+                        let tempoStr = getVal(idx.tempo);
+                        if (!tempoStr && !isBackendFormat) tempoStr = getVal(parts.length - 1);
+
                         let valor = parseTimeToHours(tempoStr);
                         let isoDate = parseDateToISO(dataStr);
 
-                        if (!setor || setor === '' || !valor) return null;
-                        
+                        // Validação: Garante que setor existe e valor é numérico (mesmo que 0)
+                        if (!setor || setor.trim() === '' || isNaN(valor)) return null;
+
                         return { setor, linha, motivo, detalhe, categoria, valor, turno, dataStr, isoDate, horaIni, responsavel, tag, os };
-                    }).filter(item => item && item.valor > 0 && item.setor && item.setor.trim() !== '');
-                    
+                    }).filter(item => item !== null);
+
                     return processedData;
                 } catch (e) {
                     console.error("Erro ao processar dados", e);
@@ -431,43 +638,82 @@
             const { sectorStats, shiftsList, pieData, timelineData, shiftComparisonData, tagData, locationData, detailedTableData, treemapData, totalHoras } = useMemo(() => {
                 const shifts = new Set();
                 const stats = { 'Todos': { horas: 0, count: 0, percent: 0 } };
-                const catGroups = {}; 
+                const catGroups = {};
                 const treeMapGroups = {};
                 const dateGroups = {};
                 const shiftGroups = {};
                 const tagGroups = {};
                 const locationGroups = {};
-                
+
+                // Collect shifts from all data
                 workingData.forEach(d => {
-                    if(d.turno) shifts.add(d.turno);
+                    if (d.turno) shifts.add(d.turno);
                 });
 
-                let filteredData = workingData;
-                if (selectedSector !== 'Todos') filteredData = filteredData.filter(d => d.setor === selectedSector);
-                if (selectedShift !== 'Todos') filteredData = filteredData.filter(d => d.turno === selectedShift);
-                
-                if (startDate) filteredData = filteredData.filter(d => d.isoDate >= startDate);
-                if (endDate) filteredData = filteredData.filter(d => d.isoDate <= endDate);
+                // Define Time Window for Clamping
+                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
+                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+
+                let filteredData = [];
+
+                workingData.forEach(d => {
+                    // 1. Filter by Sector/Shift
+                    if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
+                    if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+
+                    // 2. Calculate Timestamps & Clamp
+                    let startMs = 0;
+                    if (d.isoDate) {
+                        let timeStr = d.horaIni || '00:00:00';
+                        if (/^\d{1,2}:\d{2}$/.test(timeStr)) timeStr += ':00';
+                        const dt = new Date(`${d.isoDate}T${timeStr}`);
+                        if (!isNaN(dt.getTime())) startMs = dt.getTime();
+                    }
+
+                    if (startMs === 0) {
+                        // Fallback: include if no date filter active
+                        if (!startDate && !endDate) filteredData.push(d);
+                        return;
+                    }
+
+                    const durationMs = (d.valor || 0) * 3600000;
+                    const endMs = startMs + durationMs;
+
+                    // Check Range (Strict Start Date) - Filtra apenas registros que INICIAM no período
+                    if (startMs >= wStart && startMs <= wEnd) {
+                        // Clamp Duration to Window
+                        const cS = startMs;
+                        const cE = Math.min(endMs, wEnd);
+                        const cDur = Math.max(0, cE - cS);
+                        const cVal = cDur / 3600000;
+
+                        filteredData.push({
+                            ...d,
+                            valor: cVal, // Use clamped value for stats
+                            originalValor: d.valor
+                        });
+                    }
+                });
 
                 let grandTotal = 0;
 
                 filteredData.forEach(item => {
                     grandTotal += item.valor;
-                    
-                    let catKey = 'Outros'; 
-                    if (item.detalhe && item.detalhe.length < 20) catKey = item.detalhe; 
-                    else catKey = item.motivo.split(' ')[0] || 'Geral'; 
-                    
+
+                    let catKey = 'Outros';
+                    if (item.detalhe && item.detalhe.length < 20) catKey = item.detalhe;
+                    else catKey = item.motivo.split(' ')[0] || 'Geral';
+
                     catGroups[catKey] = (catGroups[catKey] || 0) + item.valor;
-                    
+
                     if (!treeMapGroups[catKey]) treeMapGroups[catKey] = { name: catKey, children: [] };
                     let existingChild = treeMapGroups[catKey].children.find(c => c.name === item.motivo);
-                    if (existingChild) { existingChild.size += item.valor; } 
+                    if (existingChild) { existingChild.size += item.valor; }
                     else { treeMapGroups[catKey].children.push({ name: item.motivo, size: item.valor }); }
 
                     if (item.dataStr) {
-                         const dateKey = item.dataStr.split(' ')[0];
-                         dateGroups[dateKey] = (dateGroups[dateKey] || 0) + item.valor;
+                        const dateKey = item.dataStr.split(' ')[0];
+                        dateGroups[dateKey] = (dateGroups[dateKey] || 0) + item.valor;
                     }
 
                     const shiftKey = item.turno || 'N/A';
@@ -480,20 +726,20 @@
                     const locKey = item.linha || 'Não Identificado';
                     locationGroups[locKey] = (locationGroups[locKey] || 0) + item.valor;
                 });
-                
+
                 filteredData.forEach(d => {
                     stats['Todos'].horas += d.valor;
                     stats['Todos'].count += 1;
-                    
+
                     if (!stats[d.setor]) stats[d.setor] = { horas: 0, count: 0, percent: 0 };
                     stats[d.setor].horas += d.valor;
                     stats[d.setor].count += 1;
                 });
-                
+
                 const totalGlobal = stats['Todos'].horas;
                 const sectorArray = Object.entries(stats).map(([name, data]) => ({
                     name,
-                    horas: parseFloat(data.horas.toFixed(1)),
+                    horas: data.horas,
                     count: data.count,
                     percent: totalGlobal > 0 ? ((data.horas / totalGlobal) * 100).toFixed(1) : 0
                 })).sort((a, b) => (a.name === 'Todos' ? -1 : b.horas - a.horas));
@@ -501,12 +747,12 @@
                 const finalPieData = Object.entries(catGroups)
                     .map(([name, value]) => ({ name, value: parseFloat(value.toFixed(2)) }))
                     .sort((a, b) => b.value - a.value);
-                
+
                 const finalTreemapData = Object.values(treeMapGroups).map(cat => ({
                     ...cat,
                     size: cat.children.reduce((acc, c) => acc + c.size, 0)
                 })).sort((a, b) => b.size - a.size);
-                
+
                 const finalTimelineData = Object.entries(dateGroups)
                     .map(([date, value]) => ({ date, horas: parseFloat(value.toFixed(2)) }))
                     .sort((a, b) => {
@@ -521,7 +767,7 @@
                 const finalTagData = Object.entries(tagGroups)
                     .map(([name, horas]) => ({ name, horas: parseFloat(horas.toFixed(1)) }))
                     .sort((a, b) => b.horas - a.horas)
-                    .slice(0, 5); 
+                    .slice(0, 5);
 
                 const finalLocationData = Object.entries(locationGroups)
                     .map(([name, horas]) => ({ name, horas: parseFloat(horas.toFixed(1)) }))
@@ -540,7 +786,7 @@
                     tagData: finalTagData,
                     locationData: finalLocationData,
                     detailedTableData: finalTableData,
-                    totalHoras: grandTotal.toFixed(1)
+                    totalHoras: grandTotal
                 };
             }, [workingData, selectedShift, selectedSector, startDate, endDate]);
 
@@ -550,12 +796,38 @@
             }, [sectorStats]);
 
             const processedPareto = useMemo(() => {
-                let filtered = workingData;
-                if (selectedSector !== 'Todos') filtered = filtered.filter(d => d.setor === selectedSector);
-                if (selectedShift !== 'Todos') filtered = filtered.filter(d => d.turno === selectedShift);
-                
-                if (startDate) filtered = filtered.filter(d => d.isoDate >= startDate);
-                if (endDate) filtered = filtered.filter(d => d.isoDate <= endDate);
+                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
+                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+
+                let filtered = [];
+
+                workingData.forEach(d => {
+                    if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
+                    if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+
+                    let startMs = 0;
+                    if (d.isoDate) {
+                        let timeStr = d.horaIni || '00:00:00';
+                        if (/^\d{1,2}:\d{2}$/.test(timeStr)) timeStr += ':00';
+                        const dt = new Date(`${d.isoDate}T${timeStr}`);
+                        if (!isNaN(dt.getTime())) startMs = dt.getTime();
+                    }
+
+                    if (startMs === 0) {
+                        if (!startDate && !endDate) filtered.push(d);
+                        return;
+                    }
+
+                    const durationMs = (d.valor || 0) * 3600000;
+                    const endMs = startMs + durationMs;
+
+                    if (startMs >= wStart && startMs <= wEnd) {
+                        const cS = startMs;
+                        const cE = Math.min(endMs, wEnd);
+                        const cDur = Math.max(0, cE - cS);
+                        filtered.push({ ...d, valor: cDur / 3600000 });
+                    }
+                });
 
                 const groups = {};
                 let grandTotal = 0;
@@ -563,11 +835,11 @@
                 filtered.forEach(item => {
                     const key = item.motivo ? item.motivo.trim() : 'Não Informado';
                     if (!key) return;
-                    
+
                     if (!groups[key]) {
-                        groups[key] = { 
-                            valor: 0, 
-                            detalhe: item.detalhe 
+                        groups[key] = {
+                            valor: 0,
+                            detalhe: item.detalhe
                         };
                     }
                     groups[key].valor += item.valor;
@@ -575,15 +847,15 @@
                 });
 
                 const sorted = Object.entries(groups)
-                    .map(([name, data]) => ({ 
-                        name, 
-                        valor: data.valor, 
+                    .map(([name, data]) => ({
+                        name,
+                        valor: data.valor,
                         detalhe: data.detalhe
                     }))
                     .sort((a, b) => b.valor - a.valor);
 
                 let acumulado = 0;
-                const finalChartData = sorted.slice(0, 20).map(item => { 
+                const finalChartData = sorted.slice(0, 20).map(item => {
                     acumulado += item.valor;
                     const percAcumulado = grandTotal > 0 ? (acumulado / grandTotal) * 100 : 0;
                     return {
@@ -591,13 +863,13 @@
                         detalhe: item.detalhe,
                         horas: parseFloat(item.valor.toFixed(2)),
                         acumulado: parseFloat(percAcumulado.toFixed(1)),
-                        isVital: percAcumulado <= 80 || (percAcumulado > 80 && (percAcumulado - (item.valor/grandTotal)*100) < 80)
+                        isVital: percAcumulado <= 80 || (percAcumulado > 80 && (percAcumulado - (item.valor / grandTotal) * 100) < 80)
                     };
                 });
 
-                return { 
-                    chartData: finalChartData, 
-                    totalHoras: grandTotal.toFixed(1)
+                return {
+                    chartData: finalChartData,
+                    totalHoras: grandTotal
                 };
             }, [workingData, selectedSector, selectedShift, startDate, endDate]);
 
@@ -617,47 +889,46 @@
             return (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800 p-4 md:p-8 font-sans">
                     {/* Header */}
-                    <header className="mb-8 bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl shadow-xl border-l-4 border-emerald-500">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                                <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-                                    <SproutIcon className="h-10 w-10 text-emerald-400" />
-                                    Monitoramento Industrial
-                                </h1>
-                                <p className="text-slate-300 text-sm md:text-base mt-2 flex flex-wrap items-center gap-2">
-                                    📊 Análise de Paradas | Eficiência | Manutenção
-                                    {firebaseConnected && (
-                                        <>
-                                            <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                                                <CloudIcon className="h-4 w-4 pulse-indicator" /> 
-                                                Sincronizado
-                                            </span>
-                                            {lastUpdated && <span className="text-xs text-slate-400">• {lastUpdated.toLocaleTimeString('pt-BR')}</span>}
-                                        </>
-                                    )}
-                                    {!firebaseConnected && csvInput && (
-                                        <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
-                                            <AlertCircleIcon className="h-4 w-4" /> 
-                                            Dados Locais
+
+                    <header className="flex flex-col xl:flex-row justify-between items-center mb-8 bg-slate-900 p-6 rounded-2xl shadow-xl">
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                                <SproutIcon className="h-10 w-10 text-emerald-400" />
+                                Monitoramento Industrial
+                            </h1>
+                            <p className="text-slate-300 text-sm md:text-base mt-2 flex flex-wrap items-center gap-2">
+                                📊 Análise de Paradas | Eficiência | Manutenção
+                                {firebaseConnected && (
+                                    <>
+                                        <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                                            <CloudIcon className="h-4 w-4 pulse-indicator" />
+                                            Sincronizado
                                         </span>
-                                    )}
-                                </p>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                                <button onClick={() => window.location.href = 'menu.html'} className="px-4 py-2 bg-slate-600 text-white hover:bg-slate-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-slate-700 shadow-sm hover:shadow-md">
-                                    ← Menu
-                                </button>
-                                <button onClick={() => window.location.href = 'sicronizar.html'} className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-blue-700 shadow-sm hover:shadow-md">
-                                    🔄 Sincronizar
-                                </button>
-                                <button onClick={() => { setCsvInput(''); localStorage.removeItem('dashboardParetoData'); }} className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-red-300 shadow-sm hover:shadow-md">
-                                    <TrashIcon className="h-4 w-4" /> Limpar
-                                </button>
-                                <label className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 shadow-md cursor-pointer hover:shadow-lg">
-                                    <UploadIcon className="h-4 w-4" /> Importar CSV
-                                    <input type="file" accept=".csv,.txt,.tsv" onChange={handleFileChange} className="hidden" />
-                                </label>
-                            </div>
+                                        {lastUpdated && <span className="text-xs text-slate-400">• {lastUpdated.toLocaleTimeString('pt-BR')}</span>}
+                                    </>
+                                )}
+                                {!firebaseConnected && csvInput && (
+                                    <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                                        <AlertCircleIcon className="h-4 w-4" />
+                                        Dados Locais
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                            <button onClick={() => window.location.href = 'menu.html'} className="px-4 py-2 bg-slate-600 text-white hover:bg-slate-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-slate-700 shadow-sm hover:shadow-md">
+                                ← Menu
+                            </button>
+                            <button onClick={() => window.location.href = 'sicronizar.html'} className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-blue-700 shadow-sm hover:shadow-md">
+                                🔄 Sincronizar
+                            </button>
+                            <button onClick={() => { setCsvInput(''); localStorage.removeItem('dashboardParetoData'); }} className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors border border-red-300 shadow-sm hover:shadow-md">
+                                <TrashIcon className="h-4 w-4" /> Limpar
+                            </button>
+                            <label className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 shadow-md cursor-pointer hover:shadow-lg">
+                                <UploadIcon className="h-4 w-4" /> Importar CSV
+                                <input type="file" accept=".csv,.txt,.tsv" onChange={handleFileChange} className="hidden" />
+                            </label>
                         </div>
                     </header>
 
@@ -666,50 +937,57 @@
                             <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                             Conectando ao Firestore...
                         </div>
-                    )}
+                    )
+                    }
 
-                    {error && (
-                        <div className="mb-4 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                            <AlertCircleIcon className="h-4 w-4" />
-                            {error}
-                        </div>
-                    )}
+                    {
+                        error && (
+                            <div className="mb-4 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                                <AlertCircleIcon className="h-4 w-4" />
+                                {error}
+                            </div>
+                        )
+                    }
 
-                    {firebaseConnected && !isLoading && (
-                        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4" />
-                            ✅ Dados sincronizados com sucesso!
-                        </div>
-                    )}
+                    {
+                        firebaseConnected && !isLoading && (
+                            <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                                <CheckCircleIcon className="h-4 w-4" />
+                                ✅ Dados sincronizados com sucesso!
+                            </div>
+                        )
+                    }
 
-                    {!firebaseConnected && (
-                        <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                            <details>
-                                <summary className="cursor-pointer font-bold text-slate-700 flex items-center gap-2 select-none">
-                                    <TableIcon className="h-4 w-4 text-emerald-600"/> Colar Dados (Excel)
-                                </summary>
-                                <div className="mt-3 animate-in fade-in">
-                                    <p className="text-xs text-slate-500 mb-2">Cole dados da planilha ou abra <a href="sicronizar.html" className="text-emerald-600 font-bold hover:underline">sincronizar.html</a></p>
-                                    <textarea 
-                                        value={csvInput} 
-                                        onChange={(e) => handleCsvChange(e.target.value)} 
-                                        className="w-full h-40 p-3 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50" 
-                                        placeholder="Cole dados aqui..." 
-                                    />
-                                </div>
-                            </details>
-                        </div>
-                    )}
+                    {
+                        !firebaseConnected && (
+                            <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <details>
+                                    <summary className="cursor-pointer font-bold text-slate-700 flex items-center gap-2 select-none">
+                                        <TableIcon className="h-4 w-4 text-emerald-600" /> Colar Dados (Excel)
+                                    </summary>
+                                    <div className="mt-3 animate-in fade-in">
+                                        <p className="text-xs text-slate-500 mb-2">Cole dados da planilha ou abra <a href="sicronizar.html" className="text-emerald-600 font-bold hover:underline">sincronizar.html</a></p>
+                                        <textarea
+                                            value={csvInput}
+                                            onChange={(e) => handleCsvChange(e.target.value)}
+                                            className="w-full h-40 p-3 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"
+                                            placeholder="Cole dados aqui..."
+                                        />
+                                    </div>
+                                </details>
+                            </div>
+                        )
+                    }
 
                     {/* Filtros */}
                     <div className="mb-8">
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-6 gap-4">
                             <h3 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                <FactoryIcon className="h-5 w-5 text-emerald-600"/> Setores
+                                <FactoryIcon className="h-5 w-5 text-emerald-600" /> Setores
                             </h3>
                             <div className="flex gap-3 items-center flex-wrap w-full lg:w-auto">
                                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                                    <CalendarIcon className="h-4 w-4 text-slate-500"/>
+                                    <CalendarIcon className="h-4 w-4 text-slate-500" />
                                     <span className="text-xs font-bold text-slate-600 uppercase">De:</span>
                                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-sm font-semibold text-emerald-700 outline-none cursor-pointer border-none p-0 w-32" />
                                     <span className="text-xs font-bold text-slate-600 uppercase ml-3">Até:</span>
@@ -721,7 +999,7 @@
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                                    <FilterIcon className="h-4 w-4 text-slate-500"/>
+                                    <FilterIcon className="h-4 w-4 text-slate-500" />
                                     <span className="text-xs font-bold text-slate-600 uppercase">Turno:</span>
                                     <select value={selectedShift} onChange={(e) => setSelectedShift(e.target.value)} className="bg-transparent text-sm font-semibold text-emerald-700 outline-none cursor-pointer border-none p-0">
                                         <option value="Todos">Todos</option>
@@ -737,18 +1015,18 @@
                                         <span className="text-xs font-bold uppercase tracking-wide">{sector.name}</span>
                                         {sector.name !== 'Todos' && <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>{sector.percent}%</span>}
                                     </div>
-                                    <div className="text-3xl font-bold mb-2">{sector.horas}<span className="text-xs font-normal ml-1 opacity-80">h</span></div>
-                                    <div className="text-xs opacity-70 flex items-center gap-1"><ActivityIcon className="h-3 w-3"/> {sector.count} paradas</div>
+                                    <div className="text-3xl font-bold mb-2">{formatDuration(sector.horas)}</div>
+                                    <div className="text-xs opacity-70 flex items-center gap-1"><ActivityIcon className="h-3 w-3" /> {sector.count} paradas</div>
                                 </button>
                             ))}
                         </div>
                     </div>
-                    
+
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
                             <span className="text-xs text-slate-400 uppercase font-bold">Total Horas</span>
-                            <div className="text-2xl font-bold text-slate-800 mt-1">{totalHoras} h</div>
+                            <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(totalHoras)}</div>
                         </div>
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
                             <span className="text-xs text-slate-400 uppercase font-bold">Qtd Paradas</span>
@@ -756,12 +1034,12 @@
                         </div>
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
                             <span className="text-xs text-slate-400 uppercase font-bold">MTTR</span>
-                            <div className="text-2xl font-bold text-slate-800 mt-1">{mttr} h</div>
+                            <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(mttr)}</div>
                         </div>
                         <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
                             <span className="text-xs text-slate-400 uppercase font-bold">Maior Ofensor</span>
                             <div className="text-sm font-bold text-slate-800 truncate mt-1">{chartData[0]?.name || '-'}</div>
-                            <div className="text-xs text-red-500 font-bold">{chartData[0]?.horas}h</div>
+                            <div className="text-xs text-red-500 font-bold">{formatDuration(chartData[0]?.horas)}</div>
                         </div>
                     </div>
 
@@ -769,21 +1047,21 @@
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
                             <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <TrendingUpIcon className="h-4 w-4 text-emerald-600"/> Evolução Diária
+                                <TrendingUpIcon className="h-4 w-4 text-emerald-600" /> Evolução Diária
                             </h3>
                             {timelineData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="90%">
                                     <AreaChart data={timelineData}>
                                         <defs>
                                             <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="date" tick={{fontSize: 10}} minTickGap={30} />
-                                        <YAxis tick={{fontSize: 10}} width={30}/>
-                                        <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} />
+                                        <YAxis tick={{ fontSize: 10 }} width={30} />
+                                        <Tooltip formatter={(value) => formatDuration(value)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                                         <Area type="monotone" dataKey="horas" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorHours)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -792,15 +1070,15 @@
 
                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
                             <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <ClockIcon className="h-4 w-4 text-blue-600"/> Turnos
+                                <ClockIcon className="h-4 w-4 text-blue-600" /> Turnos
                             </h3>
                             {shiftComparisonData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="90%">
                                     <BarChart data={shiftComparisonData} layout="vertical">
                                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                         <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={60} tick={{fontSize: 11, fill: '#64748b'}} />
-                                        <Tooltip cursor={{fill: 'transparent'}} />
+                                        <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                        <Tooltip formatter={(value) => formatDuration(value)} cursor={{ fill: 'transparent' }} />
                                         <Bar dataKey="horas" radius={[0, 4, 4, 0]} barSize={24}>
                                             {shiftComparisonData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name.replace('Turno ', '')] || '#94a3b8'} />
@@ -817,21 +1095,21 @@
                         <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[600px]">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <FactoryIcon className="h-5 w-5 text-emerald-600"/> Pareto
+                                    <FactoryIcon className="h-5 w-5 text-emerald-600" /> Pareto
                                 </h3>
-                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{totalHoras}h</span>
+                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{formatDuration(totalHoras)}</span>
                             </div>
                             <ResponsiveContainer width="100%" height="85%">
-                                <ComposedChart data={chartData} margin={{top: 10, right: 10, bottom: 40, left: 0}}>
+                                <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{fontSize: 10, fill: '#64748b'}} />
-                                    <YAxis yAxisId="left" stroke="#64748b" tick={{fontSize: 11}} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#ef4444" unit="%" tick={{fontSize: 11}} />
-                                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                                    <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4,4,0,0]}>
+                                    <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                    <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
+                                    <YAxis yAxisId="right" orientation="right" stroke="#ef4444" unit="%" tick={{ fontSize: 11 }} />
+                                    <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                    <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
                                         {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#059669' : '#cbd5e1'} />)}
                                     </Bar>
-                                    <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#ef4444" strokeWidth={2} dot={{r:3, fill: '#ef4444'}} />
+                                    <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
@@ -839,7 +1117,7 @@
                         <div className="flex flex-col gap-6 h-[600px]">
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
                                 <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <LayersIcon className="h-4 w-4 text-purple-600"/> Hierarquia
+                                    <LayersIcon className="h-4 w-4 text-purple-600" /> Hierarquia
                                 </h3>
                                 <div className="flex-1">
                                     {treemapData.length > 0 ? (
@@ -851,21 +1129,21 @@
                                     ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                                 </div>
                             </div>
-                            
+
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
                                 <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <MapPinIcon className="h-4 w-4 text-red-500"/> Locais
+                                    <MapPinIcon className="h-4 w-4 text-red-500" /> Locais
                                 </h3>
                                 <div className="flex-1 overflow-y-auto pr-2">
                                     {locationData.length > 0 ? (
                                         <div className="space-y-3">
                                             {locationData.map((loc, i) => (
-                                                <div key={i} className="flex flex-col">
+                                                <div key={i} className="flex flex-col cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" onClick={() => setSelectedLocation(loc.name)}>
                                                     <div className="flex justify-between text-xs mb-1">
-                                                        <span className="font-bold text-slate-700 truncate w-36">{i+1}. {loc.name}</span>
-                                                        <span className="font-bold text-slate-900">{loc.horas}h</span>
+                                                        <span className="font-bold text-slate-700 truncate w-36 hover:text-blue-600">{i + 1}. {loc.name}</span>
+                                                        <span className="font-bold text-slate-900">{formatDuration(loc.horas)}</span>
                                                     </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                                         <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
                                                     </div>
                                                 </div>
@@ -880,7 +1158,7 @@
                     {/* Tabela */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
                         <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20">
-                            <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600"/> Detalhes</h3>
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600" /> Detalhes</h3>
                         </div>
                         <div className="overflow-y-auto flex-1 p-0">
                             <table className="w-full text-sm text-left">
@@ -898,27 +1176,35 @@
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {detailedTableData.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.dataStr}</td>
-                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.horaIni}</td>
-                                            <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px]">{item.linha}</td>
-                                            <td className="px-4 py-2 text-slate-600 truncate max-w-[200px]">{item.motivo}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px]">{item.detalhe || '-'}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate">{item.responsavel}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs font-mono">{item.os}</td>
-                                            <td className="px-4 py-2 text-right text-slate-900 font-bold font-mono bg-slate-50/50">{item.valor.toFixed(2)}h</td>
+                                        <tr key={idx} className="group hover:bg-blue-50 cursor-pointer transition-all border-l-4 border-transparent hover:border-blue-500 hover:shadow-md">
+                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.dataStr}</td>
+                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.horaIni}</td>
+                                            <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px] group-hover:text-blue-800">{item.linha}</td>
+                                            <td className="px-4 py-2 text-slate-600 truncate max-w-[200px] group-hover:text-blue-800">{item.motivo}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px] group-hover:text-blue-700">{item.detalhe || '-'}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs truncate group-hover:text-blue-700">{item.responsavel}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs font-mono group-hover:text-blue-700">{item.os}</td>
+                                            <td className="px-4 py-2 text-right text-slate-900 font-bold font-mono bg-slate-50/50 group-hover:bg-blue-100/50 group-hover:text-blue-900">{formatDurationTable(item.valor)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+
+                    <LocationModal
+                        isOpen={!!selectedLocation}
+                        onClose={() => setSelectedLocation(null)}
+                        locationName={selectedLocation}
+                        data={detailedTableData.filter(d => d.linha === selectedLocation)}
+                    />
                 </div>
-            );
+        );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
+
 </html>
