@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Silos - Pré-Secagem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card-active {
+            border-left: 6px solid #10b981;
+        }
+
+        .card-maintenance {
+            border-left: 6px solid #ef4444;
+            background-color: #fef2f2;
+        }
+
+        .card-planned {
+            border-left: 6px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .card-empty {
+            border-left: 6px solid #94a3b8;
+        }
+
+        .mixer-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 font-sans">
+
+    <header
+        class="max-w-7xl mx-auto mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="flex items-center gap-4">
+            <a href="menu.html" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
+                title="Voltar ao Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m12 19-7-7 7-7" />
+                    <path d="M19 12H5" />
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Painel de Status - Pré-Secagem</h1>
+                <p class="text-sm text-gray-500">Acompanhamento Industrial em Tempo Real</p>
+            </div>
+        </div>
+        <div id="connection-status"
+            class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200">
+            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            Sincronizado
+        </div>
+    </header>
+
+    <!-- Filtros de Data e Turno -->
+    <div class="max-w-7xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-6 items-center">
+        <div class="flex items-center gap-2">
+            <label for="current-date" class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                Data:
+            </label>
+            <input type="date" id="current-date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-600 font-medium">
+        </div>
+        <div class="flex items-center gap-2">
+            <label for="current-shift" class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Turno:
+            </label>
+            <select id="current-shift" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-600 font-medium min-w-[120px]">
+                <option value="A">Turno A</option>
+                <option value="B">Turno B</option>
+                <option value="C">Turno C</option>
+            </select>
+        </div>
+    </div>
+
+    <main id="silos-container"
+        class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <!-- Os cards serão gerados pelo JS -->
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { firebaseConfig } from './firebase_config.js';
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const silosContainer = document.getElementById('silos-container');
+        const TOTAL_SILOS = 10;
+        let silosState = {};
+
+        // Inicializar Filtros (Data/Turno)
+        function initFilters() {
+            const dateInput = document.getElementById('current-date');
+            const shiftInput = document.getElementById('current-shift');
+            
+            if (dateInput && shiftInput) {
+                const now = new Date();
+                dateInput.value = now.toISOString().split('T')[0];
+                
+                const hour = now.getHours();
+                if (hour >= 6 && hour < 14) shiftInput.value = 'A';
+                else if (hour >= 14 && hour < 22) shiftInput.value = 'B';
+                else shiftInput.value = 'C';
+            }
+        }
+
+        // 1. Lógica de Autenticação Inicial
+        async function initAuth() {
+            initFilters();
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Erro na autenticação:", error);
+            }
+        }
+
+        // 2. Ouvinte em Tempo Real (Real-time)
+        function setupRealtimeListener(userId) {
+            const q = query(collection(db, 'mes_silos'));
+
+            onSnapshot(q, (snapshot) => {
+                snapshot.forEach((doc) => {
+                    if (doc.id.startsWith('PS-')) {
+                        const data = doc.data();
+                        silosState[doc.id] = data;
+                        updateSiloUI(doc.id, data);
+                    }
+                });
+            }, (error) => {
+                console.error("Erro de sincronização Firestore:", error);
+                document.getElementById('connection-status').innerHTML = "Erro de Sincronização";
+            });
+        }
+
+        // 3. Geração Inicial da UI
+        function generateInitialCards() {
+            for (let i = 1; i <= TOTAL_SILOS; i++) {
+                const siloId = `PS-${i}`;
+                const siloName = `Pré Secagem ${String(i).padStart(2, '0')}`;
+
+                const card = document.createElement('div');
+                card.id = siloId;
+                card.className = "bg-white p-5 rounded-xl shadow-md border border-gray-100 transition-all card-empty";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="font-bold text-gray-700 text-lg">${siloName}</h3>
+                        <span id="badge-${siloId}" class="text-[10px] uppercase font-bold px-2 py-1 rounded bg-gray-100 text-gray-500">Vazio</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Com Produto -->
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="check-prod-${siloId}" class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500" onchange="handleUpdate('${siloId}')">
+                                <span class="text-sm font-medium text-gray-600 uppercase">Com Produto</span>
+                            </label>
+                            
+                            <div id="prod-select-container-${siloId}" class="mt-2 hidden">
+                                <select id="select-prod-${siloId}" class="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-50" onchange="handleUpdate('${siloId}')">
+                                    <option value="">Selecione a Cultura</option>
+                                    <option value="SOJA">SOJA</option>
+                                    <option value="MILHETO">MILHETO</option>
+                                    <option value="CROTÁLARIA">CROTÁLARIA</option>
+                                    <option value="FEIJÃO">FEIJÃO</option>
+                                    <option value="BRÁQUIARIA">BRÁQUIARIA</option>
+                                    <option value="OUTRO">OUTRO</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Planeado -->
+                        <div class="pt-2 border-t border-gray-50">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="check-planned-${siloId}" class="w-5 h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500" onchange="handleUpdate('${siloId}')" disabled>
+                                <span class="text-sm font-medium text-gray-600 uppercase">Planeado</span>
+                            </label>
+                        </div>
+
+                        <!-- Mesclador -->
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="check-mix-${siloId}" class="w-5 h-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500" onchange="handleUpdate('${siloId}')">
+                                <span class="text-sm font-medium text-gray-600 uppercase">Mesclador Ligado</span>
+                            </label>
+                        </div>
+
+                        <!-- Manutenção -->
+                        <div class="pt-2 border-t border-gray-100">
+                            <label class="flex items-center gap-3 cursor-pointer text-red-600">
+                                <input type="checkbox" id="check-break-${siloId}" class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500" onchange="handleUpdate('${siloId}')">
+                                <span class="text-sm font-bold uppercase">Manutenção / Quebra</span>
+                            </label>
+                            
+                            <div id="break-text-container-${siloId}" class="mt-2 hidden">
+                                <textarea id="text-break-${siloId}" placeholder="Descreva o problema..." 
+                                    class="w-full p-2 text-sm border border-red-200 rounded-md bg-red-50 focus:ring-red-500 h-16" 
+                                    onblur="handleUpdate('${siloId}')"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                silosContainer.appendChild(card);
+            }
+        }
+
+        // 4. Atualizar UI baseado nos dados
+        window.updateSiloUI = function (siloId, data) {
+            const card = document.getElementById(siloId);
+            const badge = document.getElementById(`badge-${siloId}`);
+            if (!card) return;
+
+            // Elementos de Entrada
+            const checkPlanned = document.getElementById(`check-planned-${siloId}`);
+            const checkProd = document.getElementById(`check-prod-${siloId}`);
+            const selectProd = document.getElementById(`select-prod-${siloId}`);
+            const containerProd = document.getElementById(`prod-select-container-${siloId}`);
+            const checkMix = document.getElementById(`check-mix-${siloId}`);
+            const checkBreak = document.getElementById(`check-break-${siloId}`);
+            const textBreak = document.getElementById(`text-break-${siloId}`);
+            const containerBreak = document.getElementById(`break-text-container-${siloId}`);
+
+            // Mapeamento de dados
+            const hasProduct = data.cultura && data.cultura !== 'Vazio';
+            const isPlanned = data.planeado || false;
+            const isMaintenance = data.status === 'maintenance';
+            const isMixing = data.mesclador !== undefined ? data.mesclador : (data.status === 'drying' || data.status === 'cooling');
+
+            // Aplicar valores aos inputs
+            checkPlanned.disabled = !hasProduct;
+            checkPlanned.checked = hasProduct ? isPlanned : false;
+            checkProd.checked = hasProduct;
+            selectProd.value = data.cultura || "";
+            checkMix.checked = isMixing;
+            checkBreak.checked = isMaintenance;
+            textBreak.value = data.observacao || "";
+
+            // Alternar visibilidade de containers condicionais
+            containerProd.style.display = hasProduct ? 'block' : 'none';
+            containerBreak.style.display = isMaintenance ? 'block' : 'none';
+
+            // Lógica de Estilização Visual do Card
+            card.className = "bg-white p-5 rounded-xl shadow-md border border-gray-100 transition-all ";
+
+            if (isMaintenance) {
+                card.classList.add("card-maintenance");
+                badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-red-100 text-red-600";
+                badge.innerText = "Manutenção";
+                
+                if (isMixing) {
+                    badge.classList.add("mixer-pulse");
+                    badge.innerText += " • Mesclando";
+                }
+            } else if (hasProduct) {
+                card.classList.add("card-active");
+                badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-green-100 text-green-600";
+                badge.innerText = data.cultura || "Com Produto";
+
+                if (isMixing) {
+                    badge.classList.add("mixer-pulse");
+                    badge.innerText += " • Mesclando";
+                }
+            } else {
+                card.classList.add("card-empty");
+                badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-gray-100 text-gray-500";
+                badge.innerText = "Vazio";
+            }
+        };
+
+        // 5. Lidar com mudança de dados (Salvar no Firestore)
+        window.handleUpdate = async function (siloId) {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const comProduto = document.getElementById(`check-prod-${siloId}`).checked;
+            const checkPlanned = document.getElementById(`check-planned-${siloId}`);
+
+            if (!comProduto) {
+                checkPlanned.checked = false;
+                checkPlanned.disabled = true;
+            } else {
+                checkPlanned.disabled = false;
+            }
+
+            const planeado = checkPlanned.checked;
+            const cultura = document.getElementById(`select-prod-${siloId}`).value;
+            const mesclador = document.getElementById(`check-mix-${siloId}`).checked;
+            const manutencao = document.getElementById(`check-break-${siloId}`).checked;
+            const obs = document.getElementById(`text-break-${siloId}`).value;
+
+            // Recupera estado atual para preservar status 'cooling' se necessário
+            const currentData = silosState[siloId] || {};
+
+            let status = 'normal';
+            if (manutencao) status = 'maintenance';
+            else if (mesclador) {
+                // Se já estava em resfriamento, mantém. Senão, assume secagem.
+                status = (currentData.status === 'cooling') ? 'cooling' : 'drying';
+            }
+
+            const dataToSave = {
+                cultura: comProduto ? (cultura || 'INDEFINIDO') : 'Vazio',
+                status: status,
+                observacao: obs,
+                mesclador: mesclador,
+                planeado: planeado,
+                updatedAt: new Date().toISOString(),
+                updatedBy: user.uid
+            };
+
+            const dateInput = document.getElementById('current-date');
+            const shiftInput = document.getElementById('current-shift');
+            if (dateInput && shiftInput) {
+                dataToSave.operationDate = dateInput.value;
+                dataToSave.operationShift = shiftInput.value;
+            }
+
+            // Atualização instantânea da UI para o usuário local
+            updateSiloUI(siloId, dataToSave);
+
+            // Guardar no Firestore
+            try {
+                const docRef = doc(db, 'mes_silos', siloId);
+                await setDoc(docRef, dataToSave, { merge: true });
+            } catch (e) {
+                console.error("Erro ao guardar no Firestore:", e);
+            }
+        };
+
+        // Iniciar App
+        window.onload = async () => {
+            generateInitialCards();
+            await initAuth();
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    setupRealtimeListener(user.uid);
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>

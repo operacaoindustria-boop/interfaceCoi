@@ -49,15 +49,35 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Scrollbar customizada */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
 
         /* Sidebar Styles (from moegaDashboard) */
         .nav-item {
@@ -136,7 +156,7 @@
             <button onclick="switchMainView('relatorios')" id="menu-relatorios" class="nav-item">
                 <i data-lucide="file-bar-chart" class="w-5 h-5"></i> Relatórios
             </button>
-            
+
             <p class="nav-section-title">Configurações</p>
             <button onclick="switchMainView('config-turnos')" id="menu-config-turnos" class="nav-item">
                 <i data-lucide="clock" class="w-5 h-5"></i> Parâmetros por Turno
@@ -147,7 +167,8 @@
             <button onclick="switchMainView('config-usuarios')" id="menu-config-usuarios" class="nav-item">
                 <i data-lucide="users" class="w-5 h-5"></i> Usuários
             </button>
-            <button onclick="switchMainView('reset-zone')" id="menu-reset-zone" class="nav-item text-red-400 hover:bg-red-900/20 hover:text-red-300">
+            <button onclick="switchMainView('reset-zone')" id="menu-reset-zone"
+                class="nav-item text-red-400 hover:bg-red-900/20 hover:text-red-300">
                 <i data-lucide="trash-2" class="w-5 h-5"></i> Zona de Reset
             </button>
 
@@ -162,7 +183,9 @@
 
         <div class="p-4 border-t border-slate-800 bg-slate-900/50">
             <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 text-slate-300 font-bold">OP</div>
+                <div
+                    class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 text-slate-300 font-bold">
+                    OP</div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">Visualizador</p>
                     <p class="text-xs text-slate-500 truncate">Online</p>
@@ -175,12 +198,15 @@
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-[#0f172a]">
 
         <!-- HEADER -->
-        <header class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 shrink-0">
+        <header
+            class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 shrink-0">
             <div class="flex items-center gap-4">
                 <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2" id="header-title">
                     <i data-lucide="bar-chart-2" class="text-blue-500 w-5 h-5"></i> Visão Geral de Armazenagem
                 </h2>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">TEMPO REAL</span>
+                <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">TEMPO
+                    REAL</span>
             </div>
             <div class="text-right hidden md:block">
                 <p class="text-[10px] text-slate-500 uppercase font-bold">Última Atualização</p>
@@ -194,7 +220,8 @@
             <!-- 1. DASHBOARD (Visão Geral) -->
             <div id="view-main-dashboard" class="h-full flex flex-col">
                 <!-- TABS DE NAVEGAÇÃO (Replicando presecagem.html) -->
-                <div id="dashboard-tabs-container" class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0 gap-2">
+                <div id="dashboard-tabs-container"
+                    class="px-8 pt-4 bg-slate-900/50 border-b border-slate-800 flex items-center overflow-x-auto shrink-0 gap-2">
                     <button onclick="switchTab('preSecagem')" id="tab-preSecagem" class="dashboard-tab tab-active">
                         <i data-lucide="thermometer" class="w-4 h-4 inline mr-2"></i>Pré-Secagem
                     </button>
@@ -208,7 +235,7 @@
 
                 <!-- CONTEÚDO DAS ABAS DO DASHBOARD -->
                 <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a] relative">
-                    
+
                     <!-- 1. PRÉ-SECAGEM -->
                     <div id="view-preSecagem" class="fade-in space-y-6">
                         <div class="flex justify-between items-center">
@@ -216,8 +243,10 @@
                             <div class="text-sm text-slate-400">Monitoramento de temperatura e umidade</div>
                         </div>
                         <!-- Grid Container para os Cards -->
-                        <div id="grid-preSecagem" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            <div class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
+                        <div id="grid-preSecagem"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div
+                                class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
                                 Carregando dados...
                             </div>
                         </div>
@@ -229,8 +258,10 @@
                             <h3 class="text-xl font-bold text-white">Silos de Armazenamento</h3>
                             <div class="text-sm text-slate-400">Estoque estático e conservação</div>
                         </div>
-                        <div id="grid-armazenamento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            <div class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
+                        <div id="grid-armazenamento"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div
+                                class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
                                 Carregando dados...
                             </div>
                         </div>
@@ -242,8 +273,10 @@
                             <h3 class="text-xl font-bold text-white">Silos Metálicos</h3>
                             <div class="text-sm text-slate-400">Expedição e pulmão</div>
                         </div>
-                        <div id="grid-metalicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            <div class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
+                        <div id="grid-metalicos"
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div
+                                class="col-span-full text-center py-10 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
                                 Carregando dados...
                             </div>
                         </div>
@@ -256,9 +289,11 @@
                 <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
                     <div id="view-acompanhamento" class="fade-in space-y-6">
                         <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
-                            <div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                            <div
+                                class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
                                 <h3 class="font-bold text-white text-sm uppercase flex items-center gap-2">
-                                    <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-400"></i> Histórico Recente de Coletas
+                                    <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-400"></i> Histórico Recente
+                                    de Coletas
                                 </h3>
                             </div>
                             <div class="overflow-x-auto">
@@ -273,8 +308,12 @@
                                             <th class="p-4">Responsável</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="table-acompanhamento" class="text-sm divide-y divide-slate-700 text-slate-300">
-                                        <tr><td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...</td></tr>
+                                    <tbody id="table-acompanhamento"
+                                        class="text-sm divide-y divide-slate-700 text-slate-300">
+                                        <tr>
+                                            <td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -290,14 +329,16 @@
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">Total Armazenado</p>
-                                <h3 class="text-3xl font-mono font-bold text-white mt-1" id="trace-total-ton">0.00 t</h3>
+                                <h3 class="text-3xl font-mono font-bold text-white mt-1" id="trace-total-ton">0.00 t
+                                </h3>
                             </div>
                             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
                                 <p class="text-xs text-slate-400 uppercase font-bold">Silos com Produto</p>
-                                <h3 class="text-3xl font-mono font-bold text-blue-400 mt-1" id="trace-silos-count">0</h3>
+                                <h3 class="text-3xl font-mono font-bold text-blue-400 mt-1" id="trace-silos-count">0
+                                </h3>
                             </div>
                         </div>
-                        
+
                         <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
                             <div class="p-5 border-b border-slate-700 bg-slate-800/50">
                                 <h3 class="font-bold text-white text-sm uppercase">Mapa de Origem dos Produtos</h3>
@@ -314,8 +355,12 @@
                                             <th class="p-4 text-right">Peso Atual (t)</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="table-rastreabilidade" class="text-sm divide-y divide-slate-700 text-slate-300">
-                                        <tr><td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...</td></tr>
+                                    <tbody id="table-rastreabilidade"
+                                        class="text-sm divide-y divide-slate-700 text-slate-300">
+                                        <tr>
+                                            <td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -329,9 +374,11 @@
                 <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
                     <div id="view-transferencias" class="fade-in space-y-6">
                         <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
-                            <div class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                            <div
+                                class="p-5 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
                                 <h3 class="font-bold text-white text-sm uppercase flex items-center gap-2">
-                                    <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-400"></i> Histórico de Transferências
+                                    <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-400"></i> Histórico de
+                                    Transferências
                                 </h3>
                             </div>
                             <div class="overflow-x-auto">
@@ -346,8 +393,12 @@
                                             <th class="p-4">Responsável</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="table-transferencias" class="text-sm divide-y divide-slate-700 text-slate-300">
-                                        <tr><td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...</td></tr>
+                                    <tbody id="table-transferencias"
+                                        class="text-sm divide-y divide-slate-700 text-slate-300">
+                                        <tr>
+                                            <td colspan="6" class="p-6 text-center text-slate-500">Aguardando dados...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -361,15 +412,17 @@
                 <main class="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
                     <div id="view-lancamentoRetroativo" class="fade-in space-y-6">
                         <div class="bg-slate-800 p-8 rounded-xl border border-slate-700 text-center">
-                            <div class="bg-slate-700/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div
+                                class="bg-slate-700/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i data-lucide="lock" class="w-8 h-8 text-slate-400"></i>
                             </div>
                             <h3 class="text-xl font-bold text-white mb-2">Área Administrativa</h3>
                             <p class="text-slate-400 max-w-md mx-auto">
-                                O lançamento retroativo de descargas é uma função operacional restrita. 
+                                O lançamento retroativo de descargas é uma função operacional restrita.
                                 Para realizar lançamentos, utilize a interface operacional principal.
                             </p>
-                            <a href="presecagem.html" class="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors">
+                            <a href="presecagem.html"
+                                class="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors">
                                 <i data-lucide="external-link" class="w-4 h-4"></i> Acessar Interface Operacional
                             </a>
                         </div>
@@ -408,7 +461,7 @@
                     <div class="text-center py-20 text-slate-500">Zona de Reset em desenvolvimento.</div>
                 </main>
             </div>
-            
+
         </div>
     </div>
 
@@ -468,14 +521,23 @@
             container.innerHTML = '';
             silos.forEach(s => {
                 const hasProduct = s.cultura && s.cultura !== 'Vazio';
-                const statusColor = hasProduct ? (s.status === 'drying' ? 'border-orange-500/50 bg-orange-500/10' : (s.status === 'cooling' ? 'border-cyan-500/50 bg-cyan-500/10' : 'border-emerald-500/50 bg-emerald-500/10')) : 'border-slate-700 bg-slate-800';
+                let statusColor = 'border-slate-700 bg-slate-800';
+
+                if (s.status === 'maintenance') {
+                    statusColor = 'border-red-500/50 bg-red-500/10';
+                } else if (hasProduct) {
+                    if (s.status === 'drying') statusColor = 'border-orange-500/50 bg-orange-500/10';
+                    else if (s.status === 'cooling') statusColor = 'border-cyan-500/50 bg-cyan-500/10';
+                    else statusColor = 'border-emerald-500/50 bg-emerald-500/10';
+                }
+
                 const textColor = hasProduct ? 'text-white' : 'text-slate-500';
-                
+
                 const card = `
                     <div class="p-5 rounded-xl border ${statusColor} shadow-lg transition-all hover:scale-[1.02]">
                         <div class="flex justify-between items-start mb-4">
                             <h4 class="font-bold text-lg ${textColor}">${s.name}</h4>
-                            ${hasProduct ? `<span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-900/50 text-slate-300 border border-slate-700">${s.cultura}</span>` : '<span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-800 text-slate-600">VAZIO</span>'}
+                            ${s.status === 'maintenance' ? '<span class="text-[10px] font-bold px-2 py-1 rounded bg-red-900/50 text-red-200 border border-red-700">MANUTENÇÃO</span>' : (hasProduct ? `<span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-900/50 text-slate-300 border border-slate-700">${s.cultura}</span>` : '<span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-800 text-slate-600">VAZIO</span>')}
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
@@ -502,7 +564,7 @@
         function renderAcompanhamentoTable() {
             const tbody = document.getElementById('table-acompanhamento');
             if (!tbody) return;
-            
+
             // Coletar histórico de todos os silos
             let allHistory = [];
             silosData.forEach(s => {
@@ -543,11 +605,11 @@
             const tbody = document.getElementById('table-rastreabilidade');
             const totalEl = document.getElementById('trace-total-ton');
             const countEl = document.getElementById('trace-silos-count');
-            
+
             if (!tbody) return;
 
             const silosComProduto = silosData.filter(s => s.cultura && s.cultura !== 'Vazio');
-            
+
             // Atualizar KPIs
             const totalKg = silosComProduto.reduce((acc, s) => acc + (parseFloat(s.pesoCargaKg || s.peso || 0) || 0), 0);
             if (totalEl) totalEl.innerText = `${(totalKg / 1000).toFixed(2)} t`;
@@ -566,7 +628,7 @@
                     <tr class="hover:bg-slate-800/50 transition-colors">
                         <td class="p-4 font-bold text-white">${s.name}</td>
                         <td class="p-4 text-slate-300">${s.cultura} <span class="text-xs text-slate-500 block">${s.cultivar || ''}</span></td>
-                        <td class="p-4 font-mono text-slate-400">${s.moegaOrigem ? 'Moega 0'+s.moegaOrigem : '-'}</td>
+                        <td class="p-4 font-mono text-slate-400">${s.moegaOrigem ? 'Moega 0' + s.moegaOrigem : '-'}</td>
                         <td class="p-4 text-slate-300">${s.fazenda || '-'}</td>
                         <td class="p-4 font-mono text-slate-400">${s.origemCarga || '-'}</td>
                         <td class="p-4 text-right font-bold text-emerald-400 font-mono">${ton}</td>
@@ -588,7 +650,7 @@
             transferenciasData.forEach(t => {
                 const dateStr = t.timestamp ? new Date(t.timestamp).toLocaleString('pt-BR') : '-';
                 const weight = t.weight ? parseFloat(t.weight).toLocaleString('pt-BR') : '0';
-                
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/50 transition-colors">
                         <td class="p-4 font-mono text-slate-400">${dateStr}</td>
@@ -603,17 +665,17 @@
         }
 
         // Expor função de troca de abas globalmente
-        window.switchMainView = function(viewId) {
+        window.switchMainView = function (viewId) {
             // Hide all main views
             const views = [
                 'dashboard', 'acompanhamento', 'rastreabilidade', 'transferencias', 'lancamentoRetroativo',
                 'paradas', 'relatorios', 'config-turnos', 'central-dados', 'config-usuarios', 'reset-zone'
             ];
-            
+
             views.forEach(v => {
                 const el = document.getElementById(`view-main-${v}`);
                 if (el) el.classList.add('hidden');
-                
+
                 const btn = document.getElementById(`menu-${v}`);
                 if (btn) btn.classList.remove('active');
             });
@@ -621,7 +683,7 @@
             // Show selected view
             const selectedEl = document.getElementById(`view-main-${viewId}`);
             if (selectedEl) selectedEl.classList.remove('hidden');
-            
+
             const selectedBtn = document.getElementById(`menu-${viewId}`);
             if (selectedBtn) selectedBtn.classList.add('active');
 
@@ -643,7 +705,7 @@
                 // Keep icon, change text
                 const icon = titleEl.querySelector('svg');
                 titleEl.innerHTML = '';
-                if(icon) titleEl.appendChild(icon);
+                if (icon) titleEl.appendChild(icon);
                 titleEl.appendChild(document.createTextNode(' ' + (titles[viewId] || 'Dashboard')));
             }
 
@@ -655,7 +717,7 @@
             }
         };
 
-        window.switchTab = function(tabId) {
+        window.switchTab = function (tabId) {
             // This function handles the sub-tabs within the Dashboard view
             document.querySelectorAll('.dashboard-tab').forEach(btn => {
                 if (btn.id === `tab-${tabId}`) btn.classList.add('tab-active');
@@ -676,4 +738,5 @@
         lucide.createIcons();
     </script>
 </body>
+
 </html>

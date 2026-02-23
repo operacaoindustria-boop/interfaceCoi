@@ -180,6 +180,7 @@
 
                 if (silo.status === 'drying') return 'bg-orange-50 border-orange-500 text-orange-900';
                 if (silo.status === 'cooling') return 'bg-cyan-50 border-cyan-500 text-cyan-900';
+                if (silo.status === 'maintenance') return 'bg-red-50 border-red-500 text-red-900';
 
                 if (silo.status === 'critical' || temp > 35 || umid > 16) return 'bg-red-50 border-red-500 text-red-900';
                 if (silo.status === 'warning' || temp > 30 || umid > 14) return 'bg-yellow-50 border-yellow-500 text-yellow-900';
