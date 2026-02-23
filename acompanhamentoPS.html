@@ -21,6 +21,11 @@
             background-color: #eff6ff;
         }
 
+        .card-dirty {
+            border-left: 6px solid #d97706;
+            background-color: #fffbeb;
+        }
+
         .card-empty {
             border-left: 6px solid #94a3b8;
         }
@@ -224,6 +229,14 @@
                                     onblur="handleUpdate('${siloId}')"></textarea>
                             </div>
                         </div>
+
+                        <!-- Vazia / Suja -->
+                        <div class="pt-2 border-t border-gray-100">
+                            <label class="flex items-center gap-3 cursor-pointer text-amber-600">
+                                <input type="checkbox" id="check-dirty-${siloId}" class="w-5 h-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500" onchange="handleUpdate('${siloId}')">
+                                <span class="text-sm font-bold uppercase">Vazia / Suja</span>
+                            </label>
+                        </div>
                     </div>
                 `;
                 silosContainer.appendChild(card);
@@ -244,6 +257,7 @@
             const checkMix = document.getElementById(`check-mix-${siloId}`);
             const checkBreak = document.getElementById(`check-break-${siloId}`);
             const textBreak = document.getElementById(`text-break-${siloId}`);
+            const checkDirty = document.getElementById(`check-dirty-${siloId}`);
             const containerBreak = document.getElementById(`break-text-container-${siloId}`);
 
             // Mapeamento de dados
@@ -251,14 +265,35 @@
             const isPlanned = data.planeado || false;
             const isMaintenance = data.status === 'maintenance';
             const isMixing = data.mesclador !== undefined ? data.mesclador : (data.status === 'drying' || data.status === 'cooling');
+            const isDirty = data.vaziaSuja || false;
+
+            // Resetar estados de disabled
+            checkProd.disabled = false;
+            checkDirty.disabled = false;
+            checkMix.disabled = false;
+            checkPlanned.disabled = false;
+
+            // Lógica de Bloqueio (Exclusividade)
+            if (hasProduct) {
+                checkDirty.disabled = true; // Não pode marcar suja se tem produto
+            } else {
+                checkMix.disabled = true; // Só liga mesclador se tiver produto
+                checkPlanned.disabled = true; // Só planeja se tiver produto
+            }
+
+            if (isDirty) {
+                checkProd.disabled = true; // Não pode por produto se está suja
+                checkMix.disabled = true;
+                checkPlanned.disabled = true;
+            }
 
             // Aplicar valores aos inputs
-            checkPlanned.disabled = !hasProduct;
             checkPlanned.checked = hasProduct ? isPlanned : false;
             checkProd.checked = hasProduct;
             selectProd.value = data.cultura || "";
             checkMix.checked = isMixing;
             checkBreak.checked = isMaintenance;
+            checkDirty.checked = isDirty;
             textBreak.value = data.observacao || "";
 
             // Alternar visibilidade de containers condicionais
@@ -277,6 +312,10 @@
                     badge.classList.add("mixer-pulse");
                     badge.innerText += " • Mesclando";
                 }
+            } else if (isDirty) {
+                card.classList.add("card-dirty");
+                badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-amber-100 text-amber-600";
+                badge.innerText = "Vazia / Suja";
             } else if (hasProduct) {
                 card.classList.add("card-active");
                 badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-green-100 text-green-600";
@@ -289,7 +328,7 @@
             } else {
                 card.classList.add("card-empty");
                 badge.className = "text-[10px] uppercase font-bold px-2 py-1 rounded bg-gray-100 text-gray-500";
-                badge.innerText = "Vazio";
+                badge.innerText = "Vazia / Limpa";
             }
         };
 
@@ -313,6 +352,7 @@
             const mesclador = document.getElementById(`check-mix-${siloId}`).checked;
             const manutencao = document.getElementById(`check-break-${siloId}`).checked;
             const obs = document.getElementById(`text-break-${siloId}`).value;
+            const vaziaSuja = document.getElementById(`check-dirty-${siloId}`).checked;
 
             // Recupera estado atual para preservar status 'cooling' se necessário
             const currentData = silosState[siloId] || {};
@@ -329,6 +369,7 @@
                 status: status,
                 observacao: obs,
                 mesclador: mesclador,
+                vaziaSuja: vaziaSuja,
                 planeado: planeado,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.uid
