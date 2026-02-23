@@ -6,8 +6,8 @@
     <title>Sincronizador - Paradas Indústria</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-8">
     <div class="max-w-2xl mx-auto">
@@ -54,6 +54,17 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Acesso Restrito</h2>
+            <input type="email" id="login-email" placeholder="Email" class="w-full p-3 border border-slate-300 rounded-lg mb-3 outline-none focus:ring-2 focus:ring-emerald-500">
+            <input type="password" id="login-pass" placeholder="Senha" class="w-full p-3 border border-slate-300 rounded-lg mb-6 outline-none focus:ring-2 focus:ring-emerald-500">
+            <button onclick="fazerLogin()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors">Entrar</button>
+            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden"></p>
+        </div>
+    </div>
+
     <script>
         // Firebase Config
         const firebaseConfig = {
@@ -69,10 +80,25 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Autenticar anonimamente ao carregar
-        auth.signInAnonymously().catch(error => {
-            console.error('Erro ao autenticar anonimamente:', error);
+        // Auth State Listener
+        auth.onAuthStateChanged(user => {
+            const modal = document.getElementById('login-modal');
+            if (user) {
+                modal.classList.add('hidden');
+            } else {
+                modal.classList.remove('hidden');
+            }
         });
+
+        function fazerLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            auth.signInWithEmailAndPassword(email, pass).catch(error => {
+                const errEl = document.getElementById('login-error');
+                errEl.textContent = "Erro: " + error.message;
+                errEl.classList.remove('hidden');
+            });
+        }
 
         function mostrarStatus(mensagem, tipo) {
             const status = document.getElementById('status');

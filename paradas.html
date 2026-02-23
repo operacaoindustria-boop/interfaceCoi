@@ -1,4 +1,3 @@
-// ...existing code...
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -194,7 +193,7 @@
             const stats = useMemo(() => {
                 let total = 0;
                 const cats = { 'Manutenção': 0, 'Operacional': 0, 'Gestão': 0, 'Outros': 0 };
-                const reasons = {};
+                const detailedReasons = {};
 
                 data.forEach(d => {
                     total += d.valor;
@@ -207,20 +206,28 @@
 
                     cats[cat] = (cats[cat] || 0) + d.valor;
 
-                    const reason = d.motivo || 'Não Informado';
-                    reasons[reason] = (reasons[reason] || 0) + d.valor;
+                    // Para o gráfico de pizza detalhado
+                    const detailedKey = `${cat}: ${d.motivo || 'Não Informado'}`;
+                    detailedReasons[detailedKey] = (detailedReasons[detailedKey] || 0) + d.valor;
                 });
 
-                const sortedReasons = Object.entries(reasons)
-                    .map(([name, value]) => ({ name, value }))
-                    .sort((a, b) => b.value - a.value)
+                // Top Paradas Individuais para o Gráfico de Barras (com data/hora)
+                const topStops = [...data]
+                    .sort((a, b) => b.valor - a.valor)
                     .slice(0, 10);
 
-                const pieData = Object.entries(cats)
+                // Dados para o gráfico de pizza detalhado (Top 15 + Outros)
+                let pieData = Object.entries(detailedReasons)
                     .map(([name, value]) => ({ name, value }))
-                    .filter(i => i.value > 0);
+                    .sort((a, b) => b.value - a.value);
+                
+                if (pieData.length > 15) {
+                    const top15 = pieData.slice(0, 15);
+                    const others = pieData.slice(15).reduce((acc, curr) => acc + curr.value, 0);
+                    pieData = [...top15, { name: 'Outros', value: others }];
+                }
 
-                return { total, cats, sortedReasons, pieData };
+                return { total, cats, topStops, pieData };
             }, [data]);
 
             return (
@@ -246,7 +253,7 @@
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
-                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Distribuição por Categoria</h3>
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Distribuição Detalhada</h3>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -258,20 +265,80 @@
                                     </ResponsiveContainer>
                                 </div>
                                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
-                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Top Motivos (Pareto)</h3>
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Top Paradas (Maior Impacto)</h3>
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={stats.sortedReasons} layout="vertical" margin={{ left: 20 }}>
+                                        <BarChart data={stats.topStops} layout="vertical" margin={{ left: 20, right: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                             <XAxis type="number" hide />
-                                            <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10 }} />
-                                            <Tooltip formatter={(value) => formatDuration(value)} />
+                                            <YAxis dataKey="motivo" type="category" width={120} tick={{ fontSize: 10 }} />
+                                            <Tooltip 
+                                                content={({ active, payload }) => {
+                                                    if (active && payload && payload.length) {
+                                                        const d = payload[0].payload;
+                                                        return (
+                                                            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded text-xs z-50">
+                                                                <p className="font-bold text-slate-800 mb-1">{d.motivo}</p>
+                                                                <p className="text-slate-600">Início: <span className="font-mono font-bold">{d.dataStr} {d.horaIni}</span></p>
+                                                                <p className="text-slate-600">Duração: <span className="font-bold text-red-500">{formatDuration(d.valor)}</span></p>
+                                                                {d.detalhe && <p className="text-slate-500 mt-1 italic">{d.detalhe}</p>}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
                                             <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div className="p-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-700">Detalhamento de Paradas - {locationName}</h3></div><div className="overflow-x-auto max-h-96"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0"><tr><th className="px-4 py-3">Data</th><th className="px-4 py-3">Hora</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Categoria</th><th className="px-4 py-3 text-right">Duração</th></tr></thead><tbody className="divide-y divide-slate-100">{data.map((item, idx) => (<tr key={idx} className="hover:bg-slate-50"><td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.dataStr}</td><td className="px-4 py-2 text-slate-500 font-mono text-xs">{item.horaIni}</td><td className="px-4 py-2 text-slate-700">{item.motivo}</td><td className="px-4 py-2 text-slate-500 text-xs">{item.categoria}</td><td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td></tr>))}</tbody></table></div></div>
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50">
+                                    <h3 className="font-bold text-slate-700">Detalhamento de Paradas - {locationName}</h3>
+                                </div>
+                                <div className="overflow-x-auto max-h-96">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
+                                            <tr>
+                                                <th className="px-4 py-3">Tipo</th>
+                                                <th className="px-4 py-3">Data/Hora</th>
+                                                <th className="px-4 py-3">Motivo</th>
+                                                <th className="px-4 py-3">Detalhe</th>
+                                                <th className="px-4 py-3">Categoria</th>
+                                                <th className="px-4 py-3">Resp.</th>
+                                                <th className="px-4 py-3">Turno</th>
+                                                <th className="px-4 py-3">Tag/OS</th>
+                                                <th className="px-4 py-3 text-right">Duração</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {data.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50">
+                                                    <td className="px-4 py-2">
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                            {item.tipoParada || 'GERAL'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-slate-500 font-mono text-xs whitespace-nowrap">
+                                                        {item.dataStr} <span className="text-slate-400">{item.horaIni}</span>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-slate-700 font-medium">{item.motivo}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs max-w-[200px] truncate" title={item.detalhe}>{item.detalhe || '-'}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs">{item.categoria}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs">{item.responsavel}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs text-center">{item.turno}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs font-mono">
+                                                        {item.tag && item.tag !== '-' ? item.tag : ''} 
+                                                        {item.os && item.os !== '-' ? ` / ${item.os}` : ''}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -534,7 +601,7 @@
 
                     // Detecção inteligente de formato (Backend vs Raw Excel)
                     const lowerHeader = firstLine.toLowerCase();
-                    const isBackendFormat = lowerHeader.includes('setor') && lowerHeader.includes('tempo parada') && lowerHeader.includes('desc detalhada');
+                    const isBackendFormat = lowerHeader.includes('setor') && (lowerHeader.includes('tempo') || lowerHeader.includes('duração'));
 
                     let idx = {};
 
@@ -548,21 +615,22 @@
                             linha: getIdx('linha'),
                             responsavel: getIdx('responsável'),
                             turno: getIdx('turno'),
-                            data: getIdx('data início'),
-                            hora: getIdx('hora início'),
-                            motivo: getIdx('descrição'),
+                            data: getIdx('data') > -1 ? getIdx('data') : getIdx('data início'),
+                            hora: getIdx('hora') > -1 ? getIdx('hora') : getIdx('hora início'),
+                            motivo: getIdx('descrição') > -1 ? getIdx('descrição') : getIdx('motivo'),
                             categoria: getIdx('categoria'),
-                            detalhe: getIdx('desc detalhada'),
+                            detalhe: getIdx('agrupamento') > -1 ? getIdx('agrupamento') : (getIdx('detalhada') > -1 ? getIdx('detalhada') : getIdx('desc detalhada')),
+                            detalhe_extra: getIdx('desc detalhada') > -1 ? getIdx('desc detalhada') : (getIdx('detalhada') > -1 ? getIdx('detalhada') : -1),
                             tag: getIdx('tag'),
                             os: getIdx('o.s'),
-                            tempo: getIdx('tempo parada')
+                            tempo: getIdx('tempo')
                         };
                     } else {
                         // Mapeamento fixo para Colar do Excel (Raw)
                         // Ajustado: Descrição Detalhada é índice 11 (L), não 10 (K - Agrupamento)
                         idx = {
                             setor: 1, linha: 2, responsavel: 3, turno: 4, data: 5, hora: 6,
-                            categoria: 8, motivo: 9, detalhe: 11, tag: 13, os: 14, tempo: 17
+                            categoria: 8, motivo: 9, detalhe: 10, detalhe_extra: 11, tag: 13, os: 14, tempo: 17
                         };
                     }
 
@@ -591,7 +659,11 @@
                         let horaIni = getVal(idx.hora) || '';
                         let categoria = getVal(idx.categoria) || 'Outros';
                         let motivo = getVal(idx.motivo) || 'Não Informado';
-                        let detalhe = getVal(idx.detalhe) || '';
+                        
+                        let val1 = getVal(idx.detalhe) || '';
+                        let val2 = idx.detalhe_extra ? (getVal(idx.detalhe_extra) || '') : '';
+                        let detalhe = (val1 + ' ' + val2).trim();
+                        
                         let tag = getVal(idx.tag) || '-';
                         let os = getVal(idx.os) || '-';
 
@@ -605,7 +677,19 @@
                         // Validação: Garante que setor existe e valor é numérico (mesmo que 0)
                         if (!setor || setor.trim() === '' || isNaN(valor)) return null;
 
-                        return { setor, linha, motivo, detalhe, categoria, valor, turno, dataStr, isoDate, horaIni, responsavel, tag, os };
+                        let tipoParada = 'GERAL';
+                        // Procura por GERAL ou FROTA nas colunas prováveis (10 a 14) para garantir captura correta
+                        for (let i = 10; i <= 14; i++) {
+                            if (parts[i]) {
+                                const v = cleanCell(parts[i]).toUpperCase();
+                                if (v === 'GERAL' || v === 'FROTA') {
+                                    tipoParada = v;
+                                    break;
+                                }
+                            }
+                        }
+
+                        return { setor, linha, motivo, detalhe, categoria, valor, turno, dataStr, isoDate, horaIni, responsavel, tag, os, extraInfo: val2, tipoParada };
                     }).filter(item => item !== null);
 
                     return processedData;
@@ -637,7 +721,7 @@
             // --- Cálculos Estatísticos ---
             const { sectorStats, shiftsList, pieData, timelineData, shiftComparisonData, tagData, locationData, detailedTableData, treemapData, totalHoras } = useMemo(() => {
                 const shifts = new Set();
-                const stats = { 'Todos': { horas: 0, count: 0, percent: 0 } };
+                const stats = { 'Todos': { horas: 0, count: 0, percent: 0, horasGeral: 0, horasFrota: 0 } };
                 const catGroups = {};
                 const treeMapGroups = {};
                 const dateGroups = {};
@@ -730,16 +814,28 @@
                 filteredData.forEach(d => {
                     stats['Todos'].horas += d.valor;
                     stats['Todos'].count += 1;
+                    if (d.tipoParada === 'FROTA') {
+                        stats['Todos'].horasFrota += d.valor;
+                    } else {
+                        stats['Todos'].horasGeral += d.valor;
+                    }
 
-                    if (!stats[d.setor]) stats[d.setor] = { horas: 0, count: 0, percent: 0 };
+                    if (!stats[d.setor]) stats[d.setor] = { horas: 0, count: 0, percent: 0, horasGeral: 0, horasFrota: 0 };
                     stats[d.setor].horas += d.valor;
                     stats[d.setor].count += 1;
+                    if (d.tipoParada === 'FROTA') {
+                        stats[d.setor].horasFrota += d.valor;
+                    } else {
+                        stats[d.setor].horasGeral += d.valor;
+                    }
                 });
 
                 const totalGlobal = stats['Todos'].horas;
                 const sectorArray = Object.entries(stats).map(([name, data]) => ({
                     name,
                     horas: data.horas,
+                    horasGeral: data.horasGeral,
+                    horasFrota: data.horasFrota,
                     count: data.count,
                     percent: totalGlobal > 0 ? ((data.horas / totalGlobal) * 100).toFixed(1) : 0
                 })).sort((a, b) => (a.name === 'Todos' ? -1 : b.horas - a.horas));
@@ -802,6 +898,9 @@
                 let filtered = [];
 
                 workingData.forEach(d => {
+                    // Filtra apenas GERAL para o gráfico principal
+                    if (d.tipoParada !== 'GERAL') return;
+
                     if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
 
@@ -873,7 +972,88 @@
                 };
             }, [workingData, selectedSector, selectedShift, startDate, endDate]);
 
+            const processedFleetPareto = useMemo(() => {
+                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
+                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+
+                let filtered = [];
+
+                workingData.forEach(d => {
+                    // Filtra apenas dados de FROTA para o gráfico de frota
+                    if (d.tipoParada !== 'FROTA') return;
+                    
+                    if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+
+                    let startMs = 0;
+                    if (d.isoDate) {
+                        let timeStr = d.horaIni || '00:00:00';
+                        if (/^\d{1,2}:\d{2}$/.test(timeStr)) timeStr += ':00';
+                        const dt = new Date(`${d.isoDate}T${timeStr}`);
+                        if (!isNaN(dt.getTime())) startMs = dt.getTime();
+                    }
+
+                    if (startMs === 0) {
+                        if (!startDate && !endDate) filtered.push(d);
+                        return;
+                    }
+
+                    const durationMs = (d.valor || 0) * 3600000;
+                    const endMs = startMs + durationMs;
+
+                    if (startMs >= wStart && startMs <= wEnd) {
+                        const cS = startMs;
+                        const cE = Math.min(endMs, wEnd);
+                        const cDur = Math.max(0, cE - cS);
+                        filtered.push({ ...d, valor: cDur / 3600000 });
+                    }
+                });
+
+                const groups = {};
+                let grandTotal = 0;
+
+                filtered.forEach(item => {
+                    // Agrupa por Veículo/Linha
+                    const key = item.tag || item.linha || 'Não Identificado';
+                    
+                    if (!groups[key]) {
+                        groups[key] = {
+                            valor: 0,
+                            detalhe: item.motivo // Detalhe mostra o motivo
+                        };
+                    }
+                    groups[key].valor += item.valor;
+                    grandTotal += item.valor;
+                });
+
+                const sorted = Object.entries(groups)
+                    .map(([name, data]) => ({
+                        name,
+                        valor: data.valor,
+                        detalhe: data.detalhe
+                    }))
+                    .sort((a, b) => b.valor - a.valor);
+
+                let acumulado = 0;
+                const finalChartData = sorted.slice(0, 20).map(item => {
+                    acumulado += item.valor;
+                    const percAcumulado = grandTotal > 0 ? (acumulado / grandTotal) * 100 : 0;
+                    return {
+                        name: item.name,
+                        detalhe: item.detalhe,
+                        horas: parseFloat(item.valor.toFixed(2)),
+                        acumulado: parseFloat(percAcumulado.toFixed(1)),
+                        isVital: percAcumulado <= 80 || (percAcumulado > 80 && (percAcumulado - (item.valor / grandTotal) * 100) < 80)
+                    };
+                });
+
+                return {
+                    chartData: finalChartData,
+                    totalHoras: grandTotal
+                };
+            }, [workingData, selectedShift, startDate, endDate]);
+
             const { chartData, totalHoras: paretoTotal } = processedPareto;
+            const { chartData: fleetChartData, totalHoras: fleetTotal } = processedFleetPareto;
             const mttr = detailedTableData.length > 0 ? (totalHoras / detailedTableData.length).toFixed(1) : 0;
 
             const handleFileChange = (event) => {
@@ -1010,13 +1190,27 @@
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                             {sectorStats.map((sector) => (
-                                <button key={sector.name} onClick={() => setSelectedSector(sector.name)} className={`p-4 rounded-xl border-2 transition-all transform hover:scale-105 ${selectedSector === sector.name ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 border-emerald-800 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400 hover:shadow-md'}`}>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold uppercase tracking-wide">{sector.name}</span>
-                                        {sector.name !== 'Todos' && <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>{sector.percent}%</span>}
+                                <button key={sector.name} onClick={() => setSelectedSector(sector.name)} className={`p-4 rounded-xl border-2 transition-all transform hover:scale-105 text-left ${selectedSector === sector.name ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 border-emerald-800 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400 hover:shadow-md'}`}>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <span className="text-xs font-bold uppercase tracking-wide truncate w-full" title={sector.name}>{sector.name}</span>
+                                        {sector.name !== 'Todos' && <span className={`text-[10px] px-2 py-1 rounded-full font-bold ml-2 ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>{sector.percent}%</span>}
                                     </div>
-                                    <div className="text-3xl font-bold mb-2">{formatDuration(sector.horas)}</div>
-                                    <div className="text-xs opacity-70 flex items-center gap-1"><ActivityIcon className="h-3 w-3" /> {sector.count} paradas</div>
+                                    
+                                    <div className="space-y-1 mb-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className={`text-[10px] uppercase font-bold ${selectedSector === sector.name ? 'text-emerald-100' : 'text-slate-400'}`}>Geral</span>
+                                            <span className="text-sm font-mono font-bold">{formatDuration(sector.horasGeral)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className={`text-[10px] uppercase font-bold ${selectedSector === sector.name ? 'text-blue-100' : 'text-blue-400'}`}>Frota</span>
+                                            <span className={`text-sm font-mono font-bold ${selectedSector === sector.name ? 'text-white' : 'text-blue-600'}`}>{formatDuration(sector.horasFrota)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className={`text-xs flex items-center gap-1 pt-2 border-t ${selectedSector === sector.name ? 'border-white/20 text-emerald-100' : 'border-slate-100 text-slate-400'}`}>
+                                        <ActivityIcon className="h-3 w-3" /> 
+                                        <span className="font-bold">Total: {formatDuration(sector.horas)}</span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -1155,6 +1349,31 @@
                         </div>
                     </div>
 
+                    {/* Pareto Frota (Novo) */}
+                    {fleetTotal > 0 && (
+                        <div className="mb-6 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[500px]">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                    <FactoryIcon className="h-5 w-5 text-blue-600" /> Pareto de Frota
+                                </h3>
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">{formatDuration(fleetTotal)}</span>
+                            </div>
+                            <ResponsiveContainer width="100%" height="85%">
+                                <ComposedChart data={fleetChartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                    <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
+                                    <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" unit="%" tick={{ fontSize: 11 }} />
+                                    <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                    <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
+                                        {fleetChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#2563eb' : '#cbd5e1'} />)}
+                                    </Bar>
+                                    <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+
                     {/* Tabela */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
                         <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20">
@@ -1164,6 +1383,7 @@
                             <table className="w-full text-sm text-left">
                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
                                     <tr>
+                                        <th className="px-4 py-3 bg-slate-50 w-20">Tipo</th>
                                         <th className="px-4 py-3 bg-slate-50 w-24">Data</th>
                                         <th className="px-4 py-3 bg-slate-50 w-20">Início</th>
                                         <th className="px-4 py-3 bg-slate-50">Local</th>
@@ -1177,6 +1397,11 @@
                                 <tbody className="divide-y divide-slate-100">
                                     {detailedTableData.map((item, idx) => (
                                         <tr key={idx} className="group hover:bg-blue-50 cursor-pointer transition-all border-l-4 border-transparent hover:border-blue-500 hover:shadow-md">
+                                            <td className="px-4 py-2">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                    {item.tipoParada || 'GERAL'}
+                                                </span>
+                                            </td>
                                             <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.dataStr}</td>
                                             <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.horaIni}</td>
                                             <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px] group-hover:text-blue-800">{item.linha}</td>
