@@ -73,6 +73,18 @@
         </div>
     </header>
 
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 text-center">Acesso ao Painel</h2>
+            <p class="text-sm text-slate-500 mb-6 text-center">Faça login para continuar.</p>
+            <input type="email" id="login-email" placeholder="Email" class="w-full p-3 border border-slate-300 rounded-lg mb-3 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="login-pass" placeholder="Senha" class="w-full p-3 border border-slate-300 rounded-lg mb-6 outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="fazerLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">Entrar</button>
+            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden"></p>
+        </div>
+    </div>
+
     <!-- Filtros de Data e Turno -->
     <div class="max-w-7xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-6 items-center">
         <div class="flex items-center gap-2">
@@ -103,7 +115,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { firebaseConfig } from './firebase_config.js';
 
@@ -129,20 +141,6 @@
                 if (hour >= 6 && hour < 14) shiftInput.value = 'A';
                 else if (hour >= 14 && hour < 22) shiftInput.value = 'B';
                 else shiftInput.value = 'C';
-            }
-        }
-
-        // 1. Lógica de Autenticação Inicial
-        async function initAuth() {
-            initFilters();
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Erro na autenticação:", error);
             }
         }
 
@@ -394,13 +392,30 @@
             }
         };
 
+        // Lógica de Login
+        window.fazerLogin = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorEl = document.getElementById('login-error');
+            errorEl.classList.add('hidden');
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                errorEl.textContent = "Erro: " + error.message;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
         // Iniciar App
         window.onload = async () => {
             generateInitialCards();
-            await initAuth();
+            initFilters();
             onAuthStateChanged(auth, (user) => {
                 if (user) {
+                    document.getElementById('login-modal').classList.add('hidden');
                     setupRealtimeListener(user.uid);
+                } else {
+                    document.getElementById('login-modal').classList.remove('hidden');
                 }
             });
         };

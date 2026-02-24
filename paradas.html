@@ -220,7 +220,7 @@
                 let pieData = Object.entries(detailedReasons)
                     .map(([name, value]) => ({ name, value }))
                     .sort((a, b) => b.value - a.value);
-                
+
                 if (pieData.length > 15) {
                     const top15 = pieData.slice(0, 15);
                     const others = pieData.slice(15).reduce((acc, curr) => acc + curr.value, 0);
@@ -271,7 +271,7 @@
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                             <XAxis type="number" hide />
                                             <YAxis dataKey="motivo" type="category" width={120} tick={{ fontSize: 10 }} />
-                                            <Tooltip 
+                                            <Tooltip
                                                 content={({ active, payload }) => {
                                                     if (active && payload && payload.length) {
                                                         const d = payload[0].payload;
@@ -329,7 +329,7 @@
                                                     <td className="px-4 py-2 text-slate-500 text-xs">{item.responsavel}</td>
                                                     <td className="px-4 py-2 text-slate-500 text-xs text-center">{item.turno}</td>
                                                     <td className="px-4 py-2 text-slate-500 text-xs font-mono">
-                                                        {item.tag && item.tag !== '-' ? item.tag : ''} 
+                                                        {item.tag && item.tag !== '-' ? item.tag : ''}
                                                         {item.os && item.os !== '-' ? ` / ${item.os}` : ''}
                                                     </td>
                                                     <td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td>
@@ -398,7 +398,7 @@
         function App() {
             const [selectedSector, setSelectedSector] = useState('Todos');
             const [selectedShift, setSelectedShift] = useState('Todos');
-            
+
             // Inicializa com a data de ontem para evitar travamento por excesso de dados
             const [startDate, setStartDate] = useState(() => {
                 const d = new Date();
@@ -659,11 +659,11 @@
                         let horaIni = getVal(idx.hora) || '';
                         let categoria = getVal(idx.categoria) || 'Outros';
                         let motivo = getVal(idx.motivo) || 'Não Informado';
-                        
+
                         let val1 = getVal(idx.detalhe) || '';
                         let val2 = idx.detalhe_extra ? (getVal(idx.detalhe_extra) || '') : '';
                         let detalhe = (val1 + ' ' + val2).trim();
-                        
+
                         let tag = getVal(idx.tag) || '-';
                         let os = getVal(idx.os) || '-';
 
@@ -981,7 +981,7 @@
                 workingData.forEach(d => {
                     // Filtra apenas dados de FROTA para o gráfico de frota
                     if (d.tipoParada !== 'FROTA') return;
-                    
+
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
 
                     let startMs = 0;
@@ -1012,13 +1012,13 @@
                 let grandTotal = 0;
 
                 filtered.forEach(item => {
-                    // Agrupa por Veículo/Linha
-                    const key = item.tag || item.linha || 'Não Identificado';
-                    
+                    // Agrupa por Motivo (igual ao gráfico geral)
+                    const key = item.motivo ? item.motivo.trim() : 'Não Informado';
+
                     if (!groups[key]) {
                         groups[key] = {
                             valor: 0,
-                            detalhe: item.motivo // Detalhe mostra o motivo
+                            detalhe: item.detalhe
                         };
                     }
                     groups[key].valor += item.valor;
@@ -1195,7 +1195,7 @@
                                         <span className="text-xs font-bold uppercase tracking-wide truncate w-full" title={sector.name}>{sector.name}</span>
                                         {sector.name !== 'Todos' && <span className={`text-[10px] px-2 py-1 rounded-full font-bold ml-2 ${selectedSector === sector.name ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>{sector.percent}%</span>}
                                     </div>
-                                    
+
                                     <div className="space-y-1 mb-3">
                                         <div className="flex justify-between items-center">
                                             <span className={`text-[10px] uppercase font-bold ${selectedSector === sector.name ? 'text-emerald-100' : 'text-slate-400'}`}>Geral</span>
@@ -1208,7 +1208,7 @@
                                     </div>
 
                                     <div className={`text-xs flex items-center gap-1 pt-2 border-t ${selectedSector === sector.name ? 'border-white/20 text-emerald-100' : 'border-slate-100 text-slate-400'}`}>
-                                        <ActivityIcon className="h-3 w-3" /> 
+                                        <ActivityIcon className="h-3 w-3" />
                                         <span className="font-bold">Total: {formatDuration(sector.horas)}</span>
                                     </div>
                                 </button>
@@ -1424,7 +1424,7 @@
                         data={detailedTableData.filter(d => d.linha === selectedLocation)}
                     />
                 </div>
-        );
+            );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
