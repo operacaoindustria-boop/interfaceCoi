@@ -22,6 +22,11 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <!-- Supressão de avisos -->
     <script>
         const originalError = console.error;
@@ -161,6 +166,8 @@
         const LogOutIcon = ({ className }) => <IconWrapper className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></IconWrapper>;
         const CloudIcon = ({ className }) => <IconWrapper className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" /></IconWrapper>;
         const CheckCircleIcon = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></IconWrapper>;
+        const SearchIcon = ({ className }) => <IconWrapper className={className}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></IconWrapper>;
+        const DownloadIcon = ({ className }) => <IconWrapper className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></IconWrapper>;
 
         // Cores
         const COLORS = ['#059669', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#4f46e5', '#0891b2', '#be185d', '#15803d'];
@@ -274,7 +281,8 @@
                                             <Tooltip
                                                 content={({ active, payload }) => {
                                                     if (active && payload && payload.length) {
-                                                        const d = payload[0].payload
+                                                        const d = payload[0].payload;
+                                                        if (!d) return null;
                                                         return (
                                                             <div className="bg-white p-3 border border-slate-200 shadow-lg rounded text-xs z-50">
                                                                 <p className="font-bold text-slate-800 mb-1">{d.motivo}</p>
@@ -398,6 +406,10 @@
         function App() {
             const [selectedSector, setSelectedSector] = useState('Todos');
             const [selectedShift, setSelectedShift] = useState('Todos');
+            const [selectedResponsible, setSelectedResponsible] = useState('Todos');
+            const [selectedType, setSelectedType] = useState('Todos');
+            const [searchTerm, setSearchTerm] = useState('');
+            const [activeTab, setActiveTab] = useState('dashboard');
 
             // Inicializa com a data de ontem para evitar travamento por excesso de dados
             const [startDate, setStartDate] = useState(() => {
@@ -419,6 +431,7 @@
             const [lastUpdated, setLastUpdated] = useState(null);
             const [firebaseConnected, setFirebaseConnected] = useState(false);
             const [selectedLocation, setSelectedLocation] = useState(null);
+            const [alerts, setAlerts] = useState([]);
 
             const fileInputRef = useRef(null);
 
@@ -721,6 +734,7 @@
             // --- Cálculos Estatísticos ---
             const { sectorStats, shiftsList, pieData, timelineData, shiftComparisonData, tagData, locationData, detailedTableData, treemapData, totalHoras } = useMemo(() => {
                 const shifts = new Set();
+                const responsibles = new Set();
                 const stats = { 'Todos': { horas: 0, count: 0, percent: 0, horasGeral: 0, horasFrota: 0 } };
                 const catGroups = {};
                 const treeMapGroups = {};
@@ -732,6 +746,7 @@
                 // Collect shifts from all data
                 workingData.forEach(d => {
                     if (d.turno) shifts.add(d.turno);
+                    if (d.responsavel && d.responsavel !== '-') responsibles.add(d.responsavel);
                 });
 
                 // Define Time Window for Clamping
@@ -744,6 +759,17 @@
                     // 1. Filter by Sector/Shift
                     if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+                    if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
+                    if (selectedType !== 'Todos' && d.tipoParada !== selectedType) return;
+
+                    // 1.1 Dynamic Search
+                    if (searchTerm) {
+                        const term = searchTerm.toLowerCase();
+                        const match = (d.motivo && d.motivo.toLowerCase().includes(term)) ||
+                            (d.detalhe && d.detalhe.toLowerCase().includes(term)) ||
+                            (d.linha && d.linha.toLowerCase().includes(term));
+                        if (!match) return;
+                    }
 
                     // 2. Calculate Timestamps & Clamp
                     let startMs = 0;
@@ -875,6 +901,7 @@
                 return {
                     sectorStats: sectorArray,
                     shiftsList: Array.from(shifts).sort(),
+                    responsiblesList: Array.from(responsibles).sort(),
                     pieData: finalPieData,
                     treemapData: finalTreemapData,
                     timelineData: finalTimelineData,
@@ -884,12 +911,21 @@
                     detailedTableData: finalTableData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedShift, selectedSector, startDate, endDate]);
+            }, [workingData, selectedShift, selectedSector, selectedResponsible, selectedType, searchTerm, startDate, endDate]);
 
             useEffect(() => {
                 const exists = sectorStats.find(s => s.name === selectedSector);
                 if (!exists) setSelectedSector('Todos');
             }, [sectorStats]);
+
+            // Alerts Logic
+            useEffect(() => {
+                const newAlerts = [];
+                if (totalHoras > 24 && detailedTableData.length > 0) {
+                    // Exemplo de alerta
+                }
+                setAlerts(newAlerts);
+            }, [totalHoras, detailedTableData]);
 
             const processedPareto = useMemo(() => {
                 const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
@@ -903,6 +939,15 @@
 
                     if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+                    if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
+
+                    if (searchTerm) {
+                        const term = searchTerm.toLowerCase();
+                        const match = (d.motivo && d.motivo.toLowerCase().includes(term)) ||
+                            (d.detalhe && d.detalhe.toLowerCase().includes(term)) ||
+                            (d.linha && d.linha.toLowerCase().includes(term));
+                        if (!match) return;
+                    }
 
                     let startMs = 0;
                     if (d.isoDate) {
@@ -970,7 +1015,7 @@
                     chartData: finalChartData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedSector, selectedShift, startDate, endDate]);
+            }, [workingData, selectedSector, selectedShift, selectedResponsible, searchTerm, startDate, endDate]);
 
             const processedFleetPareto = useMemo(() => {
                 const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
@@ -983,6 +1028,15 @@
                     if (d.tipoParada !== 'FROTA') return;
 
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
+                    if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
+
+                    if (searchTerm) {
+                        const term = searchTerm.toLowerCase();
+                        const match = (d.motivo && d.motivo.toLowerCase().includes(term)) ||
+                            (d.detalhe && d.detalhe.toLowerCase().includes(term)) ||
+                            (d.linha && d.linha.toLowerCase().includes(term));
+                        if (!match) return;
+                    }
 
                     let startMs = 0;
                     if (d.isoDate) {
@@ -1050,7 +1104,7 @@
                     chartData: finalChartData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedShift, startDate, endDate]);
+            }, [workingData, selectedShift, selectedResponsible, searchTerm, startDate, endDate]);
 
             const { chartData, totalHoras: paretoTotal } = processedPareto;
             const { chartData: fleetChartData, totalHoras: fleetTotal } = processedFleetPareto;
@@ -1064,6 +1118,54 @@
                     setCsvInput(e.target.result);
                 };
                 reader.readAsText(file);
+            };
+
+            const exportToPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFontSize(18);
+                doc.text("Relatório de Paradas", 14, 22);
+                doc.setFontSize(11);
+                doc.text(`Período: ${startDate || 'Início'} a ${endDate || 'Fim'}`, 14, 30);
+                doc.text(`Setor: ${selectedSector} | Turno: ${selectedShift}`, 14, 36);
+
+                const tableColumn = ["Data", "Hora", "Local", "Motivo", "Categoria", "Duração"];
+                const tableRows = [];
+
+                detailedTableData.forEach(ticket => {
+                    const ticketData = [
+                        ticket.dataStr,
+                        ticket.horaIni,
+                        ticket.linha,
+                        ticket.motivo,
+                        ticket.categoria,
+                        formatDurationTable(ticket.valor)
+                    ];
+                    tableRows.push(ticketData);
+                });
+
+                doc.autoTable(tableColumn, tableRows, { startY: 45 });
+                doc.save(`Relatorio_Paradas_${new Date().toISOString().slice(0, 10)}.pdf`);
+            };
+
+            const exportToExcel = () => {
+                const ws = XLSX.utils.json_to_sheet(detailedTableData.map(d => ({
+                    Data: d.dataStr,
+                    Hora: d.horaIni,
+                    Setor: d.setor,
+                    Local: d.linha,
+                    Motivo: d.motivo,
+                    Detalhe: d.detalhe,
+                    Categoria: d.categoria,
+                    Responsavel: d.responsavel,
+                    Turno: d.turno,
+                    Tipo: d.tipoParada,
+                    Duracao_Horas: d.valor.toFixed(2)
+                })));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Paradas");
+                XLSX.writeFile(wb, `Paradas_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
             };
 
             return (
@@ -1159,11 +1261,17 @@
                         )
                     }
 
+                    {/* Tabs de Navegação */}
+                    <div className="flex space-x-1 bg-slate-200 p-1 rounded-xl mb-6 w-fit">
+                        <button onClick={() => setActiveTab('dashboard')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Dashboard</button>
+                        <button onClick={() => setActiveTab('history')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Histórico Detalhado</button>
+                    </div>
+
                     {/* Filtros */}
-                    <div className="mb-8">
+                    <div className="mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-6 gap-4">
-                            <h3 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                <FactoryIcon className="h-5 w-5 text-emerald-600" /> Setores
+                            <h3 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 hidden lg:flex">
+                                <FilterIcon className="h-5 w-5 text-emerald-600" /> Filtros
                             </h3>
                             <div className="flex gap-3 items-center flex-wrap w-full lg:w-auto">
                                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
@@ -1216,206 +1324,222 @@
                         </div>
                     </div>
 
-                    {/* KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold">Total Horas</span>
-                            <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(totalHoras)}</div>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold">Qtd Paradas</span>
-                            <div className="text-2xl font-bold text-slate-800 mt-1">{detailedTableData.length}</div>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold">MTTR</span>
-                            <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(mttr)}</div>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
-                            <span className="text-xs text-slate-400 uppercase font-bold">Maior Ofensor</span>
-                            <div className="text-sm font-bold text-slate-800 truncate mt-1">{chartData[0]?.name || '-'}</div>
-                            <div className="text-xs text-red-500 font-bold">{formatDuration(chartData[0]?.horas)}</div>
-                        </div>
-                    </div>
-
-                    {/* Gráficos */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
-                            <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <TrendingUpIcon className="h-4 w-4 text-emerald-600" /> Evolução Diária
-                            </h3>
-                            {timelineData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="90%">
-                                    <AreaChart data={timelineData}>
-                                        <defs>
-                                            <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} />
-                                        <YAxis tick={{ fontSize: 10 }} width={30} />
-                                        <Tooltip formatter={(value) => formatDuration(value)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                        <Area type="monotone" dataKey="horas" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorHours)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
-                        </div>
-
-                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
-                            <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                <ClockIcon className="h-4 w-4 text-blue-600" /> Turnos
-                            </h3>
-                            {shiftComparisonData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="90%">
-                                    <BarChart data={shiftComparisonData} layout="vertical">
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                        <Tooltip formatter={(value) => formatDuration(value)} cursor={{ fill: 'transparent' }} />
-                                        <Bar dataKey="horas" radius={[0, 4, 4, 0]} barSize={24}>
-                                            {shiftComparisonData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name.replace('Turno ', '')] || '#94a3b8'} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
-                        </div>
-                    </div>
-
-                    {/* Pareto + Árvore */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[600px]">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <FactoryIcon className="h-5 w-5 text-emerald-600" /> Pareto
-                                </h3>
-                                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{formatDuration(totalHoras)}</span>
+                    {activeTab === 'dashboard' && (
+                        <div className="animate-in fade-in">
+                            {/* KPIs */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                    <span className="text-xs text-slate-400 uppercase font-bold">Total Horas</span>
+                                    <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(totalHoras)}</div>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
+                                    <span className="text-xs text-slate-400 uppercase font-bold">Qtd Paradas</span>
+                                    <div className="text-2xl font-bold text-slate-800 mt-1">{detailedTableData.length}</div>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
+                                    <span className="text-xs text-slate-400 uppercase font-bold">MTTR</span>
+                                    <div className="text-2xl font-bold text-slate-800 mt-1">{formatDuration(mttr)}</div>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                                    <span className="text-xs text-slate-400 uppercase font-bold">Maior Ofensor</span>
+                                    <div className="text-sm font-bold text-slate-800 truncate mt-1">{chartData[0]?.name || '-'}</div>
+                                    <div className="text-xs text-red-500 font-bold">{formatDuration(chartData[0]?.horas)}</div>
+                                </div>
                             </div>
-                            <ResponsiveContainer width="100%" height="85%">
-                                <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                    <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#ef4444" unit="%" tick={{ fontSize: 11 }} />
-                                    <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
-                                        {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#059669' : '#cbd5e1'} />)}
-                                    </Bar>
-                                    <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
 
-                        <div className="flex flex-col gap-6 h-[600px]">
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
-                                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <LayersIcon className="h-4 w-4 text-purple-600" /> Hierarquia
-                                </h3>
-                                <div className="flex-1">
-                                    {treemapData.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <Treemap data={treemapData} dataKey="size" stroke="#fff" fill="#8884d8" content={<CustomizedTreemapContent colors={COLORS} />}>
-                                                <Tooltip content={<CustomTooltip />} />
-                                            </Treemap>
+                            {/* Gráficos */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                        <TrendingUpIcon className="h-4 w-4 text-emerald-600" /> Evolução Diária
+                                    </h3>
+                                    {timelineData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <AreaChart data={timelineData}>
+                                                <defs>
+                                                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} />
+                                                <YAxis tick={{ fontSize: 10 }} width={30} />
+                                                <Tooltip formatter={(value) => formatDuration(value)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                <Area type="monotone" dataKey="horas" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorHours)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
+                                </div>
+
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[320px]">
+                                    <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                        <ClockIcon className="h-4 w-4 text-blue-600" /> Turnos
+                                    </h3>
+                                    {shiftComparisonData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <BarChart data={shiftComparisonData} layout="vertical">
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                                <XAxis type="number" hide />
+                                                <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                                <Tooltip formatter={(value) => formatDuration(value)} cursor={{ fill: 'transparent' }} />
+                                                <Bar dataKey="horas" radius={[0, 4, 4, 0]} barSize={24}>
+                                                    {shiftComparisonData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name.replace('Turno ', '')] || '#94a3b8'} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                                 </div>
                             </div>
 
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
-                                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                    <MapPinIcon className="h-4 w-4 text-red-500" /> Locais
-                                </h3>
-                                <div className="flex-1 overflow-y-auto pr-2">
-                                    {locationData.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {locationData.map((loc, i) => (
-                                                <div key={i} className="flex flex-col cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" onClick={() => setSelectedLocation(loc.name)}>
-                                                    <div className="flex justify-between text-xs mb-1">
-                                                        <span className="font-bold text-slate-700 truncate w-36 hover:text-blue-600">{i + 1}. {loc.name}</span>
-                                                        <span className="font-bold text-slate-900">{formatDuration(loc.horas)}</span>
-                                                    </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                        <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                            {/* Pareto + Árvore */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[600px]">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                            <FactoryIcon className="h-5 w-5 text-emerald-600" /> Pareto
+                                        </h3>
+                                        <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">{formatDuration(totalHoras)}</span>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height="85%">
+                                        <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                            <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
+                                            <YAxis yAxisId="right" orientation="right" stroke="#ef4444" unit="%" tick={{ fontSize: 11 }} />
+                                            <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                            <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
+                                                {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#059669' : '#cbd5e1'} />)}
+                                            </Bar>
+                                            <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div className="flex flex-col gap-6 h-[600px]">
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
+                                        <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                            <LayersIcon className="h-4 w-4 text-purple-600" /> Hierarquia
+                                        </h3>
+                                        <div className="flex-1">
+                                            {treemapData.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <Treemap data={treemapData} dataKey="size" stroke="#fff" fill="#8884d8" content={<CustomizedTreemapContent colors={COLORS} />}>
+                                                        <Tooltip content={<CustomTooltip />} />
+                                                    </Treemap>
+                                                </ResponsiveContainer>
+                                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                                         </div>
-                                    ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
+                                    </div>
+
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
+                                        <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                            <MapPinIcon className="h-4 w-4 text-red-500" /> Locais
+                                        </h3>
+                                        <div className="flex-1 overflow-y-auto pr-2">
+                                            {locationData.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {locationData.map((loc, i) => (
+                                                        <div key={i} className="flex flex-col cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" onClick={() => setSelectedLocation(loc.name)}>
+                                                            <div className="flex justify-between text-xs mb-1">
+                                                                <span className="font-bold text-slate-700 truncate w-36 hover:text-blue-600">{i + 1}. {loc.name}</span>
+                                                                <span className="font-bold text-slate-900">{formatDuration(loc.horas)}</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                                <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Pareto Frota (Novo) */}
-                    {fleetTotal > 0 && (
-                        <div className="mb-6 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[500px]">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <FactoryIcon className="h-5 w-5 text-blue-600" /> Pareto de Frota
-                                </h3>
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">{formatDuration(fleetTotal)}</span>
-                            </div>
-                            <ResponsiveContainer width="100%" height="85%">
-                                <ComposedChart data={fleetChartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                    <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" unit="%" tick={{ fontSize: 11 }} />
-                                    <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
-                                        {fleetChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#2563eb' : '#cbd5e1'} />)}
-                                    </Bar>
-                                    <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
+                            {/* Pareto Frota (Novo) */}
+                            {fleetTotal > 0 && (
+                                <div className="mb-6 bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[500px]">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                            <FilterIcon className="h-5 w-5 text-blue-600" />
+                                            <FactoryIcon className="h-5 w-5 text-blue-600" /> Pareto de Frota
+                                        </h3>
+                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">{formatDuration(fleetTotal)}</span>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height="85%">
+                                        <ComposedChart data={fleetChartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={70} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                            <YAxis yAxisId="left" stroke="#64748b" tick={{ fontSize: 11 }} />
+                                            <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" unit="%" tick={{ fontSize: 11 }} />
+                                            <Tooltip formatter={(value, name) => [name === 'acumulado' ? `${value}%` : formatDuration(value), name]} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                            <Bar yAxisId="left" dataKey="horas" barSize={35} radius={[4, 4, 0, 0]}>
+                                                {fleetChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.isVital ? '#2563eb' : '#cbd5e1'} />)}
+                                            </Bar>
+                                            <Line yAxisId="right" type="monotone" dataKey="acumulado" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* Tabela */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
-                        <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20">
-                            <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600" /> Detalhes</h3>
+                    {activeTab === 'history' && (
+                        <div className="animate-in fade-in">
+                            <div className="flex justify-end gap-3 mb-4">
+                                <button onClick={exportToExcel} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 transition shadow-sm">
+                                    <DownloadIcon className="w-4 h-4" /> Excel
+                                </button>
+                                <button onClick={exportToPDF} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">
+                                    <DownloadIcon className="w-4 h-4" /> PDF
+                                </button>
+                            </div>
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-20">
+                                    <h3 className="font-bold text-slate-700 flex items-center gap-2"><TableIcon className="h-4 w-4 text-emerald-600" /> Detalhes</h3>
+                                </div>
+                                <div className="overflow-y-auto flex-1 p-0">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
+                                            <tr>
+                                                <th className="px-4 py-3 bg-slate-50 w-20">Tipo</th>
+                                                <th className="px-4 py-3 bg-slate-50 w-24">Data</th>
+                                                <th className="px-4 py-3 bg-slate-50 w-20">Início</th>
+                                                <th className="px-4 py-3 bg-slate-50">Local</th>
+                                                <th className="px-4 py-3 bg-slate-50">Motivo</th>
+                                                <th className="px-4 py-3 bg-slate-50">Detalhado</th>
+                                                <th className="px-4 py-3 bg-slate-50">Resp.</th>
+                                                <th className="px-4 py-3 bg-slate-50">OS</th>
+                                                <th className="px-4 py-3 text-right bg-slate-50">Duração</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {detailedTableData.map((item, idx) => (
+                                                <tr key={idx} className="group hover:bg-blue-50 cursor-pointer transition-all border-l-4 border-transparent hover:border-blue-500 hover:shadow-md">
+                                                    <td className="px-4 py-2">
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                            {item.tipoParada || 'GERAL'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.dataStr}</td>
+                                                    <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.horaIni}</td>
+                                                    <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px] group-hover:text-blue-800">{item.linha}</td>
+                                                    <td className="px-4 py-2 text-slate-600 truncate max-w-[200px] group-hover:text-blue-800">{item.motivo}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px] group-hover:text-blue-700">{item.detalhe || '-'}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs truncate group-hover:text-blue-700">{item.responsavel}</td>
+                                                    <td className="px-4 py-2 text-slate-500 text-xs font-mono group-hover:text-blue-700">{item.os}</td>
+                                                    <td className="px-4 py-2 text-right text-slate-900 font-bold font-mono bg-slate-50/50 group-hover:bg-blue-100/50 group-hover:text-blue-900">{formatDurationTable(item.valor)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div className="overflow-y-auto flex-1 p-0">
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
-                                    <tr>
-                                        <th className="px-4 py-3 bg-slate-50 w-20">Tipo</th>
-                                        <th className="px-4 py-3 bg-slate-50 w-24">Data</th>
-                                        <th className="px-4 py-3 bg-slate-50 w-20">Início</th>
-                                        <th className="px-4 py-3 bg-slate-50">Local</th>
-                                        <th className="px-4 py-3 bg-slate-50">Motivo</th>
-                                        <th className="px-4 py-3 bg-slate-50">Detalhado</th>
-                                        <th className="px-4 py-3 bg-slate-50">Resp.</th>
-                                        <th className="px-4 py-3 bg-slate-50">OS</th>
-                                        <th className="px-4 py-3 text-right bg-slate-50">Duração</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {detailedTableData.map((item, idx) => (
-                                        <tr key={idx} className="group hover:bg-blue-50 cursor-pointer transition-all border-l-4 border-transparent hover:border-blue-500 hover:shadow-md">
-                                            <td className="px-4 py-2">
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                    {item.tipoParada || 'GERAL'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.dataStr}</td>
-                                            <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.horaIni}</td>
-                                            <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px] group-hover:text-blue-800">{item.linha}</td>
-                                            <td className="px-4 py-2 text-slate-600 truncate max-w-[200px] group-hover:text-blue-800">{item.motivo}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px] group-hover:text-blue-700">{item.detalhe || '-'}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs truncate group-hover:text-blue-700">{item.responsavel}</td>
-                                            <td className="px-4 py-2 text-slate-500 text-xs font-mono group-hover:text-blue-700">{item.os}</td>
-                                            <td className="px-4 py-2 text-right text-slate-900 font-bold font-mono bg-slate-50/50 group-hover:bg-blue-100/50 group-hover:text-blue-900">{formatDurationTable(item.valor)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    )}
 
                     <LocationModal
                         isOpen={!!selectedLocation}
