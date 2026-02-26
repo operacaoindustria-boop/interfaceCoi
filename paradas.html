@@ -194,8 +194,8 @@
         };
 
         // --- Componente Modal de Detalhes do Local ---
-        const LocationModal = ({ isOpen, onClose, locationName, data }) => {
-            if (!isOpen) return null;
+        const LocationDetails = ({ locationName, data }) => {
+            if (!locationName || !data || data.length === 0) return null;
 
             const stats = useMemo(() => {
                 let total = 0;
@@ -238,114 +238,109 @@
             }, [data]);
 
             return (
-                <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-slate-800 p-4 flex justify-between items-center shrink-0">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <MapPinIcon className="h-6 w-6 text-red-500" />
-                                {locationName}
-                            </h2>
-                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-                                <XIcon className="h-8 w-8" />
-                            </button>
+                <div className="mt-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in">
+                    <div className="bg-slate-800 p-4 flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <MapPinIcon className="h-6 w-6 text-red-500" />
+                            Detalhes: {locationName}
+                        </h2>
+                    </div>
+
+                    <div className="p-6 bg-slate-50">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Total Parado</p><p className="text-2xl font-bold text-slate-800">{formatDuration(stats.total)}</p></div>
+                            <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Operacional</p><p className="text-xl font-bold text-blue-600">{formatDuration(stats.cats['Operacional'])}</p></div>
+                            <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Manutenção</p><p className="text-xl font-bold text-orange-600">{formatDuration(stats.cats['Manutenção'])}</p></div>
+                            <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Gestão</p><p className="text-xl font-bold text-purple-600">{formatDuration(stats.cats['Gestão'])}</p></div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Total Parado</p><p className="text-2xl font-bold text-slate-800">{formatDuration(stats.total)}</p></div>
-                                <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Operacional</p><p className="text-xl font-bold text-blue-600">{formatDuration(stats.cats['Operacional'])}</p></div>
-                                <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Manutenção</p><p className="text-xl font-bold text-orange-600">{formatDuration(stats.cats['Manutenção'])}</p></div>
-                                <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm"><p className="text-xs font-bold text-slate-500 uppercase">Gestão</p><p className="text-xl font-bold text-purple-600">{formatDuration(stats.cats['Gestão'])}</p></div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
+                                <h3 className="text-sm font-bold text-slate-700 mb-4">Distribuição Detalhada</h3>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                            {stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatDuration(value)} />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
                             </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
-                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Distribuição Detalhada</h3>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                                {stats.pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                                            </Pie>
-                                            <Tooltip formatter={(value) => formatDuration(value)} />
-                                            <Legend />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
-                                    <h3 className="text-sm font-bold text-slate-700 mb-4">Top Paradas (Maior Impacto)</h3>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={stats.topStops} layout="vertical" margin={{ left: 20, right: 20 }}>
-                                            <CartesianGrid stroke="#f1f5f9" horizontal={false} />
-                                            <XAxis type="number" hide />
-                                            <YAxis dataKey="motivo" type="category" width={120} tick={{ fontSize: 10 }} />
-                                            <Tooltip
-                                                content={({ active, payload }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const d = payload[0].payload;
-                                                        if (!d) return null;
-                                                        return (
-                                                            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded text-xs z-50">
-                                                                <p className="font-bold text-slate-800 mb-1">{d.motivo}</p>
-                                                                <p className="text-slate-600">Início: <span className="font-mono font-bold">{d.dataStr} {d.horaIni}</span></p>
-                                                                <p className="text-slate-600">Duração: <span className="font-bold text-red-500">{formatDuration(d.valor)}</span></p>
-                                                                {d.detalhe && <p className="text-slate-500 mt-1 italic">{d.detalhe}</p>}
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Bar dataKey="valor" fill="#8884d8" radius={[0, 4, 4, 0]} barSize={20} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
+                                <h3 className="text-sm font-bold text-slate-700 mb-4">Top Paradas (Maior Impacto)</h3>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={stats.topStops} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                        <CartesianGrid stroke="#f1f5f9" horizontal={false} />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="motivo" type="category" width={120} tick={{ fontSize: 10 }} />
+                                        <Tooltip
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const d = payload[0].payload;
+                                                    if (!d) return null;
+                                                    return (
+                                                        <div className="bg-white p-3 border border-slate-200 shadow-lg rounded text-xs z-50">
+                                                            <p className="font-bold text-slate-800 mb-1">{d.motivo}</p>
+                                                            <p className="text-slate-600">Início: <span className="font-mono font-bold">{d.dataStr} {d.horaIni}</span></p>
+                                                            <p className="text-slate-600">Duração: <span className="font-bold text-red-500">{formatDuration(d.valor)}</span></p>
+                                                            {d.detalhe && <p className="text-slate-500 mt-1 italic">{d.detalhe}</p>}
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar dataKey="valor" fill="#8884d8" radius={[0, 4, 4, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
+                        </div>
 
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="p-4 border-b border-slate-100 bg-slate-50">
-                                    <h3 className="font-bold text-slate-700">Detalhamento de Paradas - {locationName}</h3>
-                                </div>
-                                <div className="overflow-x-auto max-h-96">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
-                                            <tr>
-                                                <th className="px-4 py-3">Tipo</th>
-                                                <th className="px-4 py-3">Data/Hora</th>
-                                                <th className="px-4 py-3">Motivo</th>
-                                                <th className="px-4 py-3">Detalhe</th>
-                                                <th className="px-4 py-3">Categoria</th>
-                                                <th className="px-4 py-3">Resp.</th>
-                                                <th className="px-4 py-3">Turno</th>
-                                                <th className="px-4 py-3">Tag/OS</th>
-                                                <th className="px-4 py-3 text-right">Duração</th>
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50">
+                                <h3 className="font-bold text-slate-700">Detalhamento de Paradas - {locationName}</h3>
+                            </div>
+                            <div className="overflow-x-auto max-h-96">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
+                                        <tr>
+                                            <th className="px-4 py-3">Tipo</th>
+                                            <th className="px-4 py-3">Data/Hora</th>
+                                            <th className="px-4 py-3">Motivo</th>
+                                            <th className="px-4 py-3">Detalhe</th>
+                                            <th className="px-4 py-3">Categoria</th>
+                                            <th className="px-4 py-3">Resp.</th>
+                                            <th className="px-4 py-3">Turno</th>
+                                            <th className="px-4 py-3">Tag/OS</th>
+                                            <th className="px-4 py-3 text-right">Duração</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {data.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-50">
+                                                <td className="px-4 py-2">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                        {item.tipoParada || 'GERAL'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-2 text-slate-500 font-mono text-xs whitespace-nowrap">
+                                                    {item.dataStr} <span className="text-slate-400">{item.horaIni}</span>
+                                                </td>
+                                                <td className="px-4 py-2 text-slate-700 font-medium">{item.motivo}</td>
+                                                <td className="px-4 py-2 text-slate-500 text-xs max-w-[200px] truncate" title={item.detalhe}>{item.detalhe || '-'}</td>
+                                                <td className="px-4 py-2 text-slate-500 text-xs">{item.categoria}</td>
+                                                <td className="px-4 py-2 text-slate-500 text-xs">{item.responsavel}</td>
+                                                <td className="px-4 py-2 text-slate-500 text-xs text-center">{item.turno}</td>
+                                                <td className="px-4 py-2 text-slate-500 text-xs font-mono">
+                                                    {item.tag && item.tag !== '-' ? item.tag : ''}
+                                                    {item.os && item.os !== '-' ? ` / ${item.os}` : ''}
+                                                </td>
+                                                <td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {data.map((item, idx) => (
-                                                <tr key={idx} className="hover:bg-slate-50">
-                                                    <td className="px-4 py-2">
-                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.tipoParada === 'FROTA' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                            {item.tipoParada || 'GERAL'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-slate-500 font-mono text-xs whitespace-nowrap">
-                                                        {item.dataStr} <span className="text-slate-400">{item.horaIni}</span>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-slate-700 font-medium">{item.motivo}</td>
-                                                    <td className="px-4 py-2 text-slate-500 text-xs max-w-[200px] truncate" title={item.detalhe}>{item.detalhe || '-'}</td>
-                                                    <td className="px-4 py-2 text-slate-500 text-xs">{item.categoria}</td>
-                                                    <td className="px-4 py-2 text-slate-500 text-xs">{item.responsavel}</td>
-                                                    <td className="px-4 py-2 text-slate-500 text-xs text-center">{item.turno}</td>
-                                                    <td className="px-4 py-2 text-slate-500 text-xs font-mono">
-                                                        {item.tag && item.tag !== '-' ? item.tag : ''}
-                                                        {item.os && item.os !== '-' ? ` / ${item.os}` : ''}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right font-bold text-slate-700 font-mono">{formatDurationTable(item.valor)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -927,6 +922,18 @@
                 setAlerts(newAlerts);
             }, [totalHoras, detailedTableData]);
 
+            // Auto-select first location when data changes
+            useEffect(() => {
+                if (locationData.length > 0) {
+                    const exists = selectedLocation && locationData.find(l => l.name === selectedLocation);
+                    if (!exists) {
+                        setSelectedLocation(locationData[0].name);
+                    }
+                } else {
+                    setSelectedLocation(null);
+                }
+            }, [locationData]);
+
             const processedPareto = useMemo(() => {
                 const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
                 const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
@@ -1418,43 +1425,18 @@
                                     </ResponsiveContainer>
                                 </div>
 
-                                <div className="flex flex-col gap-6 h-[600px]">
-                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
-                                        <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                            <LayersIcon className="h-4 w-4 text-purple-600" /> Hierarquia
-                                        </h3>
-                                        <div className="flex-1">
-                                            {treemapData.length > 0 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <Treemap data={treemapData} dataKey="size" stroke="#fff" fill="#8884d8" content={<CustomizedTreemapContent colors={COLORS} />}>
-                                                        <Tooltip content={<CustomTooltip />} />
-                                                    </Treemap>
-                                                </ResponsiveContainer>
-                                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[290px] flex flex-col">
-                                        <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                                            <MapPinIcon className="h-4 w-4 text-red-500" /> Locais
-                                        </h3>
-                                        <div className="flex-1 overflow-y-auto pr-2">
-                                            {locationData.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {locationData.map((loc, i) => (
-                                                        <div key={i} className="flex flex-col cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" onClick={() => setSelectedLocation(loc.name)}>
-                                                            <div className="flex justify-between text-xs mb-1">
-                                                                <span className="font-bold text-slate-700 truncate w-36 hover:text-blue-600">{i + 1}. {loc.name}</span>
-                                                                <span className="font-bold text-slate-900">{formatDuration(loc.horas)}</span>
-                                                            </div>
-                                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                                <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
-                                        </div>
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-[600px] flex flex-col">
+                                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                                        <LayersIcon className="h-4 w-4 text-purple-600" /> Hierarquia
+                                    </h3>
+                                    <div className="flex-1">
+                                        {treemapData.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <Treemap data={treemapData} dataKey="size" stroke="#fff" fill="#8884d8" content={<CustomizedTreemapContent colors={COLORS} />}>
+                                                    <Tooltip content={<CustomTooltip />} />
+                                                </Treemap>
+                                            </ResponsiveContainer>
+                                        ) : <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados</div>}
                                     </div>
                                 </div>
                             </div>
@@ -1484,6 +1466,36 @@
                                     </ResponsiveContainer>
                                 </div>
                             )}
+
+                            {/* Menu de Locais (Horizontal) */}
+                            {locationData.length > 0 && (
+                                <div className="mb-2">
+                                    <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                        <MapPinIcon className="h-5 w-5 text-red-500" /> Análise Detalhada por Local
+                                    </h3>
+                                    <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                                        {locationData.map((loc, i) => (
+                                            <div key={i} onClick={() => setSelectedLocation(loc.name)} className={`min-w-[220px] p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md flex-shrink-0 ${selectedLocation === loc.name ? 'bg-white border-blue-500 ring-2 ring-blue-100 shadow-md' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className={`font-bold text-sm truncate w-full ${selectedLocation === loc.name ? 'text-blue-700' : 'text-slate-700'}`} title={loc.name}>{i + 1}. {loc.name}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end mb-2">
+                                                    <span className="text-xs text-slate-500">Duração</span>
+                                                    <span className="font-bold text-slate-900">{formatDuration(loc.horas)}</span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                    <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(loc.horas / locationData[0].horas) * 100}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <LocationDetails
+                                locationName={selectedLocation}
+                                data={detailedTableData.filter(d => d.linha === selectedLocation)}
+                            />
                         </div>
                     )}
 
@@ -1540,13 +1552,6 @@
                             </div>
                         </div>
                     )}
-
-                    <LocationModal
-                        isOpen={!!selectedLocation}
-                        onClose={() => setSelectedLocation(null)}
-                        locationName={selectedLocation}
-                        data={detailedTableData.filter(d => d.linha === selectedLocation)}
-                    />
                 </div>
             );
         }
