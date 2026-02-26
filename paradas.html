@@ -1175,6 +1175,202 @@
                 XLSX.writeFile(wb, `Paradas_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
             };
 
+            const generateWeeklyReport = useCallback(() => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'a4');
+
+                // --- Lógica de Data para o Relatório Semanal ---
+                const reportEndDate = new Date();
+                reportEndDate.setDate(reportEndDate.getDate() - 1); // Ontem
+                const reportStartDate = new Date();
+                reportStartDate.setDate(reportEndDate.getDate() - 6); // 7 dias atrás a partir de ontem
+
+                const reportStartDateStr = reportStartDate.toLocaleDateString('pt-BR');
+                const reportEndDateStr = reportEndDate.toLocaleDateString('pt-BR');
+
+                const reportStartMs = reportStartDate.setHours(0, 0, 0, 0);
+                const reportEndMs = reportEndDate.setHours(23, 59, 59, 999);
+
+                // --- Filtragem e Cálculo de Dados Específicos para o Relatório ---
+                const reportFilteredData = workingData.filter(d => {
+                    if (!d.isoDate) return false;
+                    const startMs = new Date(`${d.isoDate}T${d.horaIni || '00:00:00'}`).getTime();
+                    return startMs >= reportStartMs && startMs <= reportEndMs;
+                });
+
+                const reportTotalHoras = reportFilteredData.reduce((sum, item) => sum + item.valor, 0);
+                const reportMttr = reportFilteredData.length > 0 ? (reportTotalHoras / reportFilteredData.length) : 0;
+
+                const reportCategoryStats = { 'Manutenção': 0, 'Operacional': 0, 'Gestão': 0, 'Outros': 0 };
+                reportFilteredData.forEach(d => {
+                    let cat = d.categoria || 'Outros';
+                    if (/mec|manut/i.test(cat)) cat = 'Manutenção';
+                    else if (/op/i.test(cat)) cat = 'Operacional';
+                    else if (/ges/i.test(cat)) cat = 'Gestão';
+                    else cat = 'Outros';
+                    reportCategoryStats[cat] = (reportCategoryStats[cat] || 0) + d.valor;
+                });
+
+                const reportGroups = {};
+                reportFilteredData.forEach(item => { const key = item.motivo ? item.motivo.trim() : 'Não Informado'; if (!key) return; if (!reportGroups[key]) reportGroups[key] = { valor: 0 }; reportGroups[key].valor += item.valor; });
+                const reportSorted = Object.entries(reportGroups).map(([name, data]) => ({ name, valor: data.valor })).sort((a, b) => b.valor - a.valor);
+                let reportAcumulado = 0;
+                const reportChartData = reportSorted.map(item => { reportAcumulado += item.valor; const percAcumulado = reportTotalHoras > 0 ? (reportAcumulado / reportTotalHoras) * 100 : 0; return { name: item.name, horas: item.valor, acumulado: parseFloat(percAcumulado.toFixed(1)) }; });
+
+                const reportSectorStatsMap = {};
+                reportFilteredData.forEach(d => { if (!reportSectorStatsMap[d.setor]) reportSectorStatsMap[d.setor] = { horas: 0 }; reportSectorStatsMap[d.setor].horas += d.valor; });
+                const reportSectorStats = Object.entries(reportSectorStatsMap).map(([name, data]) => ({ name, horas: data.horas, percent: reportTotalHoras > 0 ? ((data.horas / reportTotalHoras) * 100).toFixed(1) : 0 })).sort((a, b) => b.horas - a.horas);
+
+                const reportShiftGroups = {};
+                reportFilteredData.forEach(item => { const shiftKey = item.turno || 'N/A'; reportShiftGroups[shiftKey] = (reportShiftGroups[shiftKey] || 0) + item.valor; });
+                const reportShiftComparisonData = Object.entries(reportShiftGroups).map(([name, horas]) => ({ name, horas }));
+
+                const totalPeriodMs = reportEndMs - reportStartMs;
+                const totalPeriodHours = totalPeriodMs > 0 ? totalPeriodMs / (1000 * 60 * 60) : 24 * 7;
+                const reportAvailability = totalPeriodHours > 0 ? ((totalPeriodHours - reportTotalHoras) / totalPeriodHours) * 100 : 0;
+
+                // --- Funções Auxiliares para o PDF ---
+                const addHeader = () => {
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("Relatório Gerencial de Paradas Industriais", doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(100);
+                    doc.text(`Período: ${reportStartDateStr} a ${reportEndDateStr}`, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+                };
+
+                const addSectionTitle = (title, y) => {
+                    doc.setFontSize(14);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(40, 40, 40);
+                    doc.text(title, 40, y);
+                    return y + 20;
+                };
+
+                // --- Geração do PDF ---
+                addHeader();
+                let y = 90;
+
+                // 1. Resumo Executivo
+                y = addSectionTitle("Resumo Executivo", y);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(80, 80, 80);
+                const mainOffenderCategory = Object.keys(reportCategoryStats).reduce((a, b) => reportCategoryStats[a] > reportCategoryStats[b] ? a : b);
+                const summaryText = `Este relatório apresenta uma análise consolidada das paradas industriais ocorridas na última semana (${reportStartDateStr} a ${reportEndDateStr}). O tempo total de parada registrado foi de ${formatDuration(reportTotalHoras)}, impactando diretamente a disponibilidade e eficiência operacional. Os principais ofensores identificados estão relacionados a paradas de ${mainOffenderCategory.toLowerCase()}, com destaque para o motivo "${reportChartData[0]?.name || 'N/A'}". Recomenda-se foco nas ações corretivas para este ponto crítico a fim de otimizar a produção.`;
+                const splitSummary = doc.splitTextToSize(summaryText, 515);
+                doc.text(splitSummary, 40, y);
+                y += doc.getTextDimensions(splitSummary).h + 25;
+
+                // 2. KPIs Principais & Paradas por Categoria (Lado a Lado)
+                doc.autoTable({
+                    startY: y,
+                    head: [['Indicador Principal (KPI)', 'Valor']],
+                    body: [
+                        ['Total de Horas Paradas', formatDuration(reportTotalHoras)],
+                        ['Quantidade de Ocorrências', reportFilteredData.length],
+                        ['MTTR (Tempo Médio de Reparo)', formatDuration(reportMttr)],
+                        ['Disponibilidade (no período)', `${reportAvailability.toFixed(2)}%`],
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [41, 128, 185] },
+                    margin: { left: 40 },
+                    tableWidth: 250,
+                });
+
+                doc.autoTable({
+                    startY: y,
+                    head: [['Paradas por Categoria', 'Tempo Parado']],
+                    body: Object.entries(reportCategoryStats).map(([name, value]) => [name, formatDuration(value)]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [22, 160, 133] },
+                    margin: { left: 305 },
+                    tableWidth: 250,
+                });
+                y = doc.lastAutoTable.finalY + 25;
+
+                // 3. Análise de Pareto
+                y = addSectionTitle("Análise de Pareto: Maiores Ofensores", y);
+                doc.autoTable({
+                    startY: y,
+                    head: [['#', 'Motivo da Parada', 'Duração (HH:MM)', '% Acumulado']],
+                    body: reportChartData.slice(0, 10).map((item, index) => [
+                        index + 1,
+                        item.name,
+                        formatDuration(item.horas),
+                        `${item.acumulado}%`
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [211, 84, 0] },
+                });
+                y = doc.lastAutoTable.finalY + 25;
+
+                // 4. Análise por Setor e Turno (Lado a Lado)
+                const sectorTableBody = reportSectorStats
+                    .filter(s => s.horas > 0)
+                    .map(s => [s.name, formatDuration(s.horas), `${s.percent}%`]);
+
+                if (sectorTableBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Análise por Setor', 'Tempo Parado', '% Total']],
+                        body: sectorTableBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [44, 62, 80] },
+                        margin: { left: 40 },
+                        tableWidth: 250,
+                    });
+                }
+
+                const shiftTableBody = reportShiftComparisonData
+                    .filter(s => s.horas > 0)
+                    .map(s => [s.name, formatDuration(s.horas)]);
+
+                if (shiftTableBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Análise por Turno', 'Tempo Parado']],
+                        body: shiftTableBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [44, 62, 80] },
+                        margin: { left: 305 },
+                        tableWidth: 250,
+                    });
+                }
+                y = doc.lastAutoTable.finalY + 25;
+
+                // 5. Kanban de Ações (Placeholder)
+                y = addSectionTitle("Kanban de Ações Corretivas", y);
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text("Esta seção deve ser integrada com o sistema de gestão de tarefas para acompanhamento do status das ações.", 40, y);
+                y += 15;
+                doc.autoTable({
+                    startY: y,
+                    head: [['Ação Corretiva', 'Responsável', 'Prazo', 'Status']],
+                    body: [
+                        ['[Exemplo] Investigar causa da quebra do Elevador 04', 'Equipe Man.', 'DD/MM/AAAA', 'Em Andamento'],
+                        ['[Exemplo] Treinamento de setup da linha de ensaque', 'Líder Prod.', 'DD/MM/AAAA', 'A Fazer'],
+                        ['...', '...', '...', '...']
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [142, 68, 173] },
+                });
+                y = doc.lastAutoTable.finalY + 25;
+
+                // 6. Melhoria Contínua (Placeholder)
+                y = addSectionTitle("Melhoria Contínua e Recomendações", y);
+                doc.setFontSize(10);
+                doc.setTextColor(80, 80, 80);
+                const recommendationsText = `Pontos Críticos Identificados:\n- A recorrência de paradas no(a) ${reportChartData[0]?.name || 'N/A'} sugere uma análise de causa raiz (RCA) aprofundada.\n- O setor de ${reportSectorStats[0]?.name || 'N/A'} concentra ${reportSectorStats[0]?.percent || 'N/A'}% do tempo total de parada.\n\nPlano de Ação Sugerido:\n1. Realizar análise de falha no equipamento/processo relacionado ao principal ofensor.\n2. Criar plano de manutenção preventiva focado nos componentes de maior falha.\n3. Revisar procedimentos operacionais (SOPs) para os setups mais demorados.`;
+                const splitRecs = doc.splitTextToSize(recommendationsText, 515);
+                doc.text(splitRecs, 40, y);
+
+                // --- Salvar o PDF ---
+                doc.save(`Relatorio_Gerencial_Paradas_${reportStartDateStr}_a_${reportEndDateStr}.pdf`);
+            }, [workingData]);
+
             return (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800 p-4 md:p-8 font-sans">
                     {/* Header */}
@@ -1505,6 +1701,9 @@
                                 </button>
                                 <button onClick={exportToPDF} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">
                                     <DownloadIcon className="w-4 h-4" /> PDF
+                                </button>
+                                <button onClick={generateWeeklyReport} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition shadow-sm">
+                                    <DownloadIcon className="w-4 h-4" /> Relatório Semanal
                                 </button>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
