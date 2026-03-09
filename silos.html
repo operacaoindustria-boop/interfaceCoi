@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UBS-ATTO | Gestão Industrial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF e AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sticky-table-head {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-12">
+
+    <!-- Barra de Navegação -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 md:px-8 py-4 shadow-sm">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200">
+                    <i data-lucide="database"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 leading-tight">UBS-ATTO</h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Gestão Industrial</p>
+                </div>
+            </div>
+
+            <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button onclick="switchView('dashboard')" id="btn-dashboard"
+                    class="flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all bg-white text-blue-600 shadow-sm">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Painel
+                </button>
+                <button onclick="switchView('management')" id="btn-management"
+                    class="flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-700">
+                    <i data-lucide="settings-2" class="w-4 h-4"></i> Gestão
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="menu.html"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Menu
+                </a>
+                <button onclick="generatePDF()" id="btn-pdf"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-md active:scale-95">
+                    <i data-lucide="download" class="w-4 h-4"></i> Gerar Relatório PDF
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-8 mt-8">
+
+        <!-- DASHBOARD VIEW -->
+        <section id="dashboard-view" class="animate-fade-in">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-container">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Tabela de Inventário -->
+                <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h3 class="font-black text-slate-800 uppercase tracking-tight text-sm">Inventário Detalhado</h3>
+                        <span id="silo-count-badge"
+                            class="text-[10px] bg-blue-100 px-3 py-1 rounded-full text-blue-600 font-black uppercase tracking-widest">0
+                            Silos</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 sticky-table-head">
+                                <tr
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <th class="px-6 py-4">Silo</th>
+                                    <th class="px-6 py-4">Cultivar</th>
+                                    <th class="px-6 py-4 text-center">Umidade</th>
+                                    <th class="px-6 py-4 text-right">Volume (T)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body" class="divide-y divide-slate-50">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumo por Cultivar -->
+                <div class="space-y-6">
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <h3
+                            class="font-black text-slate-800 uppercase tracking-tight text-sm mb-6 flex items-center gap-2">
+                            <i data-lucide="package" class="text-blue-500 w-5 h-5"></i> Por Variedade
+                        </h3>
+                        <div id="variety-summary-container" class="space-y-5">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i data-lucide="trending-up" class="w-20 h-20"></i>
+                        </div>
+                        <h3
+                            class="text-amber-400 font-black text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Foco Estratégico
+                        </h3>
+                        <p class="text-slate-300 text-xs leading-relaxed font-medium">
+                            Meta de reserva: <span class="text-white font-bold">400.000 sacas</span>. Priorizar lotes
+                            com umidade elevada (>16%) para otimizar a rotação dos silos para o final de Março.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MANAGEMENT VIEW -->
+        <section id="management-view" class="hidden animate-fade-in">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div
+                    class="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
+                    <div>
+                        <h3 class="font-black text-slate-800 uppercase tracking-tight text-lg">Gestão de Inventário</h3>
+                        <p class="text-xs text-slate-500 font-medium">Controle total de entrada, edição e exclusão de
+                            volumes</p>
+                    </div>
+                    <button onclick="openModal()"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-100 active:scale-95">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Novo Lote/Silo
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50">
+                            <tr
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <th class="px-6 py-4">Identificador</th>
+                                <th class="px-6 py-4">Cultivar</th>
+                                <th class="px-6 py-4">Volume (T)</th>
+                                <th class="px-6 py-4">Umidade (%)</th>
+                                <th class="px-6 py-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="management-table-body" class="divide-y divide-slate-50">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE INPUT -->
+    <div id="modal-container"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="px-8 py-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h4 id="modal-title" class="font-black text-slate-800 uppercase tracking-tight">Entrada de Dados
+                    </h4>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Complexo Industrial
+                    </p>
+                </div>
+                <button onclick="closeModal()"
+                    class="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <input type="hidden" id="edit-id">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Silo / ID
+                        Estrutura</label>
+                    <input type="text" id="input-silo"
+                        class="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-2xl transition-all font-bold text-slate-800 placeholder:text-slate-400"
+                        placeholder="Ex: SM 08">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cultivar /
+                        Variedade</label>
+                    <input type="text" id="input-cultivar"
+                        class="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-2xl transition-all font-bold text-slate-800 placeholder:text-slate-400"
+                        placeholder="Ex: BMX OLIMPO">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Volume
+                            (T)</label>
+                        <input type="number" id="input-volume" step="0.01"
+                            class="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-2xl transition-all font-mono font-bold text-slate-800 text-lg"
+                            placeholder="0.00">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Umidade
+                            (%)</label>
+                        <input type="number" id="input-umidade" step="0.1"
+                            class="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-2xl transition-all font-mono font-bold text-slate-800 text-lg"
+                            placeholder="0.0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 bg-slate-50 border-t border-slate-200 flex gap-4">
+                <button onclick="closeModal()"
+                    class="flex-1 px-4 py-4 rounded-2xl border-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all">
+                    Cancelar
+                </button>
+                <button onclick="saveData()"
+                    class="flex-1 px-4 py-4 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100">
+                    <i data-lucide="save" class="w-4 h-4"></i> Salvar Lote
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO (SUBSTITUTO DO CONFIRM) -->
+    <div id="delete-modal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div class="bg-red-50 text-red-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="trash-2" class="w-8 h-8"></i>
+            </div>
+            <h4 class="font-black text-slate-800 uppercase tracking-tight text-lg mb-2">Excluir Silo?</h4>
+            <p class="text-slate-500 text-sm mb-8 font-medium">Esta ação não pode ser desfeita. O volume será removido
+                do inventário.</p>
+            <div class="flex gap-4">
+                <button onclick="closeDeleteModal()"
+                    class="flex-1 py-3.5 rounded-xl border-2 border-slate-100 text-slate-500 font-bold text-xs uppercase">Não,
+                    manter</button>
+                <button id="confirm-delete-btn"
+                    class="flex-1 py-3.5 rounded-xl bg-red-600 text-white font-bold text-xs uppercase">Sim,
+                    excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÕES E DADOS INICIAIS
+        const CAPACIDADE_TOTAL_ESTATICA = 28600;
+        const PICO_SAFRA_META_SC = 400000;
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_ZscXHOoNP1Xkm-C6WLqhwEFcTsBk3GQ",
+            authDomain: "integracaocoi.firebaseapp.com",
+            projectId: "integracaocoi",
+            storageBucket: "integracaocoi.firebasestorage.app",
+            messagingSenderId: "177203745489",
+            appId: "1:177203745489:web:b86bbc4e96830e06032bf0"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let inventory = [];
+
+        // INICIALIZAÇÃO
+        window.onload = () => {
+            lucide.createIcons();
+
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // Usuário logado, pode carregar os dados
+                    console.log("Usuário autenticado, carregando dados dos silos...");
+                    db.collection('mes_silos').onSnapshot(snapshot => {
+                        inventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        updateAll();
+                    }, error => {
+                        console.error("Erro ao carregar dados:", error);
+                        showMessageBox("Erro ao conectar com o banco de dados. Verifique as permissões.");
+                    });
+                } else {
+                    // Usuário não logado.
+                    console.log("Usuário não autenticado. Redirecionando para login.");
+                    document.body.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-4 text-center">
+                            <i data-lucide="shield-off" class="w-16 h-16 text-red-500 mb-4"></i>
+                            <h1 class="text-2xl font-bold mb-2">Acesso Negado</h1>
+                            <p class="text-slate-400 mb-6 max-w-sm">Você precisa estar autenticado para visualizar e gerenciar o inventário dos silos.</p>
+                            <a href="index.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">Ir para a página de Login</a>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+            });
+        };
+
+        // NAVEGAÇÃO
+        function switchView(view) {
+            const dash = document.getElementById('dashboard-view');
+            const mgmt = document.getElementById('management-view');
+            const btnDash = document.getElementById('btn-dashboard');
+            const btnMgmt = document.getElementById('btn-management');
+
+            if (view === 'dashboard') {
+                dash.classList.remove('hidden');
+                mgmt.classList.add('hidden');
+                btnDash.className = "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all bg-white text-blue-600 shadow-sm";
+                btnMgmt.className = "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+                renderDashboard();
+            } else {
+                dash.classList.add('hidden');
+                mgmt.classList.remove('hidden');
+                btnMgmt.className = "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all bg-white text-blue-600 shadow-sm";
+                btnDash.className = "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+                renderManagement();
+            }
+            lucide.createIcons();
+        }
+
+        // CÁLCULOS E RENDERS
+        function updateAll() {
+            renderDashboard();
+            renderManagement();
+            lucide.createIcons();
+        }
+
+        function calculateStats() {
+            const totalVolume = inventory.reduce((acc, item) => acc + (Number(item.volume) || 0), 0);
+            const occupancy = (totalVolume / CAPACIDADE_TOTAL_ESTATICA) * 100;
+            const freeT = CAPACIDADE_TOTAL_ESTATICA - totalVolume;
+            const freeSc = freeT / 0.06;
+
+            const cultivarGroups = inventory.reduce((acc, item) => {
+                if (item.cultivar) {
+                    acc[item.cultivar] = (acc[item.cultivar] || 0) + (Number(item.volume) || 0);
+                }
+                return acc;
+            }, {});
+
+            const varieties = Object.entries(cultivarGroups)
+                .sort(([, a], [, b]) => b - a)
+                .map(([name, vol]) => ({ name, vol }));
+
+            return { totalVolume, occupancy, freeT, freeSc, varieties };
+        }
+
+        function renderDashboard() {
+            const stats = calculateStats();
+
+            // Render Stats Cards
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                ${createStatCard("Ocupação Atual", `${stats.occupancy.toFixed(2)}%`, "trending-up", "blue")}
+                ${createStatCard("Disponibilidade", `${Math.floor(stats.freeSc).toLocaleString('pt-BR')} sc`, "package", "emerald", stats.freeSc < PICO_SAFRA_META_SC)}
+                ${createStatCard("Volume Estocado", `${stats.totalVolume.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} T`, "layers", "indigo")}
+                ${createStatCard("Meta Pico Safra", "400.000 sc", "alert-triangle", "amber")}
+            `;
+
+            // Render Table
+            const tableBody = document.getElementById('inventory-table-body');
+            tableBody.innerHTML = inventory.map(item => {
+                const vol = Number(item.volume) || 0;
+                const umi = Number(item.umidade) || 0;
+                return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-bold text-slate-800">${item.silo || 'N/A'}</td>
+                    <td class="px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-tight">${item.cultivar || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black ${umi > 16 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}">
+                            ${umi > 0 ? umi.toFixed(1) + '%' : '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono font-bold text-slate-700">${vol.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                </tr>
+            `}).join('');
+
+            document.getElementById('silo-count-badge').innerText = `${inventory.length} Silos Ativos`;
+
+            // Render Variety Summary
+            const varietyContainer = document.getElementById('variety-summary-container');
+            varietyContainer.innerHTML = stats.varieties.map(v => {
+                const pct = stats.totalVolume > 0 ? (v.vol / stats.totalVolume) * 100 : 0;
+                return `
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            <span class="truncate pr-2">${v.name}</span>
+                            <span class="text-slate-900">${v.vol.toFixed(1)} T</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-600 rounded-full transition-all duration-700" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function createStatCard(title, value, icon, color, alert) {
+            const colors = {
+                blue: "text-blue-600 bg-blue-50 border-blue-100",
+                emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+                indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
+                amber: "text-amber-600 bg-amber-50 border-amber-100"
+            };
+            return `
+                <div class="bg-white p-7 rounded-[2rem] shadow-sm border ${alert ? 'border-red-500 ring-4 ring-red-50' : 'border-slate-200'} transition-all hover:shadow-md">
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="p-3 rounded-2xl border ${colors[color]}">
+                            <i data-lucide="${icon}" class="w-5 h-5"></i>
+                        </div>
+                        ${alert ? '<span class="bg-red-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full animate-pulse uppercase tracking-widest">Atenção</span>' : ''}
+                    </div>
+                    <div>
+                        <h4 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1 leading-none">${title}</h4>
+                        <p class="text-2xl font-black text-slate-800">${value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderManagement() {
+            const tableBody = document.getElementById('management-table-body');
+            tableBody.innerHTML = inventory.map(item => {
+                const vol = Number(item.volume) || 0;
+                const umi = Number(item.umidade) || 0;
+                return `
+                <tr class="hover:bg-slate-50/80 transition-all">
+                    <td class="px-6 py-4 font-bold text-slate-800">${item.silo || 'N/A'}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-500">${item.cultivar || 'N/A'}</td>
+                    <td class="px-6 py-4 font-mono font-bold text-blue-600">${vol.toFixed(2)} T</td>
+                    <td class="px-6 py-4 text-sm font-bold text-slate-400">${umi > 0 ? umi.toFixed(1) + '%' : '-'}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="openModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="requestDelete('${item.id}')" class="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+            lucide.createIcons();
+        }
+
+        // MODAL LOGIC
+        function openModal(item = null) {
+            const modal = document.getElementById('modal-container');
+            const title = document.getElementById('modal-title');
+
+            if (item) {
+                title.innerText = "Atualizar Silo";
+                document.getElementById('edit-id').value = item.id;
+                document.getElementById('input-silo').value = item.silo;
+                document.getElementById('input-cultivar').value = item.cultivar;
+                document.getElementById('input-volume').value = item.volume;
+                document.getElementById('input-umidade').value = item.umidade;
+            } else {
+                title.innerText = "Entrada de Dados";
+                document.getElementById('edit-id').value = "";
+                document.getElementById('input-silo').value = "";
+                document.getElementById('input-cultivar').value = "";
+                document.getElementById('input-volume').value = "";
+                document.getElementById('input-umidade').value = "";
+            }
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+        }
+
+        function saveData() {
+            const id = document.getElementById('edit-id').value;
+            const silo = document.getElementById('input-silo').value;
+            const cultivar = document.getElementById('input-cultivar').value;
+            const volume = parseFloat(document.getElementById('input-volume').value);
+            const umidade = parseFloat(document.getElementById('input-umidade').value) || 0;
+
+            if (!silo || isNaN(volume) || !cultivar) {
+                showMessageBox("Preencha Silo, Cultivar e Volume corretamente.");
+                return;
+            }
+
+            if (!auth.currentUser) {
+                showMessageBox("Você precisa estar logado para salvar.");
+                return;
+            }
+
+            const data = { silo, cultivar, volume, umidade };
+
+            if (id) {
+                // Edit
+                db.collection('mes_silos').doc(id).update(data)
+                    .then(() => {
+                        closeModal();
+                        showMessageBox("Silo atualizado!");
+                    })
+                    .catch(err => showMessageBox("Erro ao atualizar: " + err.message));
+            } else {
+                // New
+                db.collection('mes_silos').add(data)
+                    .then(() => {
+                        closeModal();
+                        showMessageBox("Silo adicionado!");
+                    })
+                    .catch(err => showMessageBox("Erro ao adicionar: " + err.message));
+            }
+        }
+
+        // DELETE CUSTOM LOGIC
+        let pendingDeleteId = null;
+        function requestDelete(id) {
+            pendingDeleteId = id;
+            document.getElementById('delete-modal').classList.remove('hidden');
+            
+            document.getElementById('confirm-delete-btn').onclick = () => {
+                if (!auth.currentUser) {
+                    showMessageBox("Você precisa estar logado para excluir.");
+                    return;
+                }
+                db.collection('mes_silos').doc(pendingDeleteId).delete()
+                    .then(() => {
+                        closeDeleteModal();
+                        showMessageBox("Silo removido!");
+                    })
+                    .catch(err => showMessageBox("Erro ao excluir: " + err.message));
+            };
+            lucide.createIcons();
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            pendingDeleteId = null;
+        }
+
+        function showMessageBox(text) {
+            const box = document.createElement('div');
+            box.className = "fixed top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-sm animate-fade-in";
+            box.innerText = text;
+            document.body.appendChild(box);
+            setTimeout(() => box.remove(), 3000);
+        }
+
+        // PDF GENERATION
+        async function generatePDF() {
+            const btn = document.getElementById('btn-pdf');
+            btn.innerText = "Processando...";
+            btn.disabled = true;
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const stats = calculateStats();
+                const timestamp = new Date().toLocaleString('pt-BR');
+
+                // Header
+                doc.setFontSize(20);
+                doc.setTextColor(44, 62, 80);
+                doc.text("RELATÓRIO OPERACIONAL: COMPLEXO UBS-ATTO", 14, 22);
+
+                doc.setFontSize(10);
+                doc.setTextColor(120);
+                doc.text(`Data: ${timestamp} | Responsável: Ian Ítalo - Centro de Operações Industriais (COI)`, 14, 30);
+                doc.line(14, 33, 196, 33);
+
+                // 1. Consolidados
+                doc.setFontSize(14);
+                doc.setTextColor(44, 62, 80);
+                doc.text("1. CONSOLIDADO DE CAPACIDADE E OCUPAÇÃO", 14, 45);
+
+                const tableConsolidado = [
+                    ["Capacidade Total Estática", `${CAPACIDADE_TOTAL_ESTATICA.toLocaleString('pt-BR')} T`],
+                    ["Volume em Estoque", `${stats.totalVolume.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} T`],
+                    ["Capacidade Livre Atual", `${stats.freeT.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} T`],
+                    ["Ocupação do Complexo", `${stats.occupancy.toFixed(2)}%`],
+                    ["Disponibilidade em Sacas", `${Math.floor(stats.freeSc).toLocaleString('pt-BR')} sc`]
+                ];
+
+                doc.autoTable({
+                    startY: 50,
+                    head: [['Indicador', 'Valor']],
+                    body: tableConsolidado,
+                    theme: 'striped',
+                    headStyles: { fillColor: [52, 152, 219] }
+                });
+
+                // 2. Variedades
+                doc.setFontSize(14);
+                doc.text("2. VOLUME POR CULTIVAR", 14, doc.lastAutoTable.finalY + 15);
+
+                const tableVarieties = stats.varieties.map((v, i) => [`${i + 1}º`, v.name, `${v.vol.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} T`]);
+
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 20,
+                    head: [['#', 'Cultivar', 'Volume (T)']],
+                    body: tableVarieties,
+                    theme: 'grid',
+                    headStyles: { fillColor: [46, 204, 113] }
+                });
+
+                // 3. Detalhamento Silos
+                doc.addPage();
+                doc.text("3. DETALHAMENTO DE ESTOQUE POR SILO", 14, 22);
+                const tableSilos = inventory.map(s => {
+                    const vol = Number(s.volume) || 0;
+                    const umi = Number(s.umidade) || 0;
+                    return [
+                        s.silo || 'N/A',
+                        s.cultivar || 'N/A',
+                        umi > 0 ? umi.toFixed(1) + '%' : '-',
+                        `${vol.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} T`
+                    ];
+                });
+                doc.autoTable({
+                    startY: 28,
+                    head: [['Silo', 'Cultivar', 'Umidade', 'Volume (T)']],
+                    body: tableSilos,
+                    theme: 'striped',
+                    styles: { fontSize: 9 }
+                });
+
+                // Conclusion
+                const finalY = doc.lastAutoTable.finalY + 15;
+                doc.setFontSize(14);
+                doc.text("4. ALINHAMENTO ESTRATÉGICO", 14, finalY);
+                doc.setFontSize(10);
+                doc.setTextColor(0);
+                const msg = stats.freeSc < PICO_SAFRA_META_SC
+                    ? `ALERTA: A disponibilidade atual (${Math.floor(stats.freeSc).toLocaleString('pt-BR')} sc) está ABAIXO da meta de reserva.`
+                    : `STATUS: Disponibilidade favorável para o aporte de 400.000 sc.`;
+
+                const splitText = doc.splitTextToSize(`${msg}\n\nFoco central: Agilidade no beneficiamento para assegurar a meta de silos vazios e limpos para o pico de 15 dias no final de março. Prioridade para lotes com umidade elevada.`, 180);
+                doc.text(splitText, 14, finalY + 8);
+
+                doc.save(`Relatorio_UBS_ATTO_${new Date().toISOString().split('T')[0]}.pdf`);
+                showMessageBox("PDF gerado com sucesso!");
+            } catch (e) {
+                console.error(e);
+                showMessageBox("Erro ao gerar PDF.");
+            }
+
+            btn.innerHTML = `<i data-lucide="download" class="w-4 h-4"></i> Gerar Relatório PDF`;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+    </script>
+</body>
+
+</html>
