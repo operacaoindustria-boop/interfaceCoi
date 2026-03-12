@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -404,6 +405,7 @@
             const [selectedResponsible, setSelectedResponsible] = useState('Todos');
             const [selectedType, setSelectedType] = useState('Todos');
             const [searchTerm, setSearchTerm] = useState('');
+            const [osFilter, setOsFilter] = useState('');
             const [activeTab, setActiveTab] = useState('dashboard');
 
             // Inicializa com a data de ontem para evitar travamento por excesso de dados
@@ -714,12 +716,14 @@
                 reader.onload = (e) => {
                     setCsvInput(e.target.result);
                     setSelectedSector('Todos');
+                    setOsFilter('');
                 };
                 reader.readAsText(file);
             };
 
             const handleCsvChange = (value) => {
                 setCsvInput(value);
+                setOsFilter('');
             };
 
             const workingData = useMemo(() => {
@@ -756,6 +760,7 @@
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
                     if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
                     if (selectedType !== 'Todos' && d.tipoParada !== selectedType) return;
+                    if (osFilter && (!d.os || !d.os.toLowerCase().includes(osFilter.toLowerCase()))) return;
 
                     // 1.1 Dynamic Search
                     if (searchTerm) {
@@ -906,7 +911,7 @@
                     detailedTableData: finalTableData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedShift, selectedSector, selectedResponsible, selectedType, searchTerm, startDate, endDate]);
+            }, [workingData, selectedShift, selectedSector, selectedResponsible, selectedType, searchTerm, startDate, endDate, osFilter]);
 
             useEffect(() => {
                 const exists = sectorStats.find(s => s.name === selectedSector);
@@ -947,6 +952,7 @@
                     if (selectedSector !== 'Todos' && d.setor !== selectedSector) return;
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
                     if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
+                    if (osFilter && (!d.os || !d.os.toLowerCase().includes(osFilter.toLowerCase()))) return;
 
                     if (searchTerm) {
                         const term = searchTerm.toLowerCase();
@@ -1022,7 +1028,7 @@
                     chartData: finalChartData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedSector, selectedShift, selectedResponsible, searchTerm, startDate, endDate]);
+            }, [workingData, selectedSector, selectedShift, selectedResponsible, searchTerm, startDate, endDate, osFilter]);
 
             const processedFleetPareto = useMemo(() => {
                 const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
@@ -1036,6 +1042,7 @@
 
                     if (selectedShift !== 'Todos' && d.turno !== selectedShift) return;
                     if (selectedResponsible !== 'Todos' && d.responsavel !== selectedResponsible) return;
+                    if (osFilter && (!d.os || !d.os.toLowerCase().includes(osFilter.toLowerCase()))) return;
 
                     if (searchTerm) {
                         const term = searchTerm.toLowerCase();
@@ -1111,7 +1118,7 @@
                     chartData: finalChartData,
                     totalHoras: grandTotal
                 };
-            }, [workingData, selectedShift, selectedResponsible, searchTerm, startDate, endDate]);
+            }, [workingData, selectedShift, selectedResponsible, searchTerm, startDate, endDate, osFilter]);
 
             const { chartData, totalHoras: paretoTotal } = processedPareto;
             const { chartData: fleetChartData, totalHoras: fleetTotal } = processedFleetPareto;
@@ -1181,9 +1188,9 @@
 
                 // --- Lógica de Data para o Relatório Semanal ---
                 const reportEndDate = new Date();
-                reportEndDate.setDate(reportEndDate.getDate() - 1); // Ontem
+                reportEndDate.setDate(reportEndDate.getDate() - 1);
                 const reportStartDate = new Date();
-                reportStartDate.setDate(reportEndDate.getDate() - 6); // 7 dias atrás a partir de ontem
+                reportStartDate.setDate(reportEndDate.getDate() - 6);
 
                 const reportStartDateStr = reportStartDate.toLocaleDateString('pt-BR');
                 const reportEndDateStr = reportEndDate.toLocaleDateString('pt-BR');
@@ -1191,17 +1198,24 @@
                 const reportStartMs = reportStartDate.setHours(0, 0, 0, 0);
                 const reportEndMs = reportEndDate.setHours(23, 59, 59, 999);
 
-                // --- Filtragem e Cálculo de Dados Específicos para o Relatório ---
+                // --- Filtragem de Dados ---
                 const reportFilteredData = workingData.filter(d => {
                     if (!d.isoDate) return false;
                     const startMs = new Date(`${d.isoDate}T${d.horaIni || '00:00:00'}`).getTime();
                     return startMs >= reportStartMs && startMs <= reportEndMs;
+                }).sort((a, b) => {
+                    const dateA = new Date(`${a.isoDate}T${a.horaIni || '00:00:00'}`).getTime();
+                    const dateB = new Date(`${b.isoDate}T${b.horaIni || '00:00:00'}`).getTime();
+                    return dateA - dateB;
                 });
 
+                // --- Cálculos Estatísticos ---
                 const reportTotalHoras = reportFilteredData.reduce((sum, item) => sum + item.valor, 0);
                 const reportMttr = reportFilteredData.length > 0 ? (reportTotalHoras / reportFilteredData.length) : 0;
 
+                // Categorização melhorada
                 const reportCategoryStats = { 'Manutenção': 0, 'Operacional': 0, 'Gestão': 0, 'Outros': 0 };
+                const categoryBreakdown = {};
                 reportFilteredData.forEach(d => {
                     let cat = d.categoria || 'Outros';
                     if (/mec|manut/i.test(cat)) cat = 'Manutenção';
@@ -1209,166 +1223,663 @@
                     else if (/ges/i.test(cat)) cat = 'Gestão';
                     else cat = 'Outros';
                     reportCategoryStats[cat] = (reportCategoryStats[cat] || 0) + d.valor;
+                    if (!categoryBreakdown[cat]) categoryBreakdown[cat] = 0;
+                    categoryBreakdown[cat] += 1;
                 });
 
-                const reportGroups = {};
-                reportFilteredData.forEach(item => { const key = item.motivo ? item.motivo.trim() : 'Não Informado'; if (!key) return; if (!reportGroups[key]) reportGroups[key] = { valor: 0 }; reportGroups[key].valor += item.valor; });
-                const reportSorted = Object.entries(reportGroups).map(([name, data]) => ({ name, valor: data.valor })).sort((a, b) => b.valor - a.valor);
-                let reportAcumulado = 0;
-                const reportChartData = reportSorted.map(item => { reportAcumulado += item.valor; const percAcumulado = reportTotalHoras > 0 ? (reportAcumulado / reportTotalHoras) * 100 : 0; return { name: item.name, horas: item.valor, acumulado: parseFloat(percAcumulado.toFixed(1)) }; });
+                // Análise de Causa Raiz
+                const motivoStats = {};
+                reportFilteredData.forEach(d => {
+                    const key = d.motivo || 'Não Informado';
+                    if (!motivoStats[key]) motivoStats[key] = { horas: 0, count: 0, percent: 0 };
+                    motivoStats[key].horas += d.valor;
+                    motivoStats[key].count += 1;
+                });
 
+                const reportChartData = Object.entries(motivoStats)
+                    .map(([name, data]) => ({
+                        name,
+                        horas: data.horas,
+                        count: data.count,
+                        percent: reportTotalHoras > 0 ? ((data.horas / reportTotalHoras) * 100).toFixed(1) : 0
+                    }))
+                    .sort((a, b) => b.horas - a.horas);
+
+                // Análise por Máquina/Local
+                const machineStats = {};
+                reportFilteredData.forEach(d => {
+                    const key = d.linha || 'Não Identificado';
+                    if (!machineStats[key]) machineStats[key] = { horas: 0, count: 0, motivos: {} };
+                    machineStats[key].horas += d.valor;
+                    machineStats[key].count += 1;
+                    const motivo = d.motivo || 'Não Informado';
+                    machineStats[key].motivos[motivo] = (machineStats[key].motivos[motivo] || 0) + 1;
+                });
+
+                const machineData = Object.entries(machineStats)
+                    .map(([name, data]) => ({
+                        name,
+                        horas: data.horas,
+                        count: data.count,
+                        percent: reportTotalHoras > 0 ? ((data.horas / reportTotalHoras) * 100).toFixed(1) : 0,
+                        mainMotivo: Object.entries(data.motivos).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+                    }))
+                    .sort((a, b) => b.horas - a.horas)
+                    .slice(0, 15);
+
+                // Análise por Setor
                 const reportSectorStatsMap = {};
-                reportFilteredData.forEach(d => { if (!reportSectorStatsMap[d.setor]) reportSectorStatsMap[d.setor] = { horas: 0 }; reportSectorStatsMap[d.setor].horas += d.valor; });
-                const reportSectorStats = Object.entries(reportSectorStatsMap).map(([name, data]) => ({ name, horas: data.horas, percent: reportTotalHoras > 0 ? ((data.horas / reportTotalHoras) * 100).toFixed(1) : 0 })).sort((a, b) => b.horas - a.horas);
+                reportFilteredData.forEach(d => {
+                    if (!reportSectorStatsMap[d.setor]) reportSectorStatsMap[d.setor] = { horas: 0, count: 0 };
+                    reportSectorStatsMap[d.setor].horas += d.valor;
+                    reportSectorStatsMap[d.setor].count += 1;
+                });
+                const reportSectorStats = Object.entries(reportSectorStatsMap)
+                    .map(([name, data]) => ({
+                        name,
+                        horas: data.horas,
+                        count: data.count,
+                        percent: reportTotalHoras > 0 ? ((data.horas / reportTotalHoras) * 100).toFixed(1) : 0
+                    }))
+                    .sort((a, b) => b.horas - a.horas);
 
+                // Análise por Turno
                 const reportShiftGroups = {};
-                reportFilteredData.forEach(item => { const shiftKey = item.turno || 'N/A'; reportShiftGroups[shiftKey] = (reportShiftGroups[shiftKey] || 0) + item.valor; });
-                const reportShiftComparisonData = Object.entries(reportShiftGroups).map(([name, horas]) => ({ name, horas }));
+                reportFilteredData.forEach(item => {
+                    const shiftKey = item.turno || 'N/A';
+                    if (!reportShiftGroups[shiftKey]) reportShiftGroups[shiftKey] = { horas: 0, count: 0 };
+                    reportShiftGroups[shiftKey].horas += item.valor;
+                    reportShiftGroups[shiftKey].count += 1;
+                });
+                const reportShiftComparisonData = Object.entries(reportShiftGroups)
+                    .map(([name, data]) => ({ name, horas: data.horas, count: data.count }))
+                    .sort((a, b) => b.horas - a.horas);
+
+                // Análise por Responsável
+                const responsibleStats = {};
+                reportFilteredData.forEach(d => {
+                    const resp = d.responsavel || 'Não Atribuído';
+                    if (resp !== '-' && resp !== 'Não Atribuído') {
+                        if (!responsibleStats[resp]) responsibleStats[resp] = { horas: 0, count: 0 };
+                        responsibleStats[resp].horas += d.valor;
+                        responsibleStats[resp].count += 1;
+                    }
+                });
+                const topResponsibles = Object.entries(responsibleStats)
+                    .map(([name, data]) => ({ name, horas: data.horas, count: data.count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 10);
 
                 const totalPeriodMs = reportEndMs - reportStartMs;
                 const totalPeriodHours = totalPeriodMs > 0 ? totalPeriodMs / (1000 * 60 * 60) : 24 * 7;
                 const reportAvailability = totalPeriodHours > 0 ? ((totalPeriodHours - reportTotalHoras) / totalPeriodHours) * 100 : 0;
 
-                // --- Funções Auxiliares para o PDF ---
+                // --- Funções Auxiliares ---
                 const addHeader = () => {
-                    doc.setFontSize(20);
+                    doc.setFontSize(22);
                     doc.setFont('helvetica', 'bold');
-                    doc.text("Relatório Gerencial de Paradas Industriais", doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+                    doc.setTextColor(41, 128, 185);
+                    doc.text("RELATÓRIO SEMANAL DE PARADAS INDUSTRIAIS", doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(100);
-                    doc.text(`Período: ${reportStartDateStr} a ${reportEndDateStr}`, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+                    doc.text(`Período: ${reportStartDateStr} a ${reportEndDateStr}`, doc.internal.pageSize.getWidth() / 2, 62, { align: 'center' });
+                    doc.setFontSize(9);
+                    doc.setTextColor(150);
+                    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, doc.internal.pageSize.getWidth() / 2, 74, { align: 'center' });
                 };
 
                 const addSectionTitle = (title, y) => {
-                    doc.setFontSize(14);
+                    doc.setFontSize(13);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(40, 40, 40);
-                    doc.text(title, 40, y);
-                    return y + 20;
+                    doc.setTextColor(41, 128, 185);
+                    doc.text(title, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    doc.setDrawColor(41, 128, 185);
+                    doc.setLineWidth(0.8);
+                    doc.line(100, y + 4, 495, y + 4);
+                    return y + 22;
+                };
+
+                const addNewPage = () => {
+                    doc.addPage();
+                    return 40;
                 };
 
                 // --- Geração do PDF ---
                 addHeader();
-                let y = 90;
+                let y = 105;
+                const pageHeight = doc.internal.pageSize.getHeight();
 
-                // 1. Resumo Executivo
-                y = addSectionTitle("Resumo Executivo", y);
+                // RESUMO GERAL
+                y = addSectionTitle("RESUMO GERAL", y);
+                y += 5;
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(80, 80, 80);
-                const mainOffenderCategory = Object.keys(reportCategoryStats).reduce((a, b) => reportCategoryStats[a] > reportCategoryStats[b] ? a : b);
-                const summaryText = `Este relatório apresenta uma análise consolidada das paradas industriais ocorridas na última semana (${reportStartDateStr} a ${reportEndDateStr}). O tempo total de parada registrado foi de ${formatDuration(reportTotalHoras)}, impactando diretamente a disponibilidade e eficiência operacional. Os principais ofensores identificados estão relacionados a paradas de ${mainOffenderCategory.toLowerCase()}, com destaque para o motivo "${reportChartData[0]?.name || 'N/A'}". Recomenda-se foco nas ações corretivas para este ponto crítico a fim de otimizar a produção.`;
-                const splitSummary = doc.splitTextToSize(summaryText, 515);
+                const mainCategory = Object.keys(reportCategoryStats).reduce((a, b) => reportCategoryStats[a] > reportCategoryStats[b] ? a : b);
+                const summaryLines = [
+                    `Durante a semana de ${reportStartDateStr} a ${reportEndDateStr}, foram registradas ${reportFilteredData.length} paradas industriais.`,
+                    `O tempo total de parada acumulado foi de ${formatDuration(reportTotalHoras)}, impactando ${reportAvailability.toFixed(2)}% da capacidade produtiva.`,
+                    `A principal causa de paradas está relacionada a "${reportChartData[0]?.name || 'N/A'}" (${reportChartData[0]?.percent || 0}% do tempo total).`,
+                    `O tempo médio de reparo (MTTR) foi de ${formatDuration(reportMttr)}.`
+                ];
+                const splitSummary = doc.splitTextToSize(summaryLines.join('\n\n'), 515);
                 doc.text(splitSummary, 40, y);
-                y += doc.getTextDimensions(splitSummary).h + 25;
+                y += doc.getTextDimensions(splitSummary).h + 30;
 
-                // 2. KPIs Principais & Paradas por Categoria (Lado a Lado)
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // INDICADORES PRINCIPAIS
+                y = addSectionTitle("INDICADORES PRINCIPAIS (KPIs)", y);
+                y += 5;
+                const kpiBody = [
+                    ['Total de Horas Paradas', formatDuration(reportTotalHoras)],
+                    ['Quantidade de Ocorrências', reportFilteredData.length.toString()],
+                    ['MTTR (Tempo Médio de Reparo)', formatDuration(reportMttr)],
+                    ['Disponibilidade do Período', `${reportAvailability.toFixed(2)}%`],
+                    ['Indisponibilidade do Período', `${(100 - reportAvailability).toFixed(2)}%`],
+                ];
                 doc.autoTable({
                     startY: y,
-                    head: [['Indicador Principal (KPI)', 'Valor']],
-                    body: [
-                        ['Total de Horas Paradas', formatDuration(reportTotalHoras)],
-                        ['Quantidade de Ocorrências', reportFilteredData.length],
-                        ['MTTR (Tempo Médio de Reparo)', formatDuration(reportMttr)],
-                        ['Disponibilidade (no período)', `${reportAvailability.toFixed(2)}%`],
-                    ],
+                    head: [['Indicador', 'Valor']],
+                    body: kpiBody,
                     theme: 'grid',
-                    headStyles: { fillColor: [41, 128, 185] },
-                    margin: { left: 40 },
-                    tableWidth: 250,
+                    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                    bodyStyles: { fontSize: 9 },
+                    alternateRowStyles: { fillColor: [240, 248, 255] },
+                });
+                y = doc.lastAutoTable.finalY + 30;
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // ANÁLISE POR CATEGORIA
+                y = addSectionTitle("ANÁLISE POR CATEGORIA", y);
+                y += 5;
+                const categoryBody = Object.entries(reportCategoryStats)
+                    .filter(([_, v]) => v > 0)
+                    .map(([name, value]) => {
+                        const percent = reportTotalHoras > 0 ? ((value / reportTotalHoras) * 100).toFixed(1) : 0;
+                        const count = categoryBreakdown[name] || 0;
+                        return [name, formatDuration(value), `${percent}%`, count.toString()];
+                    });
+                if (categoryBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Categoria', 'Tempo Total', '% do Total', 'Ocorrências']],
+                        body: categoryBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [240, 248, 255] },
+                    });
+                    y = doc.lastAutoTable.finalY + 30;
+                }
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // ANÁLISE DETALHADA DE PROBLEMAS CRÍTICOS
+                y = addSectionTitle("ANÁLISE DETALHADA DE PROBLEMAS CRÍTICOS", y);
+                y += 10;
+
+                // Agrupar e analisar problemas críticos (focando em Manutenção, Gestão, Operacional e Qualidade)
+                const problemsAnalysis = [];
+                const machineProblems = {};
+
+                reportFilteredData.forEach(d => {
+                    // Filtrar apenas categorias críticas (excluindo Falta de Matéria Prima)
+                    const categoria = d.categoria || 'Outros';
+                    if (/falta.*mat.*prima|lavoura|semente/i.test(categoria) ||
+                        /falta.*mat.*prima|lavoura|semente/i.test(d.motivo || '')) {
+                        return; // Ignorar paradas por falta de matéria prima
+                    }
+
+                    const machineKey = d.linha || 'Não Identificado';
+                    if (!machineProblems[machineKey]) {
+                        machineProblems[machineKey] = {
+                            nome: machineKey,
+                            paradas: [],
+                            totalHoras: 0,
+                            count: 0,
+                            setor: d.setor,
+                            categoria: categoria,
+                            responsavelCorreto: getResponsibleByCategory(categoria)
+                        };
+                    }
+                    machineProblems[machineKey].paradas.push(d);
+                    machineProblems[machineKey].totalHoras += d.valor;
+                    machineProblems[machineKey].count += 1;
                 });
 
-                doc.autoTable({
-                    startY: y,
-                    head: [['Paradas por Categoria', 'Tempo Parado']],
-                    body: Object.entries(reportCategoryStats).map(([name, value]) => [name, formatDuration(value)]),
-                    theme: 'grid',
-                    headStyles: { fillColor: [22, 160, 133] },
-                    margin: { left: 305 },
-                    tableWidth: 250,
-                });
-                y = doc.lastAutoTable.finalY + 25;
+                // Função para determinar responsável correto baseado na categoria
+                function getResponsibleByCategory(categoria) {
+                    const cat = categoria.toLowerCase();
+                    if (/mec|manut|quebra|falha|motor|correia|rolamento|sensor/i.test(cat)) {
+                        return 'Manutenção Mecânica';
+                    } else if (/eletr|eletric|energia|painel|inversor/i.test(cat)) {
+                        return 'Manutenção Elétrica';
+                    } else if (/op|operac|setup|ajuste|calibra/i.test(cat)) {
+                        return 'Equipe Operacional';
+                    } else if (/ges|gest|qual|qualidade|limpeza|organiza/i.test(cat)) {
+                        return 'Gestão de Qualidade';
+                    } else if (/log|logist|transp|transport/i.test(cat)) {
+                        return 'Logística';
+                    } else {
+                        return 'Equipe Técnica';
+                    }
+                }
 
-                // 3. Análise de Pareto
-                y = addSectionTitle("Análise de Pareto: Maiores Ofensores", y);
-                doc.autoTable({
-                    startY: y,
-                    head: [['#', 'Motivo da Parada', 'Duração (HH:MM)', '% Acumulado']],
-                    body: reportChartData.slice(0, 10).map((item, index) => [
-                        index + 1,
+                // Ordenar por impacto (tempo total) - apenas equipamentos com mais de 1 hora de parada
+                const sortedProblems = Object.values(machineProblems)
+                    .filter(p => p.totalHoras > 1) // Filtrar apenas problemas significativos
+                    .sort((a, b) => b.totalHoras - a.totalHoras)
+                    .slice(0, 8); // Top 8 problemas mais críticos
+
+                // Gerar narrativas de problemas
+                sortedProblems.forEach((problem, idx) => {
+                    // Encontrar motivo mais frequente
+                    const motivoCount = {};
+                    problem.paradas.forEach(p => {
+                        const motivo = p.motivo || 'Não Informado';
+                        motivoCount[motivo] = (motivoCount[motivo] || 0) + 1;
+                    });
+                    const mainMotivo = Object.entries(motivoCount).sort((a, b) => b[1] - a[1])[0];
+                    const mainMotivoName = mainMotivo ? mainMotivo[0] : 'Não Informado';
+                    const mainMotivoCount = mainMotivo ? mainMotivo[1] : 0;
+
+                    // Encontrar parada mais recente
+                    const latestStop = problem.paradas.sort((a, b) => {
+                        const dateA = new Date(`${a.isoDate}T${a.horaIni || '00:00:00'}`).getTime();
+                        const dateB = new Date(`${b.isoDate}T${b.horaIni || '00:00:00'}`).getTime();
+                        return dateB - dateA;
+                    })[0];
+
+                    // Título centralizado
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(192, 57, 43);
+                    doc.text(`${idx + 1}. ${problem.nome}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 12;
+
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(60, 60, 60);
+
+                    // Montar a narrativa do problema com melhor formatação
+                    const problemDescription = `Setor: ${problem.setor} | Responsável: ${problem.responsavelCorreto} | Total de Paradas: ${problem.count} | Tempo Acumulado: ${formatDuration(problem.totalHoras)}`;
+
+                    const causePart = `Principal Causa: "${mainMotivoName}" ocorreu ${mainMotivoCount} vez(es) (${((mainMotivoCount / problem.count) * 100).toFixed(0)}% das paradas)`;
+
+                    const impactPart = `Última Ocorrência: ${latestStop?.dataStr} às ${latestStop?.horaIni || '??:??'} (${formatDuration(latestStop?.valor || 0)} de duração)`;
+
+                    // Adicionar motivos específicos das paradas
+                    let specificMotivesPart = 'Motivos Específicos: ';
+                    const uniqueMotives = [...new Set(problem.paradas.map(p => p.motivo).filter(m => m && m.trim()))];
+                    if (uniqueMotives.length > 0) {
+                        specificMotivesPart += uniqueMotives.slice(0, 3).join('; ') + (uniqueMotives.length > 3 ? '...' : '');
+                    } else {
+                        specificMotivesPart += 'Não informado';
+                    }
+
+                    // Adicionar descrições específicas das paradas
+                    let specificDescriptionsPart = 'Descrições Específicas: ';
+                    const uniqueDescriptions = [...new Set(problem.paradas.map(p => p.detalhe).filter(d => d && d.trim()))];
+                    if (uniqueDescriptions.length > 0) {
+                        specificDescriptionsPart += uniqueDescriptions.slice(0, 2).join('; ') + (uniqueDescriptions.length > 2 ? '...' : '');
+                    } else {
+                        specificDescriptionsPart += 'Não informado';
+                    }
+
+                    // Gerar recomendação baseada no problema e categoria
+                    let actionPart = '';
+                    const isRecurrent = mainMotivoCount > 1;
+                    const impactLevel = problem.totalHoras > 5 ? 'CRÍTICO' : problem.totalHoras > 2 ? 'ALTO' : 'MÉDIO';
+
+                    if (isRecurrent) {
+                        actionPart = `AÇÃO IMEDIATA NECESSÁRIA: O equipamento ${problem.nome} apresenta ${mainMotivoCount} paradas recorrentes por "${mainMotivoName}". A ${problem.responsavelCorreto} deve realizar diagnóstico urgente e implementar plano de manutenção preventiva. Impacto: ${impactLevel}. Prazo: 48 horas.`;
+                    } else {
+                        actionPart = `AÇÃO NECESSÁRIA: O equipamento ${problem.nome} sofreu parada significativa por "${mainMotivoName}". A ${problem.responsavelCorreto} deve investigar causa raiz e implementar medidas preventivas. Impacto: ${impactLevel}. Prazo: 24 horas.`;
+                    }
+
+                    // Quebrar em linhas separadas para melhor leitura
+                    const lines = [
+                        problemDescription,
+                        '',
+                        causePart,
+                        '',
+                        specificMotivesPart,
+                        '',
+                        specificDescriptionsPart,
+                        '',
+                        impactPart,
+                        '',
+                        actionPart
+                    ];
+
+                    lines.forEach(line => {
+                        if (line.trim() === '') {
+                            y += 4; // Espaço extra
+                        } else {
+                            const splitLine = doc.splitTextToSize(line, 480); // Largura reduzida para não ultrapassar
+                            doc.text(splitLine, 40, y);
+                            y += doc.getTextDimensions(splitLine).h + 3;
+                        }
+                    });
+
+                    y += 8; // Espaço extra entre problemas
+
+                    if (y > pageHeight - 100) {
+                        y = addNewPage();
+                    }
+                });
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // ANÁLISE PARETO
+                y = addSectionTitle("ANÁLISE PARETO: MAIORES OFENSORES", y);
+                y += 5;
+                const paretoBody = reportChartData.slice(0, 15).map((item, idx) => [
+                    (idx + 1).toString(),
+                    item.name,
+                    item.count.toString(),
+                    formatDuration(item.horas),
+                    `${item.percent}%`
+                ]);
+                if (paretoBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['#', 'Motivo da Parada', 'Ocorrências', 'Tempo Total', '% do Total']],
+                        body: paretoBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [211, 84, 0], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [255, 245, 230] },
+                    });
+                    y = doc.lastAutoTable.finalY + 30;
+                }
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // MÁQUINAS/EQUIPAMENTOS CRÍTICOS
+                y = addSectionTitle("MÁQUINAS/EQUIPAMENTOS CRÍTICOS", y);
+                y += 5;
+                const machineBody = machineData.map((item, idx) => [
+                    (idx + 1).toString(),
+                    item.name,
+                    item.count.toString(),
+                    formatDuration(item.horas),
+                    `${item.percent}%`,
+                    item.mainMotivo.substring(0, 25)
+                ]);
+                if (machineBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['#', 'Máquina/Local', 'Paradas', 'Tempo Total', '% Total', 'Principal Motivo']],
+                        body: machineBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 8 },
+                        columnStyles: { 5: { cellWidth: 60 } },
+                        alternateRowStyles: { fillColor: [245, 245, 250] },
+                    });
+                    y = doc.lastAutoTable.finalY + 20;
+                }
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // ANÁLISE POR SETOR E TURNO
+                y = addSectionTitle("ANÁLISE POR SETOR E TURNO", y);
+                y += 5;
+                const sectorBody = reportSectorStats
+                    .filter(s => s.horas > 0)
+                    .map(s => [s.name, s.count.toString(), formatDuration(s.horas), `${s.percent}%`]);
+                if (sectorBody.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Setor', 'Paradas', 'Tempo Total', '% do Total']],
+                        body: sectorBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [240, 245, 250] },
+                        margin: { left: 40 }
+                    });
+                }
+
+                const shiftBody = reportShiftComparisonData
+                    .filter(s => s.horas > 0)
+                    .map(s => [s.name, s.count.toString(), formatDuration(s.horas)]);
+                if (shiftBody.length > 0 && doc.lastAutoTable) {
+                    y = doc.lastAutoTable.finalY + 30;
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Turno', 'Paradas', 'Tempo Total']],
+                        body: shiftBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [240, 245, 250] },
+                    });
+                    y = doc.lastAutoTable.finalY + 30;
+                } else if (shiftBody.length > 0) {
+                    y += 30;
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Turno', 'Paradas', 'Tempo Total']],
+                        body: shiftBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [240, 245, 250] },
+                    });
+                    y = doc.lastAutoTable.finalY + 30;
+                }
+
+                if (y > pageHeight - 80) y = addNewPage();
+
+                // RESPONSÁVEIS PELAS PARADAS
+                if (topResponsibles.length > 0) {
+                    y = addSectionTitle("RESPONSÁVEIS PELAS PARADAS", y);
+                    y += 5;
+                    const respBody = topResponsibles.map((item, idx) => [
+                        (idx + 1).toString(),
                         item.name,
-                        formatDuration(item.horas),
-                        `${item.acumulado}%`
-                    ]),
-                    theme: 'striped',
-                    headStyles: { fillColor: [211, 84, 0] },
-                });
-                y = doc.lastAutoTable.finalY + 25;
-
-                // 4. Análise por Setor e Turno (Lado a Lado)
-                const sectorTableBody = reportSectorStats
-                    .filter(s => s.horas > 0)
-                    .map(s => [s.name, formatDuration(s.horas), `${s.percent}%`]);
-
-                if (sectorTableBody.length > 0) {
+                        item.count.toString(),
+                        formatDuration(item.horas)
+                    ]);
                     doc.autoTable({
                         startY: y,
-                        head: [['Análise por Setor', 'Tempo Parado', '% Total']],
-                        body: sectorTableBody,
+                        head: [['#', 'Responsável', 'Paradas Atendidas', 'Tempo Total']],
+                        body: respBody,
                         theme: 'grid',
-                        headStyles: { fillColor: [44, 62, 80] },
-                        margin: { left: 40 },
-                        tableWidth: 250,
+                        headStyles: { fillColor: [142, 68, 173], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9 },
+                        alternateRowStyles: { fillColor: [245, 240, 250] },
                     });
+                    y = doc.lastAutoTable.finalY + 15;
                 }
 
-                const shiftTableBody = reportShiftComparisonData
-                    .filter(s => s.horas > 0)
-                    .map(s => [s.name, formatDuration(s.horas)]);
+                // Força quebra de página antes da seção RECOMENDAÇÕES para melhor visualização
+                y = addNewPage();
 
-                if (shiftTableBody.length > 0) {
-                    doc.autoTable({
-                        startY: y,
-                        head: [['Análise por Turno', 'Tempo Parado']],
-                        body: shiftTableBody,
-                        theme: 'grid',
-                        headStyles: { fillColor: [44, 62, 80] },
-                        margin: { left: 305 },
-                        tableWidth: 250,
-                    });
-                }
-                y = doc.lastAutoTable.finalY + 25;
-
-                // 5. Kanban de Ações (Placeholder)
-                y = addSectionTitle("Kanban de Ações Corretivas", y);
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text("Esta seção deve ser integrada com o sistema de gestão de tarefas para acompanhamento do status das ações.", 40, y);
+                // RECOMENDAÇÕES E PLANO DE AÇÃO
+                y = addSectionTitle("RECOMENDAÇÕES E PLANO DE AÇÃO", y);
                 y += 15;
+
+                const topMotivo = reportChartData[0];
+                const topMachine = machineData[0];
+                const topSector = reportSectorStats[0];
+                const secondMotivo = reportChartData[1];
+
+                // Seção A: Análise de Pontos Críticos
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(211, 84, 0);
+                doc.text("A. PONTOS CRÍTICOS IDENTIFICADOS", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                y += 15;
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(80, 80, 80);
+
+                // Ponto 1: Motivo Principal
+                if (topMotivo) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(192, 57, 43);
+                    doc.text("CAUSA PRINCIPAL DE PARADA", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 10;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(60, 60, 60);
+                    const motivoText = `Motivo: "${topMotivo.name}" | Impacto: ${topMotivo.percent}% do tempo total (${formatDuration(topMotivo.horas)}) | Ocorrências: ${topMotivo.count}`;
+                    const splitMotivo = doc.splitTextToSize(motivoText, 480);
+                    doc.text(splitMotivo, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += doc.getTextDimensions(splitMotivo).h + 12;
+                }
+
+                // Ponto 2: Equipamento Crítico
+                if (topMachine) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(192, 57, 43);
+                    doc.text("EQUIPAMENTO/MÁQUINA CRÍTICO", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 10;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(60, 60, 60);
+                    const machineText = `Equipamento: "${topMachine.name}" | Total de Paradas: ${topMachine.count} | Tempo Total: ${formatDuration(topMachine.horas)} | Principal Falha: ${topMachine.mainMotivo}`;
+                    const splitMachine = doc.splitTextToSize(machineText, 480);
+                    doc.text(splitMachine, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += doc.getTextDimensions(splitMachine).h + 12;
+                }
+
+                // Ponto 3: Setor Crítico
+                if (topSector) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(192, 57, 43);
+                    doc.text("SETOR CRÍTICO", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 10;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(60, 60, 60);
+                    const sectorText = `Setor: "${topSector.name}" | Concentra: ${topSector.percent}% das paradas | Total de Paradas: ${topSector.count} | Tempo Total: ${formatDuration(topSector.horas)}`;
+                    const splitSector = doc.splitTextToSize(sectorText, 480);
+                    doc.text(splitSector, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += doc.getTextDimensions(splitSector).h + 15;
+                }
+
+                // Seção B: Plano de Ação Imediato
+                if (y > pageHeight - 200) y = addNewPage();
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(22, 160, 133);
+                doc.text("B. PLANO DE AÇÃO IMEDIATO (PRÓXIMOS 7 DIAS)", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                y += 15;
+
+                const actionPlan = [
+                    [
+                        '1',
+                        `Análise de Causa Raiz (RCA) para "${topMotivo?.name || 'N/A'}"`,
+                        'Supervisor + Técnico',
+                        'Em 24h',
+                        'Identificar raiz do problema'
+                    ],
+                    [
+                        '2',
+                        `Inspeção intensiva: ${topMachine?.name || 'Equipamento crítico'}`,
+                        'Equipe Manutenção',
+                        'Imediato',
+                        'Diagnóstico completo'
+                    ],
+                    [
+                        '3',
+                        'Implementar checklist preventivo para equipamentos críticos',
+                        'Operacional',
+                        '48h',
+                        'Reduzir falhas humanas'
+                    ],
+                    [
+                        '4',
+                        `Auditoria de processos no setor "${topSector?.name || 'crítico'}"`,
+                        'Gestor Setor',
+                        '3 dias',
+                        'Otimizar eficiência'
+                    ],
+                    [
+                        '5',
+                        'Treinamento operacional para minimizar paradas não programadas',
+                        'RH + Supervisor',
+                        '5 dias',
+                        'Qualificar equipes'
+                    ]
+                ];
+
                 doc.autoTable({
                     startY: y,
-                    head: [['Ação Corretiva', 'Responsável', 'Prazo', 'Status']],
-                    body: [
-                        ['[Exemplo] Investigar causa da quebra do Elevador 04', 'Equipe Man.', 'DD/MM/AAAA', 'Em Andamento'],
-                        ['[Exemplo] Treinamento de setup da linha de ensaque', 'Líder Prod.', 'DD/MM/AAAA', 'A Fazer'],
-                        ['...', '...', '...', '...']
-                    ],
-                    theme: 'grid',
-                    headStyles: { fillColor: [142, 68, 173] },
+                    head: [['#', 'Ação', 'Responsável', 'Prazo', 'Objetivo']],
+                    body: actionPlan,
+                    theme: 'striped',
+                    headStyles: {
+                        fillColor: [22, 160, 133],
+                        textColor: [255, 255, 255],
+                        fontSize: 10,
+                        fontStyle: 'bold',
+                        cellPadding: 5,
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    bodyStyles: {
+                        fontSize: 9,
+                        cellPadding: 4,
+                        valign: 'top',
+                        minCellHeight: 20
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 20, halign: 'center' },
+                        1: { cellWidth: 130, halign: 'left' },
+                        2: { cellWidth: 85, halign: 'left' },
+                        3: { cellWidth: 45, halign: 'center' },
+                        4: { cellWidth: 90, halign: 'left' }
+                    },
+                    alternateRowStyles: { fillColor: [240, 248, 255] },
                 });
-                y = doc.lastAutoTable.finalY + 25;
 
-                // 6. Melhoria Contínua (Placeholder)
-                y = addSectionTitle("Melhoria Contínua e Recomendações", y);
-                doc.setFontSize(10);
-                doc.setTextColor(80, 80, 80);
-                const recommendationsText = `Pontos Críticos Identificados:\n- A recorrência de paradas no(a) ${reportChartData[0]?.name || 'N/A'} sugere uma análise de causa raiz (RCA) aprofundada.\n- O setor de ${reportSectorStats[0]?.name || 'N/A'} concentra ${reportSectorStats[0]?.percent || 'N/A'}% do tempo total de parada.\n\nPlano de Ação Sugerido:\n1. Realizar análise de falha no equipamento/processo relacionado ao principal ofensor.\n2. Criar plano de manutenção preventiva focado nos componentes de maior falha.\n3. Revisar procedimentos operacionais (SOPs) para os setups mais demorados.`;
-                const splitRecs = doc.splitTextToSize(recommendationsText, 515);
-                doc.text(splitRecs, 40, y);
+                y = doc.lastAutoTable.finalY + 15;
+
+                // Seção C: Recomendações Complementares
+                if (y < pageHeight - 100) {
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(41, 128, 185);
+                    doc.text("C. RECOMENDAÇÕES COMPLEMENTARES", 40, y);
+                    y += 12;
+
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(80, 80, 80);
+
+                    const recommendations = [
+                        '• Revisar e atualizar o plano de manutenção preventiva baseado nos dados coletados nesta semana',
+                        '• Investir em manutenção preditiva/condição para reduzir paradas não programadas',
+                        '• Estabelecer KPIs de redução de paradas em 10-15% para o próximo mês',
+                        '• Documentar lições aprendidas e compartilhar com equipes de outros setores',
+                        '• Agendar reunião de acompanhamento em 7 dias para validar efetividade das ações'
+                    ];
+
+                    recommendations.forEach((rec, idx) => {
+                        const splitRec = doc.splitTextToSize(rec, 500);
+                        doc.text(splitRec, 50, y);
+                        y += doc.getTextDimensions(splitRec).h + 6;
+                    });
+                }
+
+                // --- Rodapé ---
+                const pageCount = doc.internal.pages.length - 1;
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 20, { align: 'center' });
+                    doc.text("CONFIDENCIAL - Relatório de Paradas Industriais ATTO Sementes", 40, doc.internal.pageSize.getHeight() - 10, { fontSize: 7 });
+                }
 
                 // --- Salvar o PDF ---
-                doc.save(`Relatorio_Gerencial_Paradas_${reportStartDateStr}_a_${reportEndDateStr}.pdf`);
+                doc.save(`Relatorio_Semanal_Paradas_${reportStartDateStr.replace(/\//g, '-')}_a_${reportEndDateStr.replace(/\//g, '-')}.pdf`);
             }, [workingData]);
 
             return (
@@ -1496,6 +2007,22 @@
                                         <option value="Todos">Todos</option>
                                         {shiftsList.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
+                                </div>
+                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                                    <FilterIcon className="h-4 w-4 text-slate-500" />
+                                    <span className="text-xs font-bold text-slate-600 uppercase">OS:</span>
+                                    <input
+                                        type="text"
+                                        value={osFilter}
+                                        onChange={(e) => setOsFilter(e.target.value)}
+                                        placeholder="Número"
+                                        className="bg-transparent text-sm font-semibold text-emerald-700 outline-none border-none p-0 w-24"
+                                    />
+                                    {osFilter && (
+                                        <button onClick={() => setOsFilter('')} className="text-red-400 hover:text-red-600 ml-2 p-1 rounded-full hover:bg-red-50 transition-colors">
+                                            <XIcon className="h-4 w-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1758,4 +2285,5 @@
     </script>
 </body>
 
+</html>
 </html>
