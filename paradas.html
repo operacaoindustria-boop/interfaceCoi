@@ -194,6 +194,17 @@
             return `${hours.toString().padStart(2, '0')} HR ${minutes.toString().padStart(2, '0')} MN`;
         };
 
+        // --- Helper para calcular Data/Hora Final ---
+        const calculateEndTime = (startDate, startTime, durationHours) => {
+            if (!startDate || !startTime) return 'N/A';
+            const start = new Date(`${startDate}T${startTime}`);
+            if (isNaN(start.getTime())) return 'N/A';
+            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const endDateStr = end.toLocaleDateString('pt-BR');
+            const endTimeStr = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            return `${endDateStr} ${endTimeStr}`;
+        };
+
         // --- Componente Modal de Detalhes do Local ---
         const LocationDetails = ({ locationName, data }) => {
             if (!locationName || !data || data.length === 0) return null;
@@ -280,10 +291,12 @@
                                                 if (active && payload && payload.length) {
                                                     const d = payload[0].payload;
                                                     if (!d) return null;
+                                                    const endTime = calculateEndTime(d.isoDate, d.horaIni, d.valor);
                                                     return (
                                                         <div className="bg-white p-3 border border-slate-200 shadow-lg rounded text-xs z-50">
                                                             <p className="font-bold text-slate-800 mb-1">{d.motivo}</p>
                                                             <p className="text-slate-600">Início: <span className="font-mono font-bold">{d.dataStr} {d.horaIni}</span></p>
+                                                            <p className="text-slate-600">Fim: <span className="font-mono font-bold">{endTime}</span></p>
                                                             <p className="text-slate-600">Duração: <span className="font-bold text-red-500">{formatDuration(d.valor)}</span></p>
                                                             {d.detalhe && <p className="text-slate-500 mt-1 italic">{d.detalhe}</p>}
                                                         </div>
@@ -307,7 +320,8 @@
                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
                                         <tr>
                                             <th className="px-4 py-3">Tipo</th>
-                                            <th className="px-4 py-3">Data/Hora</th>
+                                            <th className="px-4 py-3">Data/Hora Início</th>
+                                            <th className="px-4 py-3">Data/Hora Fim</th>
                                             <th className="px-4 py-3">Motivo</th>
                                             <th className="px-4 py-3">Detalhe</th>
                                             <th className="px-4 py-3">Categoria</th>
@@ -327,6 +341,9 @@
                                                 </td>
                                                 <td className="px-4 py-2 text-slate-500 font-mono text-xs whitespace-nowrap">
                                                     {item.dataStr} <span className="text-slate-400">{item.horaIni}</span>
+                                                </td>
+                                                <td className="px-4 py-2 text-slate-500 font-mono text-xs whitespace-nowrap">
+                                                    {calculateEndTime(item.isoDate, item.horaIni, item.valor)}
                                                 </td>
                                                 <td className="px-4 py-2 text-slate-700 font-medium">{item.motivo}</td>
                                                 <td className="px-4 py-2 text-slate-500 text-xs max-w-[200px] truncate" title={item.detalhe}>{item.detalhe || '-'}</td>
@@ -407,6 +424,23 @@
             const [searchTerm, setSearchTerm] = useState('');
             const [osFilter, setOsFilter] = useState('');
             const [activeTab, setActiveTab] = useState('dashboard');
+
+            // Estados para o relatório semanal
+            const [showReportModal, setShowReportModal] = useState(false);
+            const [reportStartDate, setReportStartDate] = useState(() => {
+                const today = new Date();
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - dayOfWeek + 1); // Monday of current week
+                return monday.toLocaleDateString('en-CA');
+            });
+            const [reportEndDate, setReportEndDate] = useState(() => {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const sunday = new Date(today);
+                sunday.setDate(today.getDate() + (7 - dayOfWeek)); // Sunday of current week
+                return sunday.toLocaleDateString('en-CA');
+            });
 
             // Inicializa com a data de ontem para evitar travamento por excesso de dados
             const [startDate, setStartDate] = useState(() => {
@@ -1182,21 +1216,28 @@
                 XLSX.writeFile(wb, `Paradas_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
             };
 
-            const generateWeeklyReport = useCallback(() => {
+            const generateWeeklyReport = useCallback((startDate, endDate) => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
 
-                // --- Lógica de Data para o Relatório Semanal ---
-                const reportEndDate = new Date();
-                reportEndDate.setDate(reportEndDate.getDate() - 1);
-                const reportStartDate = new Date();
-                reportStartDate.setDate(reportEndDate.getDate() - 6);
+                // --- Lógica de Data para o Relatório ---
+                const reportStartDate = startDate ? new Date(startDate) : new Date();
+                const reportEndDate = endDate ? new Date(endDate) : new Date();
+
+                if (!startDate) {
+                    reportEndDate.setDate(reportEndDate.getDate() - 1);
+                    reportStartDate.setDate(reportEndDate.getDate() - 6);
+                }
 
                 const reportStartDateStr = reportStartDate.toLocaleDateString('pt-BR');
                 const reportEndDateStr = reportEndDate.toLocaleDateString('pt-BR');
 
                 const reportStartMs = reportStartDate.setHours(0, 0, 0, 0);
                 const reportEndMs = reportEndDate.setHours(23, 59, 59, 999);
+
+                // Determinar se é relatório do dia ou semanal
+                const isSingleDay = reportStartDateStr === reportEndDateStr;
+                const reportTitle = isSingleDay ? `RELATÓRIO DO DIA ${reportStartDateStr}` : "RELATÓRIO SEMANAL DE PARADAS INDUSTRIAIS";
 
                 // --- Filtragem de Dados ---
                 const reportFilteredData = workingData.filter(d => {
@@ -1319,7 +1360,7 @@
                     doc.setFontSize(22);
                     doc.setFont('helvetica', 'bold');
                     doc.setTextColor(41, 128, 185);
-                    doc.text("RELATÓRIO SEMANAL DE PARADAS INDUSTRIAIS", doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+                    doc.text(reportTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(100);
@@ -1879,10 +1920,10 @@
                 }
 
                 // --- Salvar o PDF ---
-                doc.save(`Relatorio_Semanal_Paradas_${reportStartDateStr.replace(/\//g, '-')}_a_${reportEndDateStr.replace(/\//g, '-')}.pdf`);
+                doc.save(`${isSingleDay ? 'Relatorio_Dia' : 'Relatorio_Semanal'}_Paradas_${reportStartDateStr.replace(/\//g, '-')}_a_${reportEndDateStr.replace(/\//g, '-')}.pdf`);
             }, [workingData]);
 
-            return (
+            const mainContent = (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800 p-4 md:p-8 font-sans">
                     {/* Header */}
 
@@ -2229,7 +2270,7 @@
                                 <button onClick={exportToPDF} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">
                                     <DownloadIcon className="w-4 h-4" /> PDF
                                 </button>
-                                <button onClick={generateWeeklyReport} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition shadow-sm">
+                                <button onClick={() => setShowReportModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition shadow-sm">
                                     <DownloadIcon className="w-4 h-4" /> Relatório Semanal
                                 </button>
                             </div>
@@ -2244,6 +2285,7 @@
                                                 <th className="px-4 py-3 bg-slate-50 w-20">Tipo</th>
                                                 <th className="px-4 py-3 bg-slate-50 w-24">Data</th>
                                                 <th className="px-4 py-3 bg-slate-50 w-20">Início</th>
+                                                <th className="px-4 py-3 bg-slate-50 w-20">Fim</th>
                                                 <th className="px-4 py-3 bg-slate-50">Local</th>
                                                 <th className="px-4 py-3 bg-slate-50">Motivo</th>
                                                 <th className="px-4 py-3 bg-slate-50">Detalhado</th>
@@ -2262,6 +2304,7 @@
                                                     </td>
                                                     <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.dataStr}</td>
                                                     <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{item.horaIni}</td>
+                                                    <td className="px-4 py-2 text-slate-500 font-mono text-xs group-hover:text-blue-700">{calculateEndTime(item.isoDate, item.horaIni, item.valor)}</td>
                                                     <td className="px-4 py-2 font-bold text-slate-700 truncate max-w-[120px] group-hover:text-blue-800">{item.linha}</td>
                                                     <td className="px-4 py-2 text-slate-600 truncate max-w-[200px] group-hover:text-blue-800">{item.motivo}</td>
                                                     <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[200px] group-hover:text-blue-700">{item.detalhe || '-'}</td>
@@ -2277,6 +2320,63 @@
                         </div>
                     )}
                 </div>
+            );
+
+            // Modal para seleção de período do relatório
+            return (
+                <>
+                    {mainContent}
+                    {showReportModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full mx-4">
+                                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <CalendarIcon className="h-5 w-5 text-purple-600" />
+                                    Selecionar Período do Relatório
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Data Inicial</label>
+                                        <input
+                                            type="date"
+                                            value={reportStartDate}
+                                            onChange={(e) => setReportStartDate(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Data Final</label>
+                                        <input
+                                            type="date"
+                                            value={reportEndDate}
+                                            onChange={(e) => setReportEndDate(e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                        onClick={() => {
+                                            if (reportStartDate && reportEndDate) {
+                                                generateWeeklyReport(reportStartDate, reportEndDate);
+                                                setShowReportModal(false);
+                                            }
+                                        }}
+                                        disabled={!reportStartDate || !reportEndDate}
+                                        className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition"
+                                    >
+                                        Gerar Relatório
+                                    </button>
+                                    <button
+                                        onClick={() => setShowReportModal(false)}
+                                        className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
             );
         }
 

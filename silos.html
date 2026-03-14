@@ -299,6 +299,34 @@
 
         let inventory = [];
 
+        // Helper de ordenação customizada
+        function customSiloSort(a, b) {
+            // Ordem de prioridade corrigida conforme a sequência desejada.
+            const order = { 'PS': 1, 'SM': 2, 'SA': 3, 'SC': 4, 'SP': 5 };
+            
+            const regex = /^([A-Z]+)[\s-]*(\d+)/i;
+
+            const matchA = (a.silo || '').match(regex);
+            const matchB = (b.silo || '').match(regex);
+
+            if (matchA && matchB) {
+                const prefixA = matchA[1].toUpperCase();
+                const prefixB = matchB[1].toUpperCase();
+                const numA = parseInt(matchA[2], 10);
+                const numB = parseInt(matchB[2], 10);
+
+                const orderA = order[prefixA] || 99;
+                const orderB = order[prefixB] || 99;
+
+                if (orderA !== orderB) {
+                    return orderA - orderB;
+                }
+                return numA - numB;
+            }
+            
+            return (a.silo || '').localeCompare(b.silo || '');
+        }
+
         // INICIALIZAÇÃO
         window.onload = () => {
             lucide.createIcons();
@@ -309,6 +337,7 @@
                     console.log("Usuário autenticado, carregando dados dos silos...");
                     db.collection('mes_silos').onSnapshot(snapshot => {
                         inventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        inventory.sort(customSiloSort); // Ordena o inventário
                         updateAll();
                     }, error => {
                         console.error("Erro ao carregar dados:", error);
