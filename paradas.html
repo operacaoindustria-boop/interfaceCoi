@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -178,20 +177,22 @@
         const formatDuration = (val) => {
             const num = parseFloat(val);
             if (isNaN(num)) return '00:00';
-            const totalMinutes = Math.round(num * 60);
+            const sign = num < 0 ? '-' : '';
+            const totalMinutes = Math.round(Math.abs(num) * 60);
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         };
 
         // --- Helper de Formatação de Tempo Tabela (HH HR MM MN) ---
         const formatDurationTable = (val) => {
             const num = parseFloat(val);
             if (isNaN(num)) return '00 HR 00 MN';
-            const totalMinutes = Math.round(num * 60);
+            const sign = num < 0 ? '-' : '';
+            const totalMinutes = Math.round(Math.abs(num) * 60);
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
-            return `${hours.toString().padStart(2, '0')} HR ${minutes.toString().padStart(2, '0')} MN`;
+            return `${sign}${hours.toString().padStart(2, '0')} HR ${minutes.toString().padStart(2, '0')} MN`;
         };
 
         // --- Helper para calcular Data/Hora Final ---
@@ -715,7 +716,7 @@
                         let tempoStr = getVal(idx.tempo);
                         if (!tempoStr && !isBackendFormat) tempoStr = getVal(parts.length - 1);
 
-                        let valor = parseTimeToHours(tempoStr);
+                        let valor = Math.max(0, parseTimeToHours(tempoStr));
                         let isoDate = parseDateToISO(dataStr);
 
                         // Validação: Garante que setor existe e valor é numérico (mesmo que 0)
@@ -764,6 +765,13 @@
                 return parseDataInput(csvInput);
             }, [csvInput]);
 
+            // Helper para datas locais seguras (YYYY-MM-DD -> Date Local)
+            const parseLocalDate = (dateStr) => {
+                if (!dateStr) return null;
+                const [y, m, d] = dateStr.split('-').map(Number);
+                return new Date(y, m - 1, d);
+            };
+
             // --- Cálculos Estatísticos ---
             const { sectorStats, shiftsList, pieData, timelineData, shiftComparisonData, tagData, locationData, detailedTableData, treemapData, totalHoras } = useMemo(() => {
                 const shifts = new Set();
@@ -783,8 +791,8 @@
                 });
 
                 // Define Time Window for Clamping
-                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
-                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+                const wStart = startDate ? parseLocalDate(startDate).setHours(0, 0, 0, 0) : 0;
+                const wEnd = endDate ? parseLocalDate(endDate).setHours(23, 59, 59, 999) : Number.MAX_SAFE_INTEGER;
 
                 let filteredData = [];
 
@@ -974,8 +982,8 @@
             }, [locationData]);
 
             const processedPareto = useMemo(() => {
-                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
-                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+                const wStart = startDate ? parseLocalDate(startDate).setHours(0, 0, 0, 0) : 0;
+                const wEnd = endDate ? parseLocalDate(endDate).setHours(23, 59, 59, 999) : Number.MAX_SAFE_INTEGER;
 
                 let filtered = [];
 
@@ -1065,8 +1073,8 @@
             }, [workingData, selectedSector, selectedShift, selectedResponsible, searchTerm, startDate, endDate, osFilter]);
 
             const processedFleetPareto = useMemo(() => {
-                const wStart = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
-                const wEnd = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Number.MAX_SAFE_INTEGER;
+                const wStart = startDate ? parseLocalDate(startDate).setHours(0, 0, 0, 0) : 0;
+                const wEnd = endDate ? parseLocalDate(endDate).setHours(23, 59, 59, 999) : Number.MAX_SAFE_INTEGER;
 
                 let filtered = [];
 
@@ -1216,13 +1224,37 @@
                 XLSX.writeFile(wb, `Paradas_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
             };
 
-            const generateWeeklyReport = useCallback((startDate, endDate) => {
+            const generateWeeklyReport = useCallback(async (startDate, endDate) => {
+                // Buscar dados de silos (Mes_silos é a coleção usada em silos.html)
+                let silosData = [];
+                try {
+                    const firestore = window.FirebaseTools?.db || (window.firebase && window.firebase.firestore && window.firebase.firestore());
+                    if (firestore) {
+                        const silosSnapshot = await firestore.collection('mes_silos').get();
+                        silosData = silosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    } else {
+                        console.warn('Firestore não disponível para buscar dados de silos.');
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar dados de silos:', error);
+                }
+
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
 
+                // --- Tema Visual ---
+                const theme = {
+                    primary: [41, 128, 185],    // Azul
+                    secondary: [52, 73, 94],    // Azul Escuro
+                    accent: [230, 126, 34],     // Laranja
+                    success: [39, 174, 96],     // Verde
+                    text: [60, 60, 60],         // Cinza Escuro
+                    lightGray: [240, 242, 245]  // Cinza Claro
+                };
+
                 // --- Lógica de Data para o Relatório ---
-                const reportStartDate = startDate ? new Date(startDate) : new Date();
-                const reportEndDate = endDate ? new Date(endDate) : new Date();
+                const reportStartDate = startDate ? parseLocalDate(startDate) : new Date();
+                const reportEndDate = endDate ? parseLocalDate(endDate) : new Date();
 
                 if (!startDate) {
                     reportEndDate.setDate(reportEndDate.getDate() - 1);
@@ -1237,7 +1269,7 @@
 
                 // Determinar se é relatório do dia ou semanal
                 const isSingleDay = reportStartDateStr === reportEndDateStr;
-                const reportTitle = isSingleDay ? `RELATÓRIO DO DIA ${reportStartDateStr}` : "RELATÓRIO SEMANAL DE PARADAS INDUSTRIAIS";
+                const reportTitle = isSingleDay ? `RELATÓRIO INTEGRADO DO DIA ${reportStartDateStr}` : "RELATÓRIO INTEGRADO SEMANAL - PARADAS & SILOS";
 
                 // --- Filtragem de Dados ---
                 const reportFilteredData = workingData.filter(d => {
@@ -1251,7 +1283,7 @@
                 });
 
                 // --- Cálculos Estatísticos ---
-                const reportTotalHoras = reportFilteredData.reduce((sum, item) => sum + item.valor, 0);
+                const reportTotalHoras = reportFilteredData.reduce((sum, item) => sum + (Number(item.valor) || 0), 0);
                 const reportMttr = reportFilteredData.length > 0 ? (reportTotalHoras / reportFilteredData.length) : 0;
 
                 // Categorização melhorada
@@ -1357,33 +1389,97 @@
 
                 // --- Funções Auxiliares ---
                 const addHeader = () => {
-                    doc.setFontSize(22);
+                    // Barra superior colorida
+                    doc.setFillColor(...theme.primary);
+                    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 15, 'F');
+
+                    // Título Principal
+                    doc.setFontSize(18);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(41, 128, 185);
-                    doc.text(reportTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+                    doc.setTextColor(...theme.secondary);
+                    doc.text(reportTitle, doc.internal.pageSize.getWidth() / 2, 50, { align: 'center', maxWidth: 520 });
+
+                    // Subtítulo (Datas)
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(100);
-                    doc.text(`Período: ${reportStartDateStr} a ${reportEndDateStr}`, doc.internal.pageSize.getWidth() / 2, 62, { align: 'center' });
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Período de Análise: ${reportStartDateStr} até ${reportEndDateStr}`, doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
+
+                    // Data de Geração
                     doc.setFontSize(9);
                     doc.setTextColor(150);
-                    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, doc.internal.pageSize.getWidth() / 2, 74, { align: 'center' });
+                    doc.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, doc.internal.pageSize.getWidth() / 2, 85, { align: 'center' });
+
+                    // Linha divisória
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setLineWidth(0.5);
+                    doc.line(40, 95, 555, 95);
                 };
 
                 const addSectionTitle = (title, y) => {
-                    doc.setFontSize(13);
+                    // Fundo do título
+                    doc.setFillColor(...theme.lightGray);
+                    doc.roundedRect(40, y - 12, 515, 20, 3, 3, 'F');
+
+                    doc.setFontSize(12);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(41, 128, 185);
-                    doc.text(title, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-                    doc.setDrawColor(41, 128, 185);
-                    doc.setLineWidth(0.8);
-                    doc.line(100, y + 4, 495, y + 4);
-                    return y + 22;
+                    doc.setTextColor(...theme.primary);
+                    doc.text(title.toUpperCase(), 50, y);
+                    return y + 25;
+                };
+
+                const drawSimpleBarChart = (data, startY, barColor) => {
+                    let currentY = startY;
+                    const rowHeight = 30; // Aumentado para melhor espaçamento
+                    const labelWidth = 200;
+                    const maxBarWidth = 230;
+                    const pageHeight = doc.internal.pageSize.getHeight();
+
+                    const maxValue = Math.max(...data.map(d => d.value));
+
+                    data.forEach((item, index) => {
+                        if (currentY + rowHeight > pageHeight - 40) {
+                            currentY = addNewPage();
+                        }
+
+                        // Fundo alternado para leitura
+                        if (index % 2 === 0) {
+                            doc.setFillColor(250, 250, 250);
+                            doc.rect(40, currentY - 8, 515, rowHeight, 'F');
+                        }
+
+                        // Rótulo
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(...theme.secondary);
+                        doc.text(item.label, 45, currentY + 8);
+
+                        // Barra
+                        const barWidth = maxValue > 0 ? (item.value / maxValue) * maxBarWidth : 0;
+
+                        // Fundo da barra (cinza claro para mostrar o 100%)
+                        doc.setFillColor(230, 230, 230);
+                        doc.roundedRect(45 + labelWidth, currentY, maxBarWidth, 12, 2, 2, 'F');
+
+                        // Barra de valor
+                        doc.setFillColor(...barColor);
+                        doc.roundedRect(45 + labelWidth, currentY, Math.max(barWidth, 2), 12, 2, 2, 'F');
+
+                        // Valor
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(50, 50, 50);
+                        const valueText = `${formatDuration(item.value)} (${item.percent})`;
+                        doc.text(valueText, 45 + labelWidth + maxBarWidth + 10, currentY + 9);
+
+                        currentY += rowHeight;
+                    });
+                    return currentY + 15;
                 };
 
                 const addNewPage = () => {
                     doc.addPage();
-                    return 40;
+                    return 50;
                 };
 
                 // --- Geração do PDF ---
@@ -1405,10 +1501,10 @@
                     `O tempo médio de reparo (MTTR) foi de ${formatDuration(reportMttr)}.`
                 ];
                 const splitSummary = doc.splitTextToSize(summaryLines.join('\n\n'), 515);
-                doc.text(splitSummary, 40, y);
+                doc.text(splitSummary, 45, y);
                 y += doc.getTextDimensions(splitSummary).h + 30;
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // INDICADORES PRINCIPAIS
                 y = addSectionTitle("INDICADORES PRINCIPAIS (KPIs)", y);
@@ -1416,7 +1512,7 @@
                 const kpiBody = [
                     ['Total de Horas Paradas', formatDuration(reportTotalHoras)],
                     ['Quantidade de Ocorrências', reportFilteredData.length.toString()],
-                    ['MTTR (Tempo Médio de Reparo)', formatDuration(reportMttr)],
+                    ['Tempo Médio de Parada (Média)', formatDuration(reportMttr)],
                     ['Disponibilidade do Período', `${reportAvailability.toFixed(2)}%`],
                     ['Indisponibilidade do Período', `${(100 - reportAvailability).toFixed(2)}%`],
                 ];
@@ -1425,38 +1521,33 @@
                     head: [['Indicador', 'Valor']],
                     body: kpiBody,
                     theme: 'grid',
-                    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                    bodyStyles: { fontSize: 9 },
+                    headStyles: { fillColor: theme.primary, textColor: [255, 255, 255], fontSize: 11, fontStyle: 'bold', halign: 'center' },
+                    bodyStyles: { fontSize: 10, textColor: theme.text, cellPadding: 6 },
+                    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 300 }, 1: { halign: 'right' } },
                     alternateRowStyles: { fillColor: [240, 248, 255] },
                 });
                 y = doc.lastAutoTable.finalY + 30;
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // ANÁLISE POR CATEGORIA
                 y = addSectionTitle("ANÁLISE POR CATEGORIA", y);
                 y += 5;
-                const categoryBody = Object.entries(reportCategoryStats)
+
+                const categoryChartData = Object.entries(reportCategoryStats)
                     .filter(([_, v]) => v > 0)
-                    .map(([name, value]) => {
-                        const percent = reportTotalHoras > 0 ? ((value / reportTotalHoras) * 100).toFixed(1) : 0;
-                        const count = categoryBreakdown[name] || 0;
-                        return [name, formatDuration(value), `${percent}%`, count.toString()];
-                    });
-                if (categoryBody.length > 0) {
-                    doc.autoTable({
-                        startY: y,
-                        head: [['Categoria', 'Tempo Total', '% do Total', 'Ocorrências']],
-                        body: categoryBody,
-                        theme: 'striped',
-                        headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
-                        alternateRowStyles: { fillColor: [240, 248, 255] },
-                    });
-                    y = doc.lastAutoTable.finalY + 30;
+                    .map(([name, value]) => ({
+                        label: name,
+                        value: value,
+                        percent: reportTotalHoras > 0 ? ((value / reportTotalHoras) * 100).toFixed(1) + '%' : '0%'
+                    }))
+                    .sort((a, b) => b.value - a.value);
+
+                if (categoryChartData.length > 0) {
+                    y = drawSimpleBarChart(categoryChartData, y, theme.success); // Cor Verde
                 }
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // ANÁLISE DETALHADA DE PROBLEMAS CRÍTICOS
                 y = addSectionTitle("ANÁLISE DETALHADA DE PROBLEMAS CRÍTICOS", y);
@@ -1537,13 +1628,13 @@
                     // Título centralizado
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(192, 57, 43);
-                    doc.text(`${idx + 1}. ${problem.nome}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    doc.setTextColor(...theme.accent); // Laranja/Vermelho para destaque
+                    doc.text(`${idx + 1}. ${problem.nome.toUpperCase()}`, 45, y); // Alinhado à esquerda para lista
                     y += 12;
 
-                    doc.setFontSize(9);
+                    doc.setFontSize(10);
                     doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(60, 60, 60);
+                    doc.setTextColor(...theme.text);
 
                     // Montar a narrativa do problema com melhor formatação
                     const problemDescription = `Setor: ${problem.setor} | Responsável: ${problem.responsavelCorreto} | Total de Paradas: ${problem.count} | Tempo Acumulado: ${formatDuration(problem.totalHoras)}`;
@@ -1601,7 +1692,7 @@
                             y += 4; // Espaço extra
                         } else {
                             const splitLine = doc.splitTextToSize(line, 480); // Largura reduzida para não ultrapassar
-                            doc.text(splitLine, 40, y);
+                            doc.text(splitLine, 45, y);
                             y += doc.getTextDimensions(splitLine).h + 3;
                         }
                     });
@@ -1613,32 +1704,23 @@
                     }
                 });
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // ANÁLISE PARETO
                 y = addSectionTitle("ANÁLISE PARETO: MAIORES OFENSORES", y);
                 y += 5;
-                const paretoBody = reportChartData.slice(0, 15).map((item, idx) => [
-                    (idx + 1).toString(),
-                    item.name,
-                    item.count.toString(),
-                    formatDuration(item.horas),
-                    `${item.percent}%`
-                ]);
-                if (paretoBody.length > 0) {
-                    doc.autoTable({
-                        startY: y,
-                        head: [['#', 'Motivo da Parada', 'Ocorrências', 'Tempo Total', '% do Total']],
-                        body: paretoBody,
-                        theme: 'striped',
-                        headStyles: { fillColor: [211, 84, 0], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
-                        alternateRowStyles: { fillColor: [255, 245, 230] },
-                    });
-                    y = doc.lastAutoTable.finalY + 30;
+
+                const paretoChartData = reportChartData.slice(0, 12).map(item => ({
+                    label: item.name.length > 40 ? item.name.substring(0, 40) + '...' : item.name,
+                    value: item.horas,
+                    percent: item.percent + '%'
+                }));
+
+                if (paretoChartData.length > 0) {
+                    y = drawSimpleBarChart(paretoChartData, y, theme.accent); // Cor Laranja/Vermelho
                 }
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // MÁQUINAS/EQUIPAMENTOS CRÍTICOS
                 y = addSectionTitle("MÁQUINAS/EQUIPAMENTOS CRÍTICOS", y);
@@ -1657,15 +1739,15 @@
                         head: [['#', 'Máquina/Local', 'Paradas', 'Tempo Total', '% Total', 'Principal Motivo']],
                         body: machineBody,
                         theme: 'grid',
-                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 8 },
-                        columnStyles: { 5: { cellWidth: 60 } },
+                        headStyles: { fillColor: theme.secondary, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
+                        columnStyles: { 0: { halign: 'center' }, 2: { halign: 'center' }, 4: { halign: 'center' }, 5: { cellWidth: 80 } },
                         alternateRowStyles: { fillColor: [245, 245, 250] },
                     });
                     y = doc.lastAutoTable.finalY + 20;
                 }
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // ANÁLISE POR SETOR E TURNO
                 y = addSectionTitle("ANÁLISE POR SETOR E TURNO", y);
@@ -1679,9 +1761,10 @@
                         head: [['Setor', 'Paradas', 'Tempo Total', '% do Total']],
                         body: sectorBody,
                         theme: 'striped',
-                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
+                        headStyles: { fillColor: theme.secondary, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
                         alternateRowStyles: { fillColor: [240, 245, 250] },
+                        tableWidth: 'wrap', // Tabela menor
                         margin: { left: 40 }
                     });
                 }
@@ -1689,33 +1772,26 @@
                 const shiftBody = reportShiftComparisonData
                     .filter(s => s.horas > 0)
                     .map(s => [s.name, s.count.toString(), formatDuration(s.horas)]);
-                if (shiftBody.length > 0 && doc.lastAutoTable) {
-                    y = doc.lastAutoTable.finalY + 30;
+
+                if (shiftBody.length > 0) {
+                    // Desenhar ao lado se houver espaço, ou abaixo
+                    // Simplificando: desenhar abaixo com margem
                     doc.autoTable({
-                        startY: y,
+                        startY: doc.lastAutoTable.finalY + 20,
                         head: [['Turno', 'Paradas', 'Tempo Total']],
                         body: shiftBody,
                         theme: 'striped',
-                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
+                        headStyles: { fillColor: theme.secondary, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
                         alternateRowStyles: { fillColor: [240, 245, 250] },
+                        margin: { left: 40 }
                     });
                     y = doc.lastAutoTable.finalY + 30;
-                } else if (shiftBody.length > 0) {
-                    y += 30;
-                    doc.autoTable({
-                        startY: y,
-                        head: [['Turno', 'Paradas', 'Tempo Total']],
-                        body: shiftBody,
-                        theme: 'striped',
-                        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
-                        alternateRowStyles: { fillColor: [240, 245, 250] },
-                    });
+                } else {
                     y = doc.lastAutoTable.finalY + 30;
                 }
 
-                if (y > pageHeight - 80) y = addNewPage();
+                if (y > pageHeight - 100) y = addNewPage();
 
                 // RESPONSÁVEIS PELAS PARADAS
                 if (topResponsibles.length > 0) {
@@ -1732,8 +1808,8 @@
                         head: [['#', 'Responsável', 'Paradas Atendidas', 'Tempo Total']],
                         body: respBody,
                         theme: 'grid',
-                        headStyles: { fillColor: [142, 68, 173], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 9 },
+                        headStyles: { fillColor: [142, 68, 173], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
                         alternateRowStyles: { fillColor: [245, 240, 250] },
                     });
                     y = doc.lastAutoTable.finalY + 15;
@@ -1754,13 +1830,13 @@
                 // Seção A: Análise de Pontos Críticos
                 doc.setFontSize(12);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor(211, 84, 0);
+                doc.setTextColor(...theme.accent);
                 doc.text("A. PONTOS CRÍTICOS IDENTIFICADOS", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
                 y += 15;
 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                doc.setTextColor(80, 80, 80);
+                doc.setTextColor(...theme.text);
 
                 // Ponto 1: Motivo Principal
                 if (topMotivo) {
@@ -1808,7 +1884,7 @@
                 if (y > pageHeight - 200) y = addNewPage();
                 doc.setFontSize(12);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor(22, 160, 133);
+                doc.setTextColor(...theme.success);
                 doc.text("B. PLANO DE AÇÃO IMEDIATO (PRÓXIMOS 7 DIAS)", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
                 y += 15;
 
@@ -1856,17 +1932,17 @@
                     body: actionPlan,
                     theme: 'striped',
                     headStyles: {
-                        fillColor: [22, 160, 133],
+                        fillColor: theme.success,
                         textColor: [255, 255, 255],
                         fontSize: 10,
                         fontStyle: 'bold',
-                        cellPadding: 5,
+                        cellPadding: 8,
                         halign: 'center',
                         valign: 'middle'
                     },
                     bodyStyles: {
-                        fontSize: 9,
-                        cellPadding: 4,
+                        fontSize: 10,
+                        cellPadding: 6,
                         valign: 'top',
                         minCellHeight: 20
                     },
@@ -1886,13 +1962,13 @@
                 if (y < pageHeight - 100) {
                     doc.setFontSize(11);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(41, 128, 185);
-                    doc.text("C. RECOMENDAÇÕES COMPLEMENTARES", 40, y);
+                    doc.setTextColor(...theme.primary);
+                    doc.text("C. RECOMENDAÇÕES COMPLEMENTARES", 45, y);
                     y += 12;
 
                     doc.setFontSize(9);
                     doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(80, 80, 80);
+                    doc.setTextColor(...theme.text);
 
                     const recommendations = [
                         '• Revisar e atualizar o plano de manutenção preventiva baseado nos dados coletados nesta semana',
@@ -1904,9 +1980,162 @@
 
                     recommendations.forEach((rec, idx) => {
                         const splitRec = doc.splitTextToSize(rec, 500);
-                        doc.text(splitRec, 50, y);
+                        doc.text(splitRec, 50, y); // Ligeiramente indentado
                         y += doc.getTextDimensions(splitRec).h + 6;
                     });
+                }
+
+                // --- SEÇÃO DE SILOS ---
+                if (silosData.length > 0) {
+                    y = addNewPage();
+                    y = addSectionTitle("ANÁLISE DE DISPONIBILIDADE DE SILOS", y);
+                    y += 10;
+
+                    // Cálculos de silos
+                    const totalVolume = silosData.reduce((acc, item) => acc + (Number(item.volume) || 0), 0);
+                    const capacidadeTotal = 28600; // Capacidade total dos silos
+                    const capacidadeLivre = capacidadeTotal - totalVolume;
+                    const ocupacaoPercent = (totalVolume / capacidadeTotal) * 100;
+                    const freeSc = capacidadeLivre / 0.06; // Capacidade em sacas (60kg cada)
+                    const picoSafraMeta = 400000; // Meta de pico de safra
+
+                    // Agrupar por cultivar
+                    const cultivarGroups = {};
+                    silosData.forEach(item => {
+                        const cultivar = item.cultivar || 'Não Identificado';
+                        if (!cultivarGroups[cultivar]) {
+                            cultivarGroups[cultivar] = { volume: 0, silos: 0 };
+                        }
+                        cultivarGroups[cultivar].volume += Number(item.volume) || 0;
+                        cultivarGroups[cultivar].silos += 1;
+                    });
+
+                    const topCultivars = Object.entries(cultivarGroups)
+                        .map(([name, data]) => ({ name, volume: data.volume, silos: data.silos }))
+                        .sort((a, b) => b.volume - a.volume)
+                        .slice(0, 5);
+
+                    // Indicadores principais de silos
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(52, 152, 219);
+                    doc.text("INDICADORES PRINCIPAIS DE ESTOQUE", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 15;
+
+                    const silosKpiBody = [
+                        ['Capacidade Total dos Silos', `${capacidadeTotal.toLocaleString('pt-BR')} T`],
+                        ['Volume Atual em Estoque', `${totalVolume.toFixed(2)} T`],
+                        ['Capacidade Disponível', `${capacidadeLivre.toFixed(2)} T`],
+                        ['Taxa de Ocupação', `${ocupacaoPercent.toFixed(2)}%`],
+                        ['Disponibilidade em Sacas (60kg)', `${Math.floor(freeSc).toLocaleString('pt-BR')} sc`],
+                        ['Número de Silos Ativos', silosData.length.toString()]
+                    ];
+
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Indicador', 'Valor']],
+                        body: silosKpiBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: theme.primary, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
+                        alternateRowStyles: { fillColor: [240, 248, 255] },
+                    });
+                    y = doc.lastAutoTable.finalY + 20;
+
+                    if (y > pageHeight - 100) y = addNewPage();
+
+                    // Top Cultivars
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(46, 204, 113);
+                    doc.text("PRINCIPAIS CULTIVARES EM ESTOQUE", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 15;
+
+                    const cultivarBody = topCultivars.map((item, idx) => [
+                        (idx + 1).toString(),
+                        item.name,
+                        `${item.volume.toFixed(2)} T`,
+                        item.silos.toString()
+                    ]);
+
+                    doc.autoTable({
+                        startY: y,
+                        head: [['#', 'Cultivar', 'Volume Total (T)', 'Nº Silos']],
+                        body: cultivarBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: theme.success, textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { fontSize: 9, cellPadding: 5 },
+                        alternateRowStyles: { fillColor: [240, 248, 255] },
+                    });
+                    y = doc.lastAutoTable.finalY + 20;
+
+                    if (y > pageHeight - 100) y = addNewPage();
+
+                    // Detalhamento por Silo
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(155, 89, 182);
+                    doc.text("DETALHAMENTO POR SILO", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 15;
+
+                    const siloBody = silosData.map(silo => [
+                        silo.silo || 'N/A',
+                        silo.cultivar || 'N/A',
+                        (Number(silo.volume) || 0).toFixed(2) + ' T',
+                        (Number(silo.umidade) || 0) > 0 ? (Number(silo.umidade)).toFixed(1) + '%' : '-'
+                    ]);
+
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Silo', 'Cultivar', 'Volume (T)', 'Umidade']],
+                        body: siloBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [155, 89, 182], textColor: [255, 255, 255], fontSize: 10, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { fontSize: 8, cellPadding: 4 },
+                        alternateRowStyles: { fillColor: [248, 248, 248] },
+                    });
+                    y = doc.lastAutoTable.finalY + 20;
+
+                    // Análise Estratégica
+                    if (y > pageHeight - 100) y = addNewPage();
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(230, 126, 34);
+                    doc.text("ANÁLISE ESTRATÉGICA - INTEGRAÇÃO PARADAS x SILOS", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    y += 15;
+
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(...theme.text);
+
+                    const estrategiaText = [
+                        `Com base nas ${reportFilteredData.length} paradas registradas (${formatDuration(reportTotalHoras)} de indisponibilidade) e na ocupação atual dos silos de ${ocupacaoPercent.toFixed(1)}%, a estratégia operacional deve priorizar:`,
+                        '',
+                        '• Agilidade no beneficiamento de lotes críticos para liberar capacidade',
+                        '• Manutenção preventiva focada nos equipamentos com maior incidência de falhas',
+                        '• Otimização da logística para reduzir tempos de parada por falta de matéria-prima',
+                        '• Monitoramento contínuo da umidade para evitar perdas qualitativas',
+                        '',
+                        `Capacidade disponível: ${capacidadeLivre.toFixed(1)} T (${Math.floor(freeSc).toLocaleString('pt-BR')} sc) - ${freeSc >= picoSafraMeta ? 'SUFICIENTE' : 'INSUFICIENTE'} para meta de pico de safra (${picoSafraMeta.toLocaleString('pt-BR')} sc).`
+                    ];
+
+                    estrategiaText.forEach((line, idx) => {
+                        const splitLine = doc.splitTextToSize(line, 500);
+                        doc.text(splitLine, 45, y);
+                        y += doc.getTextDimensions(splitLine).h + 4;
+                    });
+                } else {
+                    // Se não conseguiu carregar dados de silos, adiciona nota no relatório
+                    y = addNewPage();
+                    y = addSectionTitle("DISPONIBILIDADE DE SILOS (DADOS NÃO DISPONÍVEIS)", y);
+                    y += 20;
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(180, 40, 40);
+                    const msg = "Não foi possível carregar os dados de silos para este relatório. Verifique se há conexão com o Firestore e se o usuário possui permissão de leitura na coleção 'mes_silos'.";
+                    const splitMsg = doc.splitTextToSize(msg, 500);
+                    doc.text(splitMsg, 45, y);
+                    y += doc.getTextDimensions(splitMsg).h + 20;
                 }
 
                 // --- Rodapé ---
@@ -1920,8 +2149,34 @@
                 }
 
                 // --- Salvar o PDF ---
-                doc.save(`${isSingleDay ? 'Relatorio_Dia' : 'Relatorio_Semanal'}_Paradas_${reportStartDateStr.replace(/\//g, '-')}_a_${reportEndDateStr.replace(/\//g, '-')}.pdf`);
+                doc.save(`${isSingleDay ? 'Relatorio_Integrado_Dia' : 'Relatorio_Integrado_Semanal'}_Paradas_Silos_${reportStartDateStr.replace(/\//g, '-')}_a_${reportEndDateStr.replace(/\//g, '-')}.pdf`);
             }, [workingData]);
+
+            const generateAutoWeeklyReport = () => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+
+                const start = new Date(yesterday);
+                start.setDate(yesterday.getDate() - 7);
+
+                const formatYMD = (d) => {
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                };
+
+                const sStr = formatYMD(start);
+                const eStr = formatYMD(yesterday);
+
+                setReportStartDate(sStr);
+                setReportEndDate(eStr);
+
+                generateWeeklyReport(sStr, eStr);
+                setShowReportModal(false);
+            };
 
             const mainContent = (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800 p-4 md:p-8 font-sans">
@@ -2271,7 +2526,7 @@
                                     <DownloadIcon className="w-4 h-4" /> PDF
                                 </button>
                                 <button onClick={() => setShowReportModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition shadow-sm">
-                                    <DownloadIcon className="w-4 h-4" /> Relatório Semanal
+                                    <DownloadIcon className="w-4 h-4" /> Relatório Integrado
                                 </button>
                             </div>
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
@@ -2331,8 +2586,15 @@
                             <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full mx-4">
                                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                                     <CalendarIcon className="h-5 w-5 text-purple-600" />
-                                    Selecionar Período do Relatório
+                                    Selecionar Período do Relatório Integrado
                                 </h3>
+                                <button
+                                    onClick={generateAutoWeeklyReport}
+                                    className="w-full bg-blue-50 text-blue-700 px-4 py-3 rounded-lg font-bold hover:bg-blue-100 transition mb-6 flex items-center justify-center gap-2 border border-blue-200"
+                                >
+                                    <ClockIcon className="h-4 w-4" />
+                                    Relatório Semanal (Automático)
+                                </button>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Data Inicial</label>
@@ -2386,4 +2648,5 @@
 </body>
 
 </html>
+
 </html>
